@@ -56,17 +56,6 @@
   .vA .cert small { color: #6b7280; text-transform: uppercase; letter-spacing: .08em; font-size: 12px; }
   .vA .big { font-size: 72px; font-weight: 700; letter-spacing: -.03em; line-height: 1; margin: 0 0 8px; }
 
-  /* ---------- Variant D: A's look + B's navigator and review ---------- */
-  .vA .dots { display: flex; gap: 6px; }
-  .vA .dots button { width: 30px; height: 30px; border-radius: 8px; border: 1.5px solid #d1d5db; background: #fff; color: #6b7280; font-size: 13px; font-weight: 600; }
-  .vA .dots button.done { background: #e5e7eb; border-color: #e5e7eb; color: #111827; }
-  .vA .dots button.here { border-color: #111827; color: #111827; }
-  .vA .review { width: 100%; border-collapse: collapse; margin: 0 0 28px; font-size: 16px; }
-  .vA .review td { padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
-  .vA .review td:last-child { text-align: right; }
-  .vA .review button { background: none; border: 0; color: #111827; text-decoration: underline; padding: 0 0 0 8px; }
-  .vA .missing { color: #b42318; }
-
   /* ---------- Variant B: Exam paper with navigator sidebar ---------- */
   .vB { min-height: 100vh; background: #f3f4f6; display: grid; grid-template-columns: 280px 1fr; }
   .vB aside { background: #0f2a4a; color: #dbe7f5; padding: 24px 20px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 20px; }
@@ -79,6 +68,10 @@
   .vB .nav { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
   .vB .nav button { aspect-ratio: 1; border: 1px solid #3b5f8a; background: transparent; color: #dbe7f5; border-radius: 6px; font-weight: 600; }
   .vB .nav button.done { background: #dbe7f5; color: #0f2a4a; }
+  .vB .nav button.here { outline: 3px solid #f5b400; outline-offset: 1px; }
+  .vB .one { max-width: 720px; } .vB .one .qtext { font-size: 22px; } .vB .one label { font-size: 17px; padding: 12px 12px; border: 1px solid #e5e7eb; margin-bottom: 8px; }
+  .vB .one label:has(input:checked) { border-color: #0f2a4a; background: #eef3f9; }
+  .vB .pager { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
   .vB .legend { font-size: 12px; opacity: .8; }
   .vB aside .primary { margin-top: auto; background: #f5b400; color: #111; border: 0; border-radius: 6px; padding: 12px; font-weight: 700; }
   .vB main { padding: 32px 48px 120px; max-width: 900px; }
@@ -247,44 +240,21 @@ function VariantA() {
   }
 }
 
-// ======================= Variant D: A's look + B's navigator and review =======================
-function VariantD() {
-  if (!['questions', 'submit'].includes(S.step)) return VariantA();
-  const q = QUESTIONS[S.current];
-  const dots = QUESTIONS.map((x, i) => `<button class="${(S.answers[x.id] || []).length ? 'done' : ''} ${S.step === 'questions' && i === S.current ? 'here' : ''}" data-act="jump" data-a="${i}" title="Question ${i + 1}">${i + 1}</button>`).join('');
-  const top = `<div class="top"><span><span class="brand">${ASSESSMENT.creator}</span> · ${ASSESSMENT.title}</span>
-    <span class="dots">${dots}</span>
-    <span><span class="timer ${low() ? 'low' : ''}" data-clock>${mmss(S.secondsLeft)}</span> left · saved automatically</span></div>`;
-  const wrap = inner => `<div class="vA">${top}<div class="stage"><div class="inner">${inner}</div></div></div>`;
-  if (S.step === 'submit') return wrap(`
-    <h2>Review your answers</h2>
-    <table class="review">${QUESTIONS.map((x, i) => `<tr><td>${i + 1}. ${esc(x.text.length > 60 ? x.text.slice(0, 57) + '…' : x.text)}</td><td>${(S.answers[x.id] || []).length ? 'Answered' : '<span class="missing">Not answered</span>'}<button data-act="jump" data-a="${i}">change</button></td></tr>`).join('')}</table>
-    <h2 style="font-size:22px;margin-bottom:8px">What name should go on your Certificate?</h2>
-    <input class="field" placeholder="Your full name" value="${esc(S.name)}" data-input="name">
-    <p class="hint">Exactly as it should appear if you pass. If you don't pass, we don't keep it.</p>
-    <button class="go" data-act="submit">Submit my answers</button>`);
-  return wrap(`
-    <p class="hint" style="margin-bottom:8px">Question ${S.current + 1} of ${QUESTIONS.length} · ${kindHint(q)}</p>
-    <h2>${esc(q.text)}</h2>${q.code ? `<pre>${esc(q.code)}</pre>` : ''}
-    ${q.options.map((o, i) => `<button class="opt ${(S.answers[q.id] || []).includes(i) ? 'on' : ''}" data-act="pick" data-a="${q.id}" data-b="${i}"><kbd>${i + 1}</kbd>${esc(o)}</button>`).join('')}
-    <div class="row">${S.current > 0 ? '<button class="ghost" data-act="prev">← Previous</button>' : ''}
-      <span style="flex:1"></span>
-      ${S.current < QUESTIONS.length - 1 ? '<button class="ghost" data-act="review">Review & submit</button>' : ''}
-      <button class="go" data-act="next">${S.current < QUESTIONS.length - 1 ? 'Next →' : 'Review →'}</button></div>`);
-}
-
 // ======================= Variant B: Exam paper =======================
-function VariantB() {
+function bSide() {
   const attempt = ['questions', 'submit', 'resumed'].includes(S.step);
-  const side = `<aside>
+  return `<aside>
     <div><div class="brand">${ASSESSMENT.creator}</div><div class="sub">${ASSESSMENT.title}</div></div>
     ${attempt ? `<div class="clock ${low() ? 'low' : ''}"><b data-clock>${mmss(S.secondsLeft)}</b><span>time remaining · saved automatically</span></div>
       <div><div class="legend" style="margin-bottom:8px">Questions (${answered()}/${QUESTIONS.length} answered)</div>
-      <div class="nav">${QUESTIONS.map((q, i) => `<button class="${(S.answers[q.id] || []).length ? 'done' : ''}" data-act="jump" data-a="${i}">${i + 1}</button>`).join('')}</div></div>
+      <div class="nav">${QUESTIONS.map((q, i) => `<button class="${(S.answers[q.id] || []).length ? 'done' : ''} ${variant === 'D' && S.step === 'questions' && i === S.current ? 'here' : ''}" data-act="jump" data-a="${i}">${i + 1}</button>`).join('')}</div></div>
       <button class="primary" data-act="review">Review & submit</button>`
     : `<div class="sub">${ASSESSMENT.drawn} questions · ${ASSESSMENT.minutes} min · ${ASSESSMENT.passing}% to pass · ${ASSESSMENT.maxAttempts} attempts</div><div class="sub" style="margin-top:auto">Powered by Quizz</div>`}
   </aside>`;
-  const page = inner => `<div class="vB">${side}<main>${inner}</main></div>`;
+}
+
+function VariantB() {
+  const page = inner => `<div class="vB">${bSide()}<main>${inner}</main></div>`;
   switch (S.step) {
     case 'landing': return page(`<div class="paper"><h1>${ASSESSMENT.title}</h1><p class="note">Issued by ${ASSESSMENT.creator}</p>
       <table><tr><td>Questions</td><td>${ASSESSMENT.drawn}, drawn at random</td></tr><tr><td>Time limit</td><td>${ASSESSMENT.minutes} minutes</td></tr>
@@ -320,6 +290,21 @@ function VariantB() {
       <h1 style="margin-top:10px">No score</h1><p class="note">The Attempt wasn't submitted within ${ASSESSMENT.minutes} minutes.</p>
       <table><tr><td>Attempts used</td><td>1 of ${ASSESSMENT.maxAttempts}</td></tr><tr><td>Next Attempt available</td><td>in ${ASSESSMENT.cooldown} minutes</td></tr></table></div>`);
   }
+}
+
+// ======================= Variant D: B's layout, one question at a time (A) =======================
+function VariantD() {
+  if (!['questions', 'resumed'].includes(S.step)) return VariantB();
+  const q = QUESTIONS[S.current], last = S.current === QUESTIONS.length - 1;
+  return `<div class="vB">${bSide()}<main class="one">
+    ${S.step === 'resumed' ? `<div class="banner"><b>Welcome back.</b> Your ${answered()} answers were saved; the clock kept running. <button class="btn" style="margin-left:8px" data-act="continue">Continue</button></div>` : ''}
+    <div class="paper"><div class="qhead"><span>Question ${S.current + 1} of ${QUESTIONS.length}</span><span>${kindHint(q)}</span></div>
+      <p class="qtext">${esc(q.text)}</p>${q.code ? `<pre>${esc(q.code)}</pre>` : ''}
+      ${q.options.map((o, i) => `<label><input type="${q.kind === 'multi' ? 'checkbox' : 'radio'}" name="q${q.id}" ${(S.answers[q.id] || []).includes(i) ? 'checked' : ''} data-act="pick" data-a="${q.id}" data-b="${i}"> ${esc(o)}</label>`).join('')}
+    </div>
+    <div class="pager">${S.current > 0 ? '<button class="btn alt" data-act="prev">← Previous</button>' : '<span></span>'}
+      <button class="btn" data-act="next">${last ? 'Review & submit →' : 'Next question →'}</button></div>
+  </main></div>`;
 }
 
 // ======================= Variant C: Conversation =======================
@@ -359,7 +344,7 @@ function VariantC() {
 }
 
 // ======================= Switcher + wiring =======================
-const VARIANTS = { A: ['Focused, one question per screen', VariantA], B: ['Exam paper with navigator', VariantB], C: ['Conversation', VariantC], D: ['A + B navigator & review', VariantD] };
+const VARIANTS = { A: ['Focused, one question per screen', VariantA], B: ['Exam paper with navigator', VariantB], C: ['Conversation', VariantC], D: ['B layout, one question at a time', VariantD] };
 const params = new URLSearchParams(location.search);
 let variant = VARIANTS[params.get('variant')] ? params.get('variant') : 'A';
 
@@ -393,7 +378,7 @@ document.addEventListener('keydown', e => {
   const typing = e.target.closest('input, textarea, select, [contenteditable]');
   if (!typing && e.key === 'ArrowLeft') return cycle(-1);
   if (!typing && e.key === 'ArrowRight') return cycle(1);
-  if ((variant === 'A' || variant === 'D') && S.step === 'questions' && !typing) {
+  if (variant === 'A' && S.step === 'questions' && !typing) {
     const q = QUESTIONS[S.current], n = +e.key;
     if (n >= 1 && n <= q.options.length) { ACT.pick(q.id, n - 1); render(); }
     if (e.key === 'Enter') { ACT.next(); render(); }
