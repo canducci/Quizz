@@ -1,0 +1,516 @@
+<!doctype html>
+<!-- PROTOTYPE: throwaway. Lives on branch prototype/domain-logic, never on main. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quizz prototype: Attempts and Certificates</title>
+<style>
+  :root { --accent: #2f5bea; --muted: #6b7280; --line: #e5e7eb; --bad: #b42318; --ok: #067647; --warn: #b54708; }
+  * { box-sizing: border-box; }
+  body { font: 15px/1.5 system-ui, sans-serif; color: #111827; margin: 0; background: #fafafa; }
+  main { max-width: 1200px; margin: 0 auto; padding: 32px 24px 64px; }
+  h1 { margin: 0 0 4px; font-size: 24px; }
+  h2 { font-size: 16px; margin: 0 0 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  h3 { font-size: 14px; margin: 16px 0 6px; }
+  .intro { color: #374151; max-width: 820px; }
+  .intro li { margin: 2px 0; }
+  section { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 20px; margin-top: 20px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0; }
+  dt { color: var(--muted); } dd { margin: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; }
+  .empty { color: var(--muted); font-style: italic; }
+  button { font: inherit; font-size: 14px; padding: 6px 12px; margin: 3px 4px 3px 0; border: 1px solid var(--accent); background: #fff; color: var(--accent); border-radius: 6px; cursor: pointer; }
+  button:hover:not(:disabled) { background: var(--accent); color: #fff; }
+  button:disabled { border-color: var(--line); color: #9ca3af; cursor: default; }
+  button.done { border-color: var(--line); color: var(--muted); text-decoration: line-through; }
+  select, input { font: inherit; font-size: 14px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; }
+  .event { padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid var(--ok); background: #ecfdf3; }
+  .event.rejected { border-color: var(--bad); background: #fef3f2; }
+  .pill { display: inline-block; padding: 0 8px; border-radius: 999px; font-size: 13px; background: #f3f4f6; }
+  .pill.ok { background: #ecfdf3; color: var(--ok); } .pill.bad { background: #fef3f2; color: var(--bad); } .pill.warn { background: #fffaeb; color: var(--warn); }
+  .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+  .tabs button { border: none; border-radius: 6px 6px 0 0; margin: 0; color: var(--muted); }
+  .tabs button.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+  .tabs button:hover { background: #f3f4f6; color: var(--accent); }
+  ol.steps li { margin: 4px 0; }
+  .log { font-size: 13px; color: #374151; max-height: 220px; overflow: auto; }
+  .log div { padding: 2px 0; border-bottom: 1px dashed var(--line); }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .label { color: var(--muted); font-size: 13px; min-width: 110px; }
+  code { font-size: 13px; background: #f3f4f6; padding: 0 4px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Quizz prototype: Attempts and Certificates</h1>
+  <div class="intro">
+    <p><strong>The question:</strong> does the v1 model for Attempts and Certificates hold up in the awkward cases? It covers the deadline-based timer (finalized when next accessed), the Retake Policy and cooldown, Assessment Versions, confirming the name, Revocation, Expiry, Learner Erasure, and Creator deletion versus Creator Ban. The rules come from <code>.scratch/quizz-v1/spec.md</code>. Everything is in memory with fake data. Click a scenario tab, or play freely.</p>
+    <p><strong>Deliberate choices this prototype makes. Check they feel right:</strong></p>
+    <ul>
+      <li>A Learner who already holds a valid Certificate may take the Assessment again, and passing again issues a second Certificate.</li>
+      <li>The Retake Policy counts every Attempt on the Assessment, across all Assessment Versions. The cooldown runs from when the Attempt ended; for an auto-submitted Attempt, that's its deadline.</li>
+      <li>An Attempt that passes on auto-submit still needs the Learner to come back and confirm their name before a Certificate exists.</li>
+      <li>A name correction is started by the Learner: the old Certificate is revoked ("Name correction") and a new one is issued with a new ID.</li>
+      <li>The random question draw isn't modeled; each answer is just "correct" or "wrong".</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>Guided scenarios</h2>
+    <div class="tabs" id="tabs"></div>
+    <div id="scenario"></div>
+  </section>
+
+  <section>
+    <h2>Current state</h2>
+    <div id="event"></div>
+    <div id="state"></div>
+  </section>
+
+  <section>
+    <h2>Free play</h2>
+    <div class="row"><span class="label">Acting Learner</span>
+      <select id="learner"><option>ana@example.com</option><option>bruno@example.com</option><option>eve@example.com</option></select>
+      <span class="label" style="min-width:auto">Name on certificate</span><input id="name" value="Ana Souza">
+    </div>
+    <div class="row"><span class="label">Learner</span>
+      <button data-a="start">Verify email & start / resume Attempt</button>
+      <button data-a="answerRight">Answer a question correctly</button>
+      <button data-a="answerWrong">Answer a question wrongly</button>
+      <button data-a="submit">Submit Attempt</button>
+      <button data-a="confirmName">Confirm name & get Certificate</button>
+      <button data-a="correctName">Fix name on Certificate</button>
+      <button data-a="erase">Erase all my data</button>
+    </div>
+    <div class="row"><span class="label">Creator</span>
+      <button data-a="publish">Publish</button>
+      <button data-a="raise">Raise Passing Score to 80%</button>
+      <button data-a="expiry">Set Expiry to 30 days</button>
+      <button data-a="close">Close</button>
+      <button data-a="reopen">Reopen</button>
+      <button data-a="deleteAssessment">Delete Assessment</button>
+      <button data-a="inviteOnly">Make Invite-only</button>
+      <button data-a="invite">Invite acting Learner</button>
+      <button data-a="revoke">Revoke acting Learner's Certificate</button>
+    </div>
+    <div class="row"><span class="label">Platform</span>
+      <button data-a="deleteCreator">Creator deletes account</button>
+      <button data-a="banCreator">Ban Creator</button>
+      <button data-a="cleanup">Run daily cleanup</button>
+    </div>
+    <div class="row"><span class="label">Time</span>
+      <button data-a="t5">+5 minutes</button>
+      <button data-a="t60">+1 hour</button>
+      <button data-a="t31d">+31 days</button>
+      <button data-a="reset">Reset everything</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>History</h2>
+    <div class="log" id="log"></div>
+  </section>
+</main>
+
+<script id="logic">
+// ---- Pure domain module: no DOM. The page below only calls into it. ----
+const Quizz = (() => {
+  const DAY = 1440;
+
+  // Fake keyed hash (stands in for HMAC with a server secret). Not cryptographic.
+  function hashEmail(email) {
+    let h = 0x811c9dc5;
+    for (const c of 'server-secret:' + email.trim().toLowerCase()) { h ^= c.charCodeAt(0); h = Math.imul(h, 0x01000193) >>> 0; }
+    return 'h:' + h.toString(16).padStart(8, '0');
+  }
+
+  function initialState() {
+    return {
+      now: 0,
+      creator: { name: 'Acme Academy', joinedAt: 0, status: 'active' }, // active | deleted | banned
+      assessment: {
+        title: 'React Fundamentals', status: 'Draft', accessMode: 'Public', invited: [],
+        draft: { passingScore: 70, questionsDrawn: 5, timeLimit: 10, maxAttempts: 2, cooldown: 60, expiryDays: null },
+        versions: [],
+      },
+      attempts: [], certificates: [], seq: 1, log: [],
+    };
+  }
+
+  const current = s => s.assessment.versions[s.assessment.versions.length - 1];
+  const versionOf = (s, n) => s.assessment.versions.find(v => v.number === n);
+  const isOverdue = (s, a) => a.status === 'In progress' && s.now >= a.deadline;
+
+  function score(s, a) {
+    const v = versionOf(s, a.version);
+    return Math.round(100 * a.answers.filter(Boolean).length / v.questionsDrawn);
+  }
+
+  function finish(s, a, status, at) {
+    a.status = status; a.finishedAt = at; a.score = score(s, a);
+    a.passed = a.score >= versionOf(s, a.version).passingScore;
+  }
+
+  // Attempts are never finalized by a timer: whoever touches an overdue Attempt finalizes it.
+  function finalizeIfOverdue(s, a) {
+    if (isOverdue(s, a)) { finish(s, a, 'Auto-submitted', a.deadline); return true; }
+    return false;
+  }
+
+  function issue(s, a, name) {
+    const v = versionOf(s, a.version);
+    const c = {
+      id: 'C-' + String(s.seq++).padStart(4, '0'), emailHash: a.emailHash, attemptId: a.id, name,
+      version: a.version, passingScore: v.passingScore, score: a.score, issuedAt: s.now,
+      expiresAt: v.expiryDays ? s.now + v.expiryDays * DAY : null, revoked: null,
+    };
+    s.certificates.push(c); a.certificateId = c.id;
+    return c;
+  }
+
+  const ok = msg => ({ ok: true, msg });
+  const no = msg => ({ ok: false, msg });
+
+  function apply(s, act) {
+    const A = s.assessment;
+    const hash = act.email ? hashEmail(act.email) : null;
+    const mine = () => s.attempts.filter(a => a.emailHash === hash);
+    const open = () => mine().find(a => a.status === 'In progress');
+
+    switch (act.type) {
+      case 'advance':
+        s.now += act.minutes;
+        return ok(`Time moves forward ${act.minutes >= DAY ? act.minutes / DAY + ' days' : act.minutes + ' minutes'}. Nothing is finalized until something reads the Attempt.`);
+
+      case 'publish':
+        if (A.status !== 'Draft') return no('Only a Draft can be published.');
+        A.versions.push({ number: 1, ...A.draft }); A.status = 'Published';
+        return ok('Published. Version 1 is frozen.');
+
+      case 'changeSettings': {
+        if (A.status === 'Draft') { Object.assign(A.draft, act.patch); return ok('Draft settings changed.'); }
+        A.versions.push({ ...current(s), ...act.patch, number: current(s).number + 1 });
+        return ok(`Published Assessment edited, so Version ${current(s).number} is created. Existing Certificates keep the Version they were earned on.`);
+      }
+
+      case 'close':
+        if (A.status !== 'Published') return no('Only a Published Assessment can be closed.');
+        A.status = 'Closed'; return ok('Closed. No new Attempts; Certificates stay valid.');
+
+      case 'reopen':
+        if (A.status !== 'Closed') return no('Only a Closed Assessment can be reopened.');
+        if (s.creator.status !== 'active') return no('The Creator is no longer active.');
+        A.status = 'Published'; return ok('Reopened.');
+
+      case 'deleteAssessment':
+        if (s.certificates.length) return no(`Can't delete: ${s.certificates.length} Certificate(s) point at this Assessment. Close it instead.`);
+        return ok('No Certificates, so deleting would be allowed. (The prototype keeps the Assessment on screen anyway.)');
+
+      case 'setAccessMode':
+        A.accessMode = act.mode; return ok(`Access Mode is now ${act.mode}.`);
+
+      case 'invite':
+        if (!A.invited.includes(hash)) A.invited.push(hash);
+        return ok(`Invited. Only the keyed hash ${hash} is stored, not the email.`);
+
+      case 'start': {
+        if (s.creator.status !== 'active') return no(`Rejected: the Creator is ${s.creator.status}.`);
+        if (A.status !== 'Published') return no(`Rejected: the Assessment is ${A.status}.`);
+        if (A.accessMode === 'Invite-only' && !A.invited.includes(hash)) return no('Rejected: this email was not invited.');
+        const o = open();
+        if (o && !finalizeIfOverdue(s, o)) return ok(`Resumed Attempt ${o.id}. The clock kept running: ${o.deadline - s.now} min left.`);
+        const v = current(s), prior = mine();
+        if (prior.length >= v.maxAttempts) return no(`Rejected: all ${v.maxAttempts} Attempts used.`);
+        const last = prior[prior.length - 1];
+        if (last && s.now < last.finishedAt + v.cooldown) return no(`Rejected: cooldown. Next Attempt allowed in ${last.finishedAt + v.cooldown - s.now} min.`);
+        const a = { id: 'A-' + String(s.seq++).padStart(4, '0'), emailHash: hash, version: v.number, startedAt: s.now,
+          deadline: s.now + v.timeLimit, answers: [], status: 'In progress', finishedAt: null, score: null, passed: null, certificateId: null };
+        s.attempts.push(a);
+        return ok(`${o ? 'The previous Attempt was overdue and has been auto-submitted. ' : ''}Email verified. Attempt ${a.id} started on Version ${v.number}; ${v.timeLimit} min on the clock.`);
+      }
+
+      case 'answer': {
+        const a = open();
+        if (!a) return no('No Attempt in progress.');
+        if (finalizeIfOverdue(s, a)) return no(`Too late: the deadline has passed. ${a.id} was auto-submitted with ${a.score}%.`);
+        if (a.answers.length >= versionOf(s, a.version).questionsDrawn) return no('All questions answered; submit the Attempt.');
+        a.answers.push(act.correct);
+        return ok(`Answer saved (${a.answers.length}/${versionOf(s, a.version).questionsDrawn}).`);
+      }
+
+      case 'submit': {
+        const a = open();
+        if (!a) return no('No Attempt in progress.');
+        if (finalizeIfOverdue(s, a)) return no(`Too late: ${a.id} was already over time and has been auto-submitted with ${a.score}%.`);
+        finish(s, a, 'Submitted', s.now);
+        return ok(`Submitted: ${a.score}%, ${a.passed ? 'passed. Next, confirm your name.' : 'failed.'} The Learner sees only the score and pass/fail.`);
+      }
+
+      case 'confirmName': {
+        mine().forEach(a => finalizeIfOverdue(s, a));
+        const a = mine().filter(a => a.passed && !a.certificateId).pop();
+        if (!a) return no('No passed Attempt waiting for a name.');
+        if (!act.name.trim()) return no('The name is required.');
+        const c = issue(s, a, act.name.trim());
+        return ok(`Certificate ${c.id} issued to "${c.name}". It can't be changed from now on.`);
+      }
+
+      case 'correctName': {
+        const c = s.certificates.filter(c => c.emailHash === hash && !c.revoked).pop();
+        if (!c) return no('No valid Certificate to correct.');
+        c.revoked = { at: s.now, reason: 'Name correction' };
+        const n = issue(s, s.attempts.find(a => a.id === c.attemptId), act.name.trim());
+        return ok(`${c.id} revoked (Name correction). ${n.id} issued to "${n.name}" at a new URL.`);
+      }
+
+      case 'revoke': {
+        const c = s.certificates.filter(c => c.emailHash === hash && !c.revoked).pop();
+        if (!c) return no('The Creator looked up this email (by its hash) and found no valid Certificate.');
+        c.revoked = { at: s.now, reason: act.reason };
+        return ok(`${c.id} revoked: ${act.reason}. Its Verification Page stays up and shows it as revoked.`);
+      }
+
+      case 'erase': {
+        const nA = mine().length, nC = s.certificates.filter(c => c.emailHash === hash).length;
+        s.attempts = s.attempts.filter(a => a.emailHash !== hash);
+        s.certificates = s.certificates.filter(c => c.emailHash !== hash);
+        A.invited = A.invited.filter(h => h !== hash);
+        return ok(`Learner Erasure: ${nA} Attempt(s) and ${nC} Certificate(s) deleted. Retake counts reset; the invitation is gone too.`);
+      }
+
+      case 'deleteCreator':
+        if (s.creator.status !== 'active') return no('The Creator is already ' + s.creator.status + '.');
+        s.creator.status = 'deleted'; if (A.status === 'Published') A.status = 'Closed';
+        return ok('Creator account deleted. The Assessment is closed; the Certificates stay valid.');
+
+      case 'banCreator':
+        if (s.creator.status === 'banned') return no('Already banned.');
+        s.creator.status = 'banned'; if (A.status === 'Published') A.status = 'Closed';
+        s.certificates.filter(c => !c.revoked).forEach(c => { c.revoked = { at: s.now, reason: 'Creator banned' }; });
+        return ok('Creator banned. Every Certificate they issued is revoked.');
+
+      case 'cleanup': {
+        const n = s.attempts.filter(a => finalizeIfOverdue(s, a)).length;
+        return ok(`Daily cleanup: ${n} abandoned Attempt(s) finalized.`);
+      }
+    }
+    return no('Unknown action.');
+  }
+
+  function reduce(state, act) {
+    const s = structuredClone(state);
+    const r = apply(s, act);
+    s.log.push({ at: s.now, ...r });
+    return s;
+  }
+
+  // ---- Read models ----
+  function verify(s, certId) {
+    const c = s.certificates.find(c => c.id === certId);
+    if (!c) return { status: 'Not found' };
+    if (c.revoked) return { status: 'Revoked', detail: `on ${c.revoked.at} min: ${c.revoked.reason}` };
+    if (c.expiresAt !== null && s.now >= c.expiresAt) return { status: 'Expired' };
+    return { status: 'Valid' };
+  }
+
+  function myCertificates(s, email) {
+    return s.certificates.filter(c => c.emailHash === hashEmail(email));
+  }
+
+  function statistics(s) {
+    const done = s.attempts.filter(a => a.status !== 'In progress');
+    const times = done.map(a => a.finishedAt - a.startedAt).sort((x, y) => x - y);
+    return {
+      attempts: done.length,
+      inProgress: s.attempts.filter(a => a.status === 'In progress' && !isOverdue(s, a)).length,
+      overdueUnfinalized: s.attempts.filter(a => isOverdue(s, a)).length,
+      passRate: done.length ? Math.round(100 * done.filter(a => a.passed).length / done.length) : null,
+      scores: done.map(a => a.score),
+      medianMinutes: times.length ? times[Math.floor(times.length / 2)] : null,
+      issued: s.certificates.length,
+      revoked: s.certificates.filter(c => c.revoked).length,
+      expired: s.certificates.filter(c => verify(s, c.id).status === 'Expired').length,
+    };
+  }
+
+  return { initialState, reduce, verify, myCertificates, statistics, hashEmail, isOverdue, current, DAY };
+})();
+</script>
+
+<script>
+// ---- Throwaway page shell ----
+const ANA = 'ana@example.com', BRUNO = 'bruno@example.com', EVE = 'eve@example.com';
+let state = Quizz.initialState();
+const seenCertIds = new Set(); // what outsiders have seen (e.g. printed QR codes), so erased ones show "Not found"
+
+const A = {
+  reset: () => null,
+  publish: () => ({ type: 'publish' }),
+  raise: () => ({ type: 'changeSettings', patch: { passingScore: 80 } }),
+  expiry: () => ({ type: 'changeSettings', patch: { expiryDays: 30 } }),
+  close: () => ({ type: 'close' }), reopen: () => ({ type: 'reopen' }),
+  deleteAssessment: () => ({ type: 'deleteAssessment' }),
+  inviteOnly: () => ({ type: 'setAccessMode', mode: 'Invite-only' }),
+  invite: e => ({ type: 'invite', email: e }),
+  start: e => ({ type: 'start', email: e }),
+  answerRight: e => ({ type: 'answer', email: e, correct: true }),
+  answerWrong: e => ({ type: 'answer', email: e, correct: false }),
+  submit: e => ({ type: 'submit', email: e }),
+  confirmName: (e, n) => ({ type: 'confirmName', email: e, name: n }),
+  correctName: (e, n) => ({ type: 'correctName', email: e, name: n }),
+  revoke: e => ({ type: 'revoke', email: e, reason: 'Cheating reported' }),
+  erase: e => ({ type: 'erase', email: e }),
+  deleteCreator: () => ({ type: 'deleteCreator' }), banCreator: () => ({ type: 'banCreator' }),
+  cleanup: () => ({ type: 'cleanup' }),
+  t5: () => ({ type: 'advance', minutes: 5 }), t60: () => ({ type: 'advance', minutes: 60 }),
+  t31d: () => ({ type: 'advance', minutes: 31 * Quizz.DAY }),
+};
+
+function dispatch(key, email, name) {
+  const act = A[key](email, name);
+  if (!act) { state = Quizz.initialState(); seenCertIds.clear(); render('Reset.'); return; }
+  const who = email ? `[${email.split('@')[0]}] ` : '';
+  state = Quizz.reduce(state, act);
+  state.log[state.log.length - 1].msg = who + state.log[state.log.length - 1].msg;
+  state.certificates.forEach(c => seenCertIds.add(c.id));
+  render();
+}
+
+const fmt = m => { const d = Math.floor(m / Quizz.DAY), r = m % Quizz.DAY; return `Day ${d + 1}, ${String(Math.floor(r / 60)).padStart(2, '0')}:${String(r % 60).padStart(2, '0')}`; };
+const who = h => ({ [Quizz.hashEmail(ANA)]: 'Ana', [Quizz.hashEmail(BRUNO)]: 'Bruno', [Quizz.hashEmail(EVE)]: 'Eve' })[h];
+const pill = (t, k) => `<span class="pill ${k || ''}">${t}</span>`;
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+function render(note) {
+  const s = state, A = s.assessment, v = Quizz.current(s) || A.draft, st = Quizz.statistics(s);
+  const last = s.log[s.log.length - 1];
+  document.getElementById('event').innerHTML = note ? `<div class="event">${note}</div>`
+    : last ? `<div class="event ${last.ok ? '' : 'rejected'}"><strong>${last.ok ? 'What just happened' : 'Not allowed'}:</strong> ${esc(last.msg)}</div>` : '';
+
+  const attempts = s.attempts.map(a => {
+    const overdue = Quizz.isOverdue(s, a);
+    const status = overdue ? pill('Overdue: finalized next time it is read', 'warn')
+      : a.status === 'In progress' ? pill(`In progress, ${a.deadline - s.now} min left`)
+      : pill(a.status + (a.passed ? ', passed' : ', failed'), a.passed ? 'ok' : 'bad');
+    const cert = a.passed && !a.certificateId ? pill('Waiting for name', 'warn') : (a.certificateId || '');
+    return `<tr><td>${a.id}</td><td>${who(a.emailHash)} <code>${a.emailHash}</code></td><td>v${a.version}</td><td>${a.answers.map(x => x ? '✓' : '✗').join(' ') || '·'}</td><td>${status}</td><td>${a.score ?? ''}${a.score !== null ? '%' : ''}</td><td>${cert}</td></tr>`;
+  }).join('');
+
+  const certs = [...seenCertIds].map(id => {
+    const c = s.certificates.find(c => c.id === id), r = Quizz.verify(s, id);
+    const k = r.status === 'Valid' ? 'ok' : r.status === 'Expired' ? 'warn' : 'bad';
+    if (!c) return `<tr><td>${id}</td><td colspan="4" class="empty">Erased by the Learner</td><td>${pill(r.status, k)}</td></tr>`;
+    return `<tr><td>${id}</td><td>${esc(c.name)}</td><td>v${c.version} (pass ≥ ${c.passingScore}%)</td><td>${c.score}%</td><td>${fmt(c.issuedAt)}${c.expiresAt !== null ? '<br>expires ' + fmt(c.expiresAt) : ''}</td><td>${pill(r.status, k)} ${r.detail ? esc(r.detail) : ''}</td></tr>`;
+  }).join('');
+
+  const mine = e => Quizz.myCertificates(s, e).map(c => c.id).join(', ') || '—';
+
+  document.getElementById('state').innerHTML = `
+    <div class="grid">
+      <div><h3>Clock</h3><dl><dt>Now</dt><dd>${fmt(s.now)}</dd></dl>
+        <h3>Creator</h3><dl><dt>Name</dt><dd>${s.creator.name}</dd><dt>Account</dt><dd>${pill(s.creator.status, s.creator.status === 'active' ? 'ok' : 'bad')}</dd></dl></div>
+      <div><h3>Assessment: ${A.title}</h3><dl>
+        <dt>Status</dt><dd>${pill(A.status)}</dd>
+        <dt>Current version</dt><dd>${Quizz.current(s) ? 'v' + v.number + ` (${A.versions.length} total)` : 'none yet (Draft)'}</dd>
+        <dt>Access Mode</dt><dd>${A.accessMode}${A.accessMode === 'Invite-only' ? ` (${A.invited.length} invited)` : ''}</dd>
+        <dt>Passing Score</dt><dd>${v.passingScore}%</dd>
+        <dt>Questions / time</dt><dd>${v.questionsDrawn} questions, ${v.timeLimit} min</dd>
+        <dt>Retake Policy</dt><dd>max ${v.maxAttempts} Attempts, ${v.cooldown} min cooldown</dd>
+        <dt>Expiry</dt><dd>${v.expiryDays ? v.expiryDays + ' days' : 'off'}</dd></dl></div>
+      <div><h3>Assessment Statistics (all the Creator sees)</h3><dl>
+        <dt>Attempts finished</dt><dd>${st.attempts}${st.inProgress ? ` (+${st.inProgress} in progress)` : ''}${st.overdueUnfinalized ? ` (+${st.overdueUnfinalized} abandoned, not counted until cleanup)` : ''}</dd>
+        <dt>Pass rate</dt><dd>${st.passRate ?? '—'}${st.passRate !== null ? '%' : ''}</dd>
+        <dt>Scores</dt><dd>${st.scores.join(', ') || '—'}</dd>
+        <dt>Median time</dt><dd>${st.medianMinutes ?? '—'}${st.medianMinutes !== null ? ' min' : ''}</dd>
+        <dt>Certificates</dt><dd>${st.issued} issued, ${st.revoked} revoked, ${st.expired} expired</dd></dl></div>
+      <div><h3>My Certificates (each Learner's own view)</h3><dl>
+        <dt>Ana</dt><dd>${mine(ANA)}</dd><dt>Bruno</dt><dd>${mine(BRUNO)}</dd><dt>Eve</dt><dd>${mine(EVE)}</dd></dl></div>
+    </div>
+    <h3>Attempts (internal: the Creator never sees these rows; Learners are shown only as keyed hashes)</h3>
+    ${attempts ? `<table><tr><th>Attempt</th><th>Learner</th><th>Version</th><th>Answers</th><th>Status</th><th>Score</th><th>Certificate</th></tr>${attempts}</table>` : '<p class="empty">No Attempts yet.</p>'}
+    <h3>Certificates, as their Verification Pages show them</h3>
+    ${certs ? `<table><tr><th>ID</th><th>Name</th><th>Version</th><th>Score</th><th>Issued</th><th>Verification Page says</th></tr>${certs}</table>` : '<p class="empty">No Certificates yet.</p>'}`;
+
+  document.getElementById('log').innerHTML = s.log.slice().reverse().map(l => `<div>${fmt(l.at)}: ${l.ok ? '' : '⛔ '}${esc(l.msg)}</div>`).join('') || '<span class="empty">Nothing yet.</span>';
+}
+
+// ---- Guided scenarios ----
+const step = (label, key, email, name) => ({ label, key, email, name });
+const SCENARIOS = [
+  { title: 'Happy path', text: 'Ana takes the Assessment, passes with 80% (pass mark 70%), confirms her name and gets a Certificate. Watch: nothing is issued until she confirms her name, and the Statistics never show who she is.', steps: [
+    step('Creator publishes', 'publish'), step('Ana verifies her email and starts', 'start', ANA),
+    step('Ana answers correctly', 'answerRight', ANA), step('Ana answers correctly', 'answerRight', ANA), step('Ana answers correctly', 'answerRight', ANA),
+    step('Ana answers correctly', 'answerRight', ANA), step('Ana answers wrongly', 'answerWrong', ANA),
+    step('Ana submits', 'submit', ANA), step('Ana confirms "Ana Souza"', 'confirmName', ANA, 'Ana Souza')] },
+  { title: 'Laptop dies', text: 'Bruno has 10 minutes. He answers 4 questions correctly, his laptop dies, and he comes back after the deadline. Watch: while he is away nothing happens; the Attempt shows as overdue. It is finalized the moment he touches it, with the answers he had saved. 4/5 = 80% passes, so he still has to confirm his name.', steps: [
+    step('Creator publishes', 'publish'), step('Bruno starts', 'start', BRUNO),
+    step('Bruno answers correctly', 'answerRight', BRUNO), step('Bruno answers correctly', 'answerRight', BRUNO),
+    step('+5 minutes: laptop still on', 't5'), step('Bruno comes back and resumes (5 min left)', 'start', BRUNO),
+    step('Bruno answers correctly', 'answerRight', BRUNO), step('Bruno answers correctly', 'answerRight', BRUNO),
+    step('Laptop dies. +1 hour passes', 't60'), step('Bruno tries to answer', 'answerRight', BRUNO),
+    step('Bruno confirms "Bruno Lima"', 'confirmName', BRUNO, 'Bruno Lima')] },
+  { title: 'Retake limits', text: 'Eve fails, tries again immediately (cooldown), waits, fails again, and then has no Attempts left. Then she erases her data and starts over. That is the loophole we accepted.', steps: [
+    step('Creator publishes', 'publish'), step('Eve starts', 'start', EVE), step('Eve answers wrongly', 'answerWrong', EVE), step('Eve submits (0%)', 'submit', EVE),
+    step('Eve tries again at once', 'start', EVE), step('+1 hour', 't60'), step('Eve starts her 2nd Attempt', 'start', EVE),
+    step('Eve submits (0%)', 'submit', EVE), step('+1 hour', 't60'), step('Eve tries a 3rd time', 'start', EVE),
+    step('Eve erases all her data', 'erase', EVE), step('Eve starts again: allowed', 'start', EVE)] },
+  { title: 'Editing after issuing', text: 'Ana passes with 80% on Version 1 (pass mark 70%). The Creator then raises the Passing Score to 80%, creating Version 2. Watch: Ana\'s Certificate still says v1 (pass ≥ 70%). Bruno scores 60% on v2 and fails.', steps: [
+    step('Creator publishes', 'publish'), step('Ana starts', 'start', ANA),
+    step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA),
+    step('Ana submits (80%)', 'submit', ANA), step('Ana confirms her name', 'confirmName', ANA, 'Ana Souza'),
+    step('Creator raises Passing Score to 80%', 'raise'), step('Bruno starts on v2', 'start', BRUNO),
+    step('Bruno ✓', 'answerRight', BRUNO), step('Bruno ✓', 'answerRight', BRUNO), step('Bruno ✓', 'answerRight', BRUNO),
+    step('Bruno submits (60%)', 'submit', BRUNO)] },
+  { title: 'Invite-only', text: 'The Creator restricts the Assessment and invites Ana. Eve tries to get in with the link.', steps: [
+    step('Creator publishes', 'publish'), step('Creator makes it Invite-only', 'inviteOnly'), step('Creator invites Ana', 'invite', ANA),
+    step('Eve tries to start', 'start', EVE), step('Ana starts', 'start', ANA)] },
+  { title: 'Revoke, fix name, delete', text: 'Ana passes with a typo in her name and fixes it. Later the Creator hears she cheated and revokes, then tries to delete the Assessment. Watch the Verification Page column: the old ID stays up as revoked.', steps: [
+    step('Creator publishes', 'publish'), step('Ana starts', 'start', ANA),
+    step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA),
+    step('Ana submits', 'submit', ANA), step('Ana confirms "Jhon Souza" (typo)', 'confirmName', ANA, 'Jhon Souza'),
+    step('Ana fixes it to "Ana Souza"', 'correctName', ANA, 'Ana Souza'), step('Creator revokes Ana\'s Certificate (by her email)', 'revoke', ANA),
+    step('Creator tries to delete the Assessment', 'deleteAssessment'), step('Creator closes it instead', 'close'),
+    step('Ana tries to start', 'start', ANA)] },
+  { title: 'Expiry', text: 'The Creator turns on a 30-day Expiry after Ana already has a Certificate. Watch: Ana\'s Certificate (v1, no expiry) stays valid forever; Bruno\'s (v2) expires after 30 days.', steps: [
+    step('Creator publishes', 'publish'), step('Ana starts', 'start', ANA),
+    step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA),
+    step('Ana submits', 'submit', ANA), step('Ana confirms her name', 'confirmName', ANA, 'Ana Souza'),
+    step('Creator sets Expiry to 30 days (v2)', 'expiry'), step('Bruno starts on v2', 'start', BRUNO),
+    step('Bruno ✓', 'answerRight', BRUNO), step('Bruno ✓', 'answerRight', BRUNO), step('Bruno ✓', 'answerRight', BRUNO), step('Bruno ✓', 'answerRight', BRUNO),
+    step('Bruno submits', 'submit', BRUNO), step('Bruno confirms his name', 'confirmName', BRUNO, 'Bruno Lima'), step('+31 days', 't31d')] },
+  { title: 'Creator leaves vs banned', text: 'Ana passes. The Creator deletes their account and her Certificate stays valid. Then the platform bans the Creator (say, they were impersonating a university), and every Certificate is revoked. Finally, Ana erases her data and her Verification Page becomes "Not found".', steps: [
+    step('Creator publishes', 'publish'), step('Ana starts', 'start', ANA),
+    step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA),
+    step('Ana submits', 'submit', ANA), step('Ana confirms her name', 'confirmName', ANA, 'Ana Souza'),
+    step('Creator deletes their account', 'deleteCreator'), step('Bruno tries to start', 'start', BRUNO),
+    step('Platform bans the Creator', 'banCreator'), step('Ana erases all her data', 'erase', ANA)] },
+  { title: 'Abandoned Attempts', text: 'Two Learners start and never come back. Watch the Statistics: abandoned Attempts are not counted until the daily cleanup finalizes them (with 0 answers, so 0%).', steps: [
+    step('Creator publishes', 'publish'), step('Ana starts', 'start', ANA), step('Bruno starts', 'start', BRUNO),
+    step('Ana answers once and leaves', 'answerRight', ANA), step('+1 hour', 't60'), step('Run daily cleanup', 'cleanup')] },
+];
+
+let active = 0, next = 0;
+function renderScenario() {
+  document.getElementById('tabs').innerHTML = SCENARIOS.map((sc, i) => `<button class="${i === active ? 'active' : ''}" data-tab="${i}">${sc.title}</button>`).join('');
+  const sc = SCENARIOS[active];
+  document.getElementById('scenario').innerHTML = `<p>${sc.text}</p><ol class="steps">${sc.steps.map((st, i) =>
+    `<li><button data-step="${i}" ${i !== next ? 'disabled' : ''} class="${i < next ? 'done' : ''}">${esc(st.label)}</button></li>`).join('')}</ol>
+    ${next >= sc.steps.length ? '<p><strong>Scenario complete.</strong> Scroll through the state and history below, or pick another tab.</p>' : ''}`;
+}
+function startScenario(i) { active = i; next = 0; state = Quizz.initialState(); seenCertIds.clear(); render(`Scenario "${SCENARIOS[i].title}" started from a clean state.`); renderScenario(); }
+
+document.getElementById('tabs').addEventListener('click', e => { if (e.target.dataset.tab) startScenario(+e.target.dataset.tab); });
+document.getElementById('scenario').addEventListener('click', e => {
+  const i = e.target.dataset.step; if (i === undefined) return;
+  const st = SCENARIOS[active].steps[i]; dispatch(st.key, st.email, st.name); next++; renderScenario();
+});
+document.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () =>
+  dispatch(b.dataset.a, document.getElementById('learner').value, document.getElementById('name').value)));
+
+startScenario(0);
+</script>
+</body>
+</html>
