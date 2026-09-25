@@ -23,7 +23,8 @@ type Db = LibSQLDatabase<typeof schema>;
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 type Attempt = typeof schema.attempt.$inferSelect;
 type Certificate = typeof schema.certificate.$inferSelect;
-type Counter = "attempts" | "timedOut" | "submitted" | "passed" | "certificatesIssued" | "expired";
+type Counter =
+  "attempts" | "timedOut" | "submitted" | "passed" | "certificatesIssued" | "revoked" | "expired";
 type Tallies = Pick<
   typeof schema.statsDay.$inferSelect,
   "scoreHistogram" | "timeHistogram" | "questions"

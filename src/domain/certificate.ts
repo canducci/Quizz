@@ -20,6 +20,15 @@ export function parsePublicId(typed: string) {
   return id.length === 16 && [...id].every((c) => CROCKFORD.includes(c)) ? id : null;
 }
 
+/** What a Creator typed to find a Certificate: its id, its Verification Page URL (with or without
+ * scheme, as printed under the QR code), or the Learner's email. Null if it's none of these. */
+export function certificateLookup(typed: string): { email: string } | { publicId: string } | null {
+  const text = typed.trim();
+  if (text.includes("@")) return { email: text };
+  const publicId = parsePublicId(text.match(/\/c\/([^/?#]+)/)?.[1] ?? text);
+  return publicId ? { publicId } : null;
+}
+
 export type ShownStatus = "valid" | "expired" | "revoked" | "replaced";
 
 /** What the Verification Page says, and since when. A Revocation or replacement outranks Expiry,

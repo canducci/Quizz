@@ -1,6 +1,6 @@
 # Revocation by the Creator
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 09
 
 ## What to build
@@ -9,10 +9,10 @@ A Creator revokes a Certificate.
 
 ## Acceptance criteria
 
-- [ ] Find by Certificate ID (with or without dashes), full URL, or the Learner's email (hashed for lookup).
-- [ ] Reason required, stored privately; status revoked with date; counter `revoked`.
-- [ ] Vitest: lookup by each form; reason never leaves Creator views.
-- [ ] Playwright: revoke, then the Verification Page shows Revoked without the reason.
+- [x] Find by Certificate ID (with or without dashes), full URL, or the Learner's email (hashed for lookup).
+- [x] Reason required, stored privately; status revoked with date; counter `revoked`.
+- [x] Vitest: lookup by each form; reason never leaves Creator views.
+- [x] Playwright: revoke, then the Verification Page shows Revoked without the reason.
 
 ## Design reference
 

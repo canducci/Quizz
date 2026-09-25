@@ -3,7 +3,9 @@
     "language": "Idioma",
     "signOut": "Sair",
     "assessments": "Avaliações",
-    "settings": "Configurações"
+    "settings": "Configurações",
+    "certificates": "Certificados",
+    "myCertificates": "Meus Certificados"
   },
   "signIn": {
     "title": "Entrar no Quizz",
@@ -377,5 +379,59 @@
     "empty": "Nenhuma Tentativa neste período",
     "emptyHint": "Nenhum Participante fez {version, select, all {qualquer Versão} other {a Versão {version}}} neste período. Tente um período maior ou outra Versão.",
     "questionLabel": "Q{n}"
+  },
+  "certificates": {
+    "title": "Certificados",
+    "search": "ID do Certificado, link ou e-mail do Participante",
+    "find": "Buscar",
+    "badSearch": "Informe um ID de Certificado (XXXX-XXXX-XXXX-XXXX), o link dele ou um endereço de e-mail.",
+    "none": "Nenhum dos seus Certificados corresponde.",
+    "version": "Versão {n}",
+    "issued": "emitido em {date}",
+    "status": {
+      "valid": "Válido",
+      "expired": "Expirou em {date}",
+      "revoked": "Revogado em {date}",
+      "replaced": "Substituído por correção de nome em {date}"
+    },
+    "reason": "Motivo: {reason}",
+    "reasonLabel": "Motivo da revogação",
+    "revoke": "Revogar",
+    "revoked": "Certificado revogado. A Página de Verificação agora o mostra como revogado, com a data, mas sem o motivo.",
+    "failed": "Nada foi revogado: informe um motivo e confira se o Certificado ainda é válido.",
+    "privacy": "Um e-mail é comparado apenas pelo hash; o Quizz nunca o guarda. Só os seus Certificados aparecem, e o motivo fica visível apenas para você."
+  },
+  "mine": {
+    "title": "Meus Certificados",
+    "intro": "Confirme seu e-mail com um código para ver todos os Certificados emitidos para ele, em qualquer Avaliação.",
+    "verified": "Certificados de {email}.",
+    "none": "Nenhum Certificado foi emitido para este e-mail.",
+    "version": "Versão {n}",
+    "issued": "Emitido em {date}",
+    "status": {
+      "valid": "Válido",
+      "expired": "Expirou em {date}",
+      "revoked": "Revogado em {date}",
+      "replaced": "Substituído em {date}"
+    },
+    "view": "Página de Verificação",
+    "correct": "Corrigir meu nome",
+    "newName": "Nome completo, como deve aparecer",
+    "correctHint": "Isto substitui o Certificado por um novo, em um novo link, enviado para o seu e-mail. O link antigo dirá que foi substituído.",
+    "save": "Emitir Certificado corrigido",
+    "cancel": "Cancelar",
+    "corrected": "Pronto. Seu Certificado corrigido está em um novo link e a caminho do seu e-mail.",
+    "unsent": "Pronto. Seu Certificado corrigido está em um novo link, mas não conseguimos enviá-lo por e-mail. Abra-o abaixo e baixe o PDF.",
+    "nameError": "Informe seu nome completo.",
+    "notCorrectable": "Só um Certificado válido pode ser corrigido.",
+    "erase": "Excluir todos os meus dados",
+    "eraseHint": "Exclui todas as Tentativas, Certificados e convites deste e-mail, em todas as Avaliações. As Páginas de Verificação mostrarão não encontrado. Não dá para desfazer.",
+    "eraseConfirm": "Sim, excluir tudo",
+    "erased": "Seus dados foram excluídos.",
+    "signOut": "Usar outro e-mail",
+    "mail": {
+      "subject": "Seu código do Quizz: {code}",
+      "body": "Seu código para ver seus Certificados no Quizz é:\n\n{code}\n\nEle vale por {minutes} minutos. Se você não pediu, ignore este e-mail."
+    }
   }
 }

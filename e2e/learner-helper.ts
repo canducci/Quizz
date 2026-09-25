@@ -120,3 +120,21 @@ export function sql(query: string, ...args: (string | number | null)[]) {
     JSON.stringify(args),
   ]);
 }
+
+/** A verified Learner passes a one-Question Assessment as `name`; returns their Certificate's id. */
+export async function earnCertificate(
+  page: Page,
+  request: APIRequestContext,
+  link: string,
+  name: string,
+  email = newLearner(),
+) {
+  await verifyLearner(page, request, link, email);
+  await page.getByRole("button", { name: "Start Attempt" }).click();
+  await page.getByLabel("Yes", { exact: true }).check();
+  await page.locator(".pager").getByRole("button", { name: "Review & submit" }).click();
+  await page.getByLabel("Full name").fill(name);
+  await page.getByRole("button", { name: "Submit final answers" }).click();
+  await expect(page.getByRole("heading", { name: "You passed." })).toBeVisible();
+  return (await fromMail(request, email, /\/c\/[0-9A-Z]{16}\b/)).slice(3);
+}

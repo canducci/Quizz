@@ -5,6 +5,7 @@ import { openDatabase } from "../db/open";
 import { migrateDatabase } from "../db/migrate";
 import * as schema from "../db/schema";
 import { publish } from "./publish";
+import { saveAnswer, startAttempt, submitAttempt } from "./attempts";
 
 export const MINUTE = 60_000;
 export const at = (minutes: number) => new Date(Date.UTC(2026, 8, 25, 12) + minutes * MINUTE);
@@ -50,4 +51,22 @@ export async function published(expiryDays: number | null = null) {
   await publish(db, "a1", "c1");
   const stats = async () => (await db.select().from(schema.statsDay))[0];
   return { db, stats };
+}
+
+/** Learner `learner` (an email hash) passes "a1" at minute `now` and holds its Certificate. */
+export async function pass(
+  db: Awaited<ReturnType<typeof published>>["db"],
+  learner: string,
+  now = 0,
+) {
+  await startAttempt(db, { assessmentId: "a1", learner, now: at(now) });
+  for (const questionId of ["q1", "q2", "q3"])
+    await saveAnswer(db, { assessmentId: "a1", learner, questionId, choice: [0], now: at(now) });
+  const done = await submitAttempt(db, {
+    assessmentId: "a1",
+    learner,
+    name: learner,
+    now: at(now + 1),
+  });
+  return done.ok ? done.certificate! : null!;
 }

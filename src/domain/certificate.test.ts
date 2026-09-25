@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import {
   NAME_BOX,
+  certificateLookup,
   expiryOf,
   formatId,
   nameSize,
@@ -86,4 +87,19 @@ it("shows Revoked or Replaced with their date, even past Expiry", () => {
       status,
       since: day(10),
     });
+});
+
+it("finds a Certificate by id, dashed or not, by its full or printed URL, or by email", () => {
+  const id = "7K3M9QX2HT4V8PWD";
+  for (const typed of [
+    id,
+    "7k3m-9qx2-ht4v-8pwd",
+    `https://quizz.example/c/${id}`,
+    `quizz.example/c/7K3M-9QX2-HT4V-8PWD`, // as printed under the QR code
+    ` https://quizz.example/c/${id}/pdf?x=1 `,
+  ])
+    expect(certificateLookup(typed)).toEqual({ publicId: id });
+  expect(certificateLookup(" Ana@Example.test ")).toEqual({ email: "Ana@Example.test" });
+  for (const typed of ["", "nope", "https://quizz.example/c/short", "https://quizz.example/a/x"])
+    expect(certificateLookup(typed)).toBeNull();
 });

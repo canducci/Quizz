@@ -20,12 +20,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <NextIntlClientProvider>
           <header className="header">
             <strong>Quizz</strong>
-            {me && (
-              <nav className="nav">
-                <Link href="/dashboard">{t("assessments")}</Link>
-                <Link href="/settings">{t("settings")}</Link>
-              </nav>
-            )}
+            <nav className="nav">
+              {me && (
+                <>
+                  <Link href="/dashboard">{t("assessments")}</Link>
+                  <Link href="/certificates">{t("certificates")}</Link>
+                  <Link href="/settings">{t("settings")}</Link>
+                </>
+              )}
+            </nav>
             <form action={setLocale} className="language" aria-label={t("language")}>
               <button name="locale" value="en" aria-pressed={locale === "en"}>
                 EN

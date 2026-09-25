@@ -3,7 +3,9 @@
     "language": "Language",
     "signOut": "Sign out",
     "assessments": "Assessments",
-    "settings": "Settings"
+    "settings": "Settings",
+    "certificates": "Certificates",
+    "myCertificates": "My Certificates"
   },
   "signIn": {
     "title": "Sign in to Quizz",
@@ -377,5 +379,59 @@
     "empty": "No Attempts in this range",
     "emptyHint": "No Learner took {version, select, all {any Version} other {Version {version}}} in this range. Try a longer range or another Version.",
     "questionLabel": "Q{n}"
+  },
+  "certificates": {
+    "title": "Certificates",
+    "search": "Certificate ID, link, or the Learner's email",
+    "find": "Find",
+    "badSearch": "Enter a Certificate ID (XXXX-XXXX-XXXX-XXXX), its link, or an email address.",
+    "none": "None of your Certificates matches.",
+    "version": "Version {n}",
+    "issued": "issued {date}",
+    "status": {
+      "valid": "Valid",
+      "expired": "Expired on {date}",
+      "revoked": "Revoked on {date}",
+      "replaced": "Replaced by a name correction on {date}"
+    },
+    "reason": "Reason: {reason}",
+    "reasonLabel": "Reason for revoking",
+    "revoke": "Revoke",
+    "revoked": "Certificate revoked. Its Verification Page now shows it as revoked, with the date but not the reason.",
+    "failed": "Nothing was revoked: give a reason, and check the Certificate is still valid.",
+    "privacy": "An email is compared by its hash only; Quizz never stores it. Only your own Certificates are shown, and the reason stays private to you."
+  },
+  "mine": {
+    "title": "My Certificates",
+    "intro": "Prove your email with a one-time code to see every Certificate issued to it, on any Assessment.",
+    "verified": "Showing Certificates for {email}.",
+    "none": "No Certificates were issued to this email.",
+    "version": "Version {n}",
+    "issued": "Issued {date}",
+    "status": {
+      "valid": "Valid",
+      "expired": "Expired on {date}",
+      "revoked": "Revoked on {date}",
+      "replaced": "Replaced on {date}"
+    },
+    "view": "Verification Page",
+    "correct": "Correct my name",
+    "newName": "Full name, as it should appear",
+    "correctHint": "This replaces the Certificate with a new one at a new link, emailed to you. The old link will say it was replaced.",
+    "save": "Issue corrected Certificate",
+    "cancel": "Cancel",
+    "corrected": "Done. Your corrected Certificate is at a new link and on its way to your email.",
+    "unsent": "Done. Your corrected Certificate is at a new link, but we couldn't email it. Open it below and download the PDF.",
+    "nameError": "Enter your full name.",
+    "notCorrectable": "Only a Valid Certificate can be corrected.",
+    "erase": "Delete all my data",
+    "eraseHint": "Deletes every Attempt, Certificate and invitation for this email, on every Assessment. Their Verification Pages will show not found. This can't be undone.",
+    "eraseConfirm": "Yes, delete everything",
+    "erased": "Your data has been deleted.",
+    "signOut": "Use another email",
+    "mail": {
+      "subject": "Your Quizz code: {code}",
+      "body": "Your code to see your Certificates on Quizz is:\n\n{code}\n\nIt works for {minutes} minutes. If you didn't ask for it, ignore this email."
+    }
   }
 }
