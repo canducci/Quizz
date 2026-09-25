@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { db } from "@/db";
-import { AttemptView, StartButton } from "@/components/attempt-view";
+import { AttemptView, ResendButton, StartButton } from "@/components/attempt-view";
 import { EntryForm } from "@/components/entry-form";
 import { learnerQuestions } from "@/domain/attempt";
 import { messagesFor } from "@/i18n/locales";
@@ -13,8 +13,12 @@ import { emailHash } from "@/server/email-hash";
 import { LEARNER_COOKIE, learnerEmail } from "@/server/learner-session";
 
 /** The Assessment link a Creator shares. Everything a Learner reads is in the Assessment Language. */
-export default async function AssessmentLink(props: { params: Promise<{ id: string }> }) {
+export default async function AssessmentLink(props: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ unsent?: string }>;
+}) {
   const { id } = await props.params;
+  const { unsent } = await props.searchParams;
   const row = await learnerAssessment(id);
   if (!row) notFound();
   const { title, settings, branding } = row.snapshot;
@@ -82,7 +86,14 @@ export default async function AssessmentLink(props: { params: Promise<{ id: stri
               <>
                 <h2>{t(last.attempt.passed ? "passed" : "failed")}</h2>
                 <p className="score">{t("score", { score: last.attempt.score! })}</p>
-                {last.attempt.passed && <p>{t("certificateSent", { email: verified })}</p>}
+                {last.attempt.passed && (
+                  <>
+                    <p>
+                      {t(unsent ? "certificateUnsent" : "certificateSent", { email: verified })}
+                    </p>
+                    {provide(<ResendButton assessmentId={id} />)}
+                  </>
+                )}
                 <p className="muted">
                   {t("passingWas", { passing: last.snapshot.settings.passingScore })}{" "}
                   {t("noReview")}

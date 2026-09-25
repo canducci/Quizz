@@ -7,6 +7,7 @@ import { expect, it } from "vitest";
 import { migrateDatabase } from "../db/migrate";
 import * as schema from "../db/schema";
 import { latestAttempt, saveAnswer, startAttempt, submitAttempt } from "./attempts";
+import { learnerCertificate } from "./certificates";
 import { publish } from "./publish";
 
 const MINUTE = 60_000;
@@ -97,6 +98,12 @@ it("starts once, resumes the same Attempt, and passes on the right answers", asy
     status: "valid",
   });
   expect(issued.publicId).toMatch(/^[0-9A-HJKMNP-TV-Z]{16}$/);
+  expect(passed.ok && passed.version.number).toBe(1);
+  expect(await learnerCertificate(db, "a1", "hash-ana")).toMatchObject({
+    certificate: issued,
+    version: { number: 1 },
+  });
+  expect(await learnerCertificate(db, "a1", "hash-bob")).toBeNull();
   expect(await submitAttempt(db, { ...learner, name: "Ana Souza", now: at(3) })).toEqual({
     ok: false,
     reason: "over",

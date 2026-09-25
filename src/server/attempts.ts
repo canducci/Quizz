@@ -14,7 +14,7 @@ import {
   tally,
 } from "../domain/attempt";
 import { expiryOf, newPublicId } from "../domain/certificate";
-import type { Snapshot } from "../domain/publish";
+import type { CertificateVersion } from "../domain/certificate";
 import { utcDay } from "./one-time-code";
 
 type Db = LibSQLDatabase<typeof schema>;
@@ -61,7 +61,7 @@ export async function timeOut(tx: Tx, row: Attempt) {
 /** The Learner's running Attempt with its Version snapshot, timing it out if it's overdue. */
 async function running(tx: Tx, assessmentId: string, learner: string, now: Date) {
   const [row] = await tx
-    .select({ attempt, snapshot: assessmentVersion.snapshot })
+    .select({ attempt, snapshot: assessmentVersion.snapshot, number: assessmentVersion.number })
     .from(attempt)
     .innerJoin(assessmentVersion, eq(attempt.versionId, assessmentVersion.id))
     .where(
@@ -175,7 +175,7 @@ export type SubmitResult =
       passed: boolean;
       certificate: Certificate | null;
       /** The Attempt's own Version, which the Certificate renders from. */
-      snapshot: Snapshot;
+      version: CertificateVersion;
     }
   | { ok: false; reason: "name" | "timedOut" | "over" };
 
@@ -222,28 +222,26 @@ export async function submitAttempt(
         questions: tally(s.questions, drawn, correct),
       }),
     );
-    if (!passed) return { ok: true, score, passed, certificate: null, snapshot: row.snapshot };
+    const version = { number: row.number, snapshot: row.snapshot };
+    if (!passed) return { ok: true, score, passed, certificate: null, version };
     const [{ creatorId }] = await tx
       .select({ creatorId: assessment.creatorId })
       .from(assessment)
       .where(eq(assessment.id, opts.assessmentId));
-    const issued: Certificate = {
-      id: uuidv7(),
-      publicId: newPublicId(),
-      versionId,
-      creatorId,
-      emailHash: opts.learner,
-      holderName: name,
-      score,
-      issuedAt: now,
-      expiresAt: expiryOf(now, settings.expiryDays),
-      status: "valid",
-      statusAt: null,
-      revocationReason: null,
-      replacedById: null,
-      expiryCountedAt: null,
-    };
-    await tx.insert(certificate).values(issued);
-    return { ok: true, score, passed, certificate: issued, snapshot: row.snapshot };
+    const [issued] = await tx
+      .insert(certificate)
+      .values({
+        id: uuidv7(),
+        publicId: newPublicId(),
+        versionId,
+        creatorId,
+        emailHash: opts.learner,
+        holderName: name,
+        score,
+        issuedAt: now,
+        expiresAt: expiryOf(now, settings.expiryDays),
+      })
+      .returning();
+    return { ok: true, score, passed, certificate: issued, version };
   });
 }

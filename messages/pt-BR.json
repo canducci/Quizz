@@ -226,7 +226,7 @@
     "sentTo": "Enviado para {email}. Vale por {minutes} minutos.",
     "code": "Código de verificação",
     "verify": "Verificar",
-    "resend": "Reenviar código",
+    "resend": "Enviar meu Certificado de novo",
     "otherEmail": "Usar outro e-mail",
     "verified": "E-mail verificado: {email}.",
     "verifiedHint": "Começar uma Tentativa inicia o relógio de {minutes} minutos. Ele continua correndo se você fechar a página.",
@@ -244,7 +244,8 @@
       "name": "Informe seu nome completo.",
       "timedOut": "O tempo acabou. Esta Tentativa não pode mais ser enviada.",
       "over": "Esta Tentativa já terminou.",
-      "unsaved": "Algumas respostas ainda não foram salvas. Verifique sua conexão e tente de novo."
+      "unsaved": "Algumas respostas ainda não foram salvas. Verifique sua conexão e tente de novo.",
+      "certificateSendFailed": "Não conseguimos enviar seu Certificado. Tente de novo em um minuto."
     },
     "start": "Começar Tentativa",
     "startAgain": "Começar nova Tentativa",
@@ -275,6 +276,8 @@
     "failed": "Você não passou.",
     "score": "Nota: {score}%",
     "certificateSent": "Seu Certificado está a caminho de {email}.",
+    "certificateUnsent": "Não conseguimos enviar seu Certificado para {email}. Tente de novo abaixo.",
+    "resent": "Enviado. Confira sua caixa de entrada.",
     "passingWas": "Nota de Aprovação: {passing}%.",
     "noReview": "Os resultados por Questão não são mostrados, para que o Conjunto de Questões continue justo para todos.",
     "timedOut": "O tempo acabou.",
@@ -291,6 +294,7 @@
     "issued": "Emitido em {date}",
     "validUntil": "Válido até {date}",
     "noExpiry": "Sem data de validade",
+    "version": "Versão {n} da Avaliação",
     "id": "Certificado <mono>{id}</mono>",
     "file": "Certificado {id}.pdf",
     "mail": {

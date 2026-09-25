@@ -30,6 +30,15 @@ export async function countEmail(db: Db | Tx, now = new Date()) {
     .onConflictDoUpdate({ target: emailDay.day, set: { sent: sql`${emailDay.sent} + 1` } });
 }
 
+/** Emails sent today, towards the daily cap. */
+export async function sentToday(db: Db | Tx, now = new Date()) {
+  const [today] = await db
+    .select()
+    .from(emailDay)
+    .where(eq(emailDay.day, utcDay(now)));
+  return today?.sent ?? 0;
+}
+
 /** Stores a new code for the email, or says which limit refused it. The caller emails the code. */
 export async function requestCode(
   db: Db,
@@ -51,11 +60,8 @@ export async function requestCode(
       return { ok: false as const, reason: "email" as const };
     if ((await recent(tx, eq(oneTimeCode.ip, opts.ip))) >= PER_IP)
       return { ok: false as const, reason: "ip" as const };
-    const [today] = await tx
-      .select()
-      .from(emailDay)
-      .where(eq(emailDay.day, utcDay(now)));
-    if ((today?.sent ?? 0) >= opts.cap) return { ok: false as const, reason: "dailyCap" as const };
+    if ((await sentToday(tx, now)) >= opts.cap)
+      return { ok: false as const, reason: "dailyCap" as const };
 
     const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
     await tx.insert(oneTimeCode).values({

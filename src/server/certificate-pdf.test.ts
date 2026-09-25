@@ -44,10 +44,13 @@ it.each([26, 27, 40, 41, 100, 101, MAX_NAME])(
         issuedAt: new Date(Date.UTC(2026, 8, 20)),
         expiresAt: new Date(Date.UTC(2027, 8, 20)),
       },
-      snapshot(
-        "Microsserviços ".repeat(14).slice(0, 200),
-        "Instituto ".repeat(10).slice(0, MAX_BRAND_TEXT),
-      ),
+      {
+        number: 123,
+        snapshot: snapshot(
+          "Microsserviços ".repeat(14).slice(0, 200),
+          "Instituto ".repeat(10).slice(0, MAX_BRAND_TEXT),
+        ),
+      },
       images,
       "https://quizz.example.com",
     );

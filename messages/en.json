@@ -226,7 +226,7 @@
     "sentTo": "Sent to {email}. It works for {minutes} minutes.",
     "code": "Verification code",
     "verify": "Verify",
-    "resend": "Resend code",
+    "resend": "Email my Certificate again",
     "otherEmail": "Use another email",
     "verified": "Email verified: {email}.",
     "verifiedHint": "Starting an Attempt begins the {minutes}-minute clock. It keeps running if you close the page.",
@@ -244,7 +244,8 @@
       "name": "Enter your full name.",
       "timedOut": "Time ran out. This Attempt can no longer be submitted.",
       "over": "This Attempt is already over.",
-      "unsaved": "Some answers aren't saved yet. Check your connection and try again."
+      "unsaved": "Some answers aren't saved yet. Check your connection and try again.",
+      "certificateSendFailed": "We couldn't send your Certificate. Try again in a minute."
     },
     "start": "Start Attempt",
     "startAgain": "Start a new Attempt",
@@ -275,6 +276,8 @@
     "failed": "You didn't pass.",
     "score": "Score: {score}%",
     "certificateSent": "Your Certificate is on its way to {email}.",
+    "certificateUnsent": "We couldn't email your Certificate to {email}. Try again below.",
+    "resent": "Sent. Check your inbox.",
     "passingWas": "Passing Score: {passing}%.",
     "noReview": "Per-Question results aren't shown, so the Question Pool stays fair for everyone.",
     "timedOut": "Time's up.",
@@ -291,6 +294,7 @@
     "issued": "Issued {date}",
     "validUntil": "Valid until {date}",
     "noExpiry": "Does not expire",
+    "version": "Assessment Version {n}",
     "id": "Certificate <mono>{id}</mono>",
     "file": "Certificate {id}.pdf",
     "mail": {

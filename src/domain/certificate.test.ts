@@ -1,5 +1,12 @@
 import { expect, it } from "vitest";
-import { NAME_BOX, expiryOf, formatId, nameSize, newPublicId } from "./certificate";
+import {
+  NAME_BOX,
+  expiryOf,
+  formatId,
+  nameSize,
+  newPublicId,
+  verificationUrl,
+} from "./certificate";
 
 it("makes 16-character Crockford base32 ids", () => {
   const ids = Array.from({ length: 200 }, () => newPublicId());
@@ -18,13 +25,19 @@ it("shows the id in groups of four", () => {
   expect(formatId("7K2P9QZ9X2LKQ4M8")).toBe("7K2P-9QZ9-X2LK-Q4M8");
 });
 
+it("links to the Verification Page", () => {
+  expect(verificationUrl("7K2P9QZ9X2LKQ4M8", "https://quizz.app")).toBe(
+    "https://quizz.app/c/7K2P9QZ9X2LKQ4M8",
+  );
+});
+
 it("expires the given number of days after issue, or never", () => {
   const issued = new Date(Date.UTC(2026, 8, 25, 12));
   expect(expiryOf(issued, 365)).toEqual(new Date(Date.UTC(2027, 8, 25, 12)));
   expect(expiryOf(issued, null)).toBeNull();
 });
 
-// `ems` is the name's width at 1pt: about half its length for ordinary letters, near all of it in Ws.
+// The second argument is the name's width at 1pt: about half its length for ordinary letters, near all of it in Ws.
 it("keeps the showcase's size steps for names that fit", () => {
   expect(nameSize("Ana Souza", 4.2)).toBe(42);
   expect(nameSize("x".repeat(26), 13)).toBe(42);
@@ -35,7 +48,8 @@ it("keeps the showcase's size steps for names that fit", () => {
 
 it("shrinks further until the wrapped name fits its box", () => {
   const fits = (ems: number, size: number) =>
-    Math.ceil((ems * size) / NAME_BOX.width) * size * 1.1 <= NAME_BOX.height;
+    Math.ceil((ems * size) / (NAME_BOX.width * 0.9)) * size * NAME_BOX.lineHeight <=
+    NAME_BOX.height;
   for (const ems of [60, 90, 185]) {
     const size = nameSize("x".repeat(41), ems);
     expect(size).toBeLessThan(26.04);

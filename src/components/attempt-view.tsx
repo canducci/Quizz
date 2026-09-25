@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
+  resendLearnerCertificate,
   saveLearnerAnswer,
   startLearnerAttempt,
   submitLearnerAttempt,
@@ -40,6 +41,37 @@ export function StartButton({ assessmentId, again }: { assessmentId: string; aga
           }
         >
           {t(again ? "startAgain" : "start")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Emails the Learner's Certificate again, for one that didn't arrive. */
+export function ResendButton({ assessmentId }: { assessmentId: string }) {
+  const t = useTranslations("learner");
+  const [outcome, setOutcome] = useState<"sent" | "dailyCap" | "sendFailed" | null>(null);
+  const [pending, startTransition] = useTransition();
+  return (
+    <div className="stack">
+      {outcome === "sent" ? (
+        <p role="status">{t("resent")}</p>
+      ) : (
+        outcome && (
+          <p role="alert">
+            {t(`errors.${outcome === "sendFailed" ? "certificateSendFailed" : outcome}`)}
+          </p>
+        )
+      )}
+      <div className="row">
+        <button
+          className="link"
+          disabled={pending}
+          onClick={() =>
+            startTransition(async () => setOutcome(await resendLearnerCertificate(assessmentId)))
+          }
+        >
+          {t("resend")}
         </button>
       </div>
     </div>
@@ -117,7 +149,8 @@ export function AttemptView(props: {
       if (unsaved.current.size) return setError(t("errors.unsaved"));
       const result = await submitLearnerAttempt(assessmentId, name);
       if (!result.ok) return setError(t(`errors.${result.reason}`));
-      router.refresh();
+      if (result.mailed) router.refresh();
+      else router.replace("?unsent=1");
     });
 
   return (
