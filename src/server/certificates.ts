@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { v7 as uuidv7 } from "uuid";
 import * as schema from "../db/schema";
@@ -100,8 +100,9 @@ export async function creatorCertificates(
     .orderBy(desc(certificate.issuedAt));
 }
 
-/** Revokes one of the Creator's valid Certificates and counts it as revoked on today's
- * statistics. False if the reason is blank or the Certificate isn't theirs or isn't valid. */
+/** Revokes one of the Creator's Valid Certificates and counts it as revoked on today's
+ * statistics. False if the reason is blank or the Certificate isn't theirs, or is no longer Valid:
+ * an expired one was already counted as expired. */
 export async function revokeCertificate(
   db: Db,
   opts: { creatorId: string; publicId: string; reason: string; now?: Date },
@@ -118,6 +119,7 @@ export async function revokeCertificate(
           eq(certificate.publicId, opts.publicId),
           eq(certificate.creatorId, opts.creatorId),
           eq(certificate.status, "valid"),
+          or(isNull(certificate.expiresAt), gt(certificate.expiresAt, now)),
         ),
       )
       .returning({ versionId: certificate.versionId });
@@ -151,9 +153,9 @@ export type CorrectResult =
   | { ok: true; certificate: typeof certificate.$inferSelect; version: CertificateVersion }
   | { ok: false; reason: "name" | "invalid" };
 
-/** A name correction: the Learner's Valid Certificate is replaced (reason "Name correction", not
- * counted as revoked) by a new one at a new id, counted as issued. It keeps the old Expiry, so a
- * correction never renews a Certificate or resets the Retake Policy. */
+/** A name correction: the Learner's Valid Certificate is replaced (reason "Name correction") by
+ * a new one at a new id. Neither counts in the statistics: it's not a Revocation, nor a new issue.
+ * It keeps the old Expiry, so a correction never renews a Certificate or resets the Retake Policy. */
 export async function correctName(
   db: Db,
   opts: { learner: string; publicId: string; name: string; now?: Date },
@@ -173,10 +175,22 @@ export async function correctName(
     if (!row || shownStatus(row.certificate, now).status !== "valid")
       return { ok: false, reason: "invalid" };
     const old = row.certificate;
+    const id = uuidv7();
+    // Guarded on the status, so a Revocation that got in first wins and nothing is issued.
+    const done = await tx
+      .update(certificate)
+      .set({
+        status: "replaced",
+        statusAt: now,
+        revocationReason: "Name correction",
+        replacedById: id,
+      })
+      .where(and(eq(certificate.id, old.id), eq(certificate.status, "valid")));
+    if (done.rowsAffected !== 1) return { ok: false, reason: "invalid" };
     const [issued] = await tx
       .insert(certificate)
       .values({
-        id: uuidv7(),
+        id,
         publicId: newPublicId(),
         versionId: old.versionId,
         creatorId: old.creatorId,
@@ -187,18 +201,6 @@ export async function correctName(
         expiresAt: old.expiresAt,
       })
       .returning();
-    const done = await tx
-      .update(certificate)
-      .set({
-        status: "replaced",
-        statusAt: now,
-        revocationReason: "Name correction",
-        replacedById: issued.id,
-      })
-      .where(and(eq(certificate.id, old.id), eq(certificate.status, "valid")));
-    // Lost a race with a Revocation: the insert above is rolled back with this throw.
-    if (done.rowsAffected !== 1) throw new Error("Certificate changed during name correction");
-    await bump(tx, old.versionId, now, ["certificatesIssued"]);
     return { ok: true, certificate: issued, version: row.version };
   });
 }

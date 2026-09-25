@@ -6,7 +6,7 @@ import { CorrectName, EraseButton } from "@/components/my-certificates";
 import { formatId, longDate, shownStatus } from "@/domain/certificate";
 import { learnerCertificates } from "@/server/certificates";
 import { emailHash } from "@/server/email-hash";
-import { MINE, MINE_COOKIE, learnerEmail } from "@/server/learner-session";
+import { MY_CERTIFICATES_SCOPE, MINE_COOKIE, learnerEmail } from "@/server/learner-session";
 import { forgetMe, requestMyCode, verifyMyCode } from "./actions";
 
 const DONE = ["corrected", "unsent", "erased"] as const;
@@ -19,7 +19,7 @@ export default async function MyCertificates(props: { searchParams: Promise<{ do
   const locale = await getLocale();
   const asked = (await props.searchParams).done;
   const done = DONE.find((d) => d === asked);
-  const email = learnerEmail((await cookies()).get(MINE_COOKIE)?.value, MINE);
+  const email = learnerEmail((await cookies()).get(MINE_COOKIE)?.value, MY_CERTIFICATES_SCOPE);
   const status = done && <p role="status">{t(done)}</p>;
 
   if (!email)

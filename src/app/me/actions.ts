@@ -4,21 +4,20 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { db } from "@/db";
-import { CODE_MINUTES } from "@/domain/one-time-code";
+import { CODE_MINUTES, type EntryError } from "@/domain/one-time-code";
 import { correctName, eraseLearner } from "@/server/certificates";
 import { mailCertificate } from "@/server/certificate-mail";
 import { emailHash, normalizeEmail, parseEmailList } from "@/server/email-hash";
 import { DAILY_CAP, clientIp } from "@/server/learner-request";
 import {
   LEARNER_COOKIE,
-  MINE,
+  MY_CERTIFICATES_SCOPE,
   MINE_COOKIE,
   learnerEmail,
   learnerToken,
 } from "@/server/learner-session";
 import { sendMail } from "@/server/mail";
 import { requestCode, verifyCode } from "@/server/one-time-code";
-import type { EntryError } from "@/app/a/[id]/actions";
 
 /** Sends a My Certificates code, in the interface language: it isn't about any one Assessment. */
 export async function requestMyCode(typed: string): Promise<EntryError | null> {
@@ -44,7 +43,7 @@ export async function requestMyCode(typed: string): Promise<EntryError | null> {
 export async function verifyMyCode(email: string, code: string): Promise<EntryError | null> {
   const checked = await verifyCode(db, { email, code, purpose: "my-certificates" });
   if (!checked.ok) return checked;
-  (await cookies()).set(MINE_COOKIE, learnerToken(MINE, normalizeEmail(email)), {
+  (await cookies()).set(MINE_COOKIE, learnerToken(MY_CERTIFICATES_SCOPE, normalizeEmail(email)), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.APP_URL?.startsWith("https:"),
@@ -55,7 +54,7 @@ export async function verifyMyCode(email: string, code: string): Promise<EntryEr
 
 /** The verified email; without one, back to the code. */
 async function me() {
-  const email = learnerEmail((await cookies()).get(MINE_COOKIE)?.value, MINE);
+  const email = learnerEmail((await cookies()).get(MINE_COOKIE)?.value, MY_CERTIFICATES_SCOPE);
   if (!email) redirect("/me");
   return { email, hash: emailHash(email) };
 }

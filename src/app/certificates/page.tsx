@@ -49,9 +49,12 @@ export default async function Certificates(props: {
             </div>
             <div>
               {t(`status.${status}`, { date: since ? longDate(since, locale) : "" })}
-              {c.revocationReason && ` · ${t("reason", { reason: c.revocationReason })}`}
+              {/* A replacement's reason is always "Name correction", which its status already says. */}
+              {status === "revoked" &&
+                c.revocationReason &&
+                ` · ${t("reason", { reason: c.revocationReason })}`}
             </div>
-            {c.status === "valid" && (
+            {status === "valid" && (
               <form action={revoke} className="row">
                 <input type="hidden" name="q" value={q} />
                 <input type="hidden" name="publicId" value={c.publicId} />

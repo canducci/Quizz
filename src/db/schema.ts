@@ -167,7 +167,7 @@ export const statsDay = sqliteTable(
     timedOut: integer("timed_out").notNull().default(0),
     submitted: integer("submitted").notNull().default(0),
     passed: integer("passed").notNull().default(0),
-    certificatesIssued: integer("certificates_issued").notNull().default(0),
+    certificatesIssued: integer("certificates_issued").notNull().default(0), // name corrections excluded
     revoked: integer("revoked").notNull().default(0), // name corrections excluded
     expired: integer("expired").notNull().default(0),
     scoreHistogram: text("score_histogram", { mode: "json" }).$type<Histogram>(), // 1% buckets

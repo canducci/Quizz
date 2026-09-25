@@ -31,7 +31,7 @@ Decided in the "Data model" ticket (`issues/05-data-model.md`). Vocabulary follo
 
 **email_day**: day, sent. The instance-wide daily email cap.
 
-**stats_day**: version_id, day, attempts, timed_out, submitted, passed, certificates_issued, revoked (name corrections excluded), expired, score_histogram (JSON, 1% buckets), time_histogram (JSON, 1-minute buckets), questions (JSON: per Question id, shown and correct). Bumped in the same transaction as the event. Never recomputed, so Learner Erasure never lowers it. Median time is read from the time histogram.
+**stats_day**: version_id, day, attempts, timed_out, submitted, passed, certificates_issued (name corrections excluded), revoked (name corrections excluded), expired, score_histogram (JSON, 1% buckets), time_histogram (JSON, 1-minute buckets), questions (JSON: per Question id, shown and correct). Bumped in the same transaction as the event. Never recomputed, so Learner Erasure never lowers it. Median time is read from the time histogram.
 
 ## Rules the schema carries
 

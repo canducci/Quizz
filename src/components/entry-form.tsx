@@ -3,8 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { CODE_MINUTES } from "@/domain/one-time-code";
-import type { EntryError } from "@/app/a/[id]/actions";
+import { CODE_MINUTES, type EntryError } from "@/domain/one-time-code";
 
 /** Email, then the one-time code. A verified Learner reloads into the page's verified view.
  * `request` and `verify` are the page's server actions. */

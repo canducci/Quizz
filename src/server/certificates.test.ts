@@ -8,6 +8,7 @@ import {
   publicCertificate,
   revokeCertificate,
 } from "./certificates";
+import { startAttempt } from "./attempts";
 import { addInvites } from "./invites";
 import { requestCode } from "./one-time-code";
 import { emailHash } from "./email-hash";
@@ -56,6 +57,17 @@ it("revokes once with a private reason, counting it on the Revocation's day", as
   expect(await revoke("Shared answers", "c2")).toBe(false);
   expect(await revoke(" Shared answers ")).toBe(true);
   expect(await revoke("Again", "c1", at(60 * 48))).toBe(false);
+  // An expired Certificate was already counted as expired: it can't be revoked too.
+  const { db: other } = await published(1);
+  const expired = await pass(other, ana);
+  expect(
+    await revokeCertificate(other, {
+      creatorId: "c1",
+      publicId: expired.publicId,
+      reason: "Late",
+      now: at(60 * 24 * 2),
+    }),
+  ).toBe(false);
 
   const [found] = (await creatorCertificates(db, "c1", cert.publicId, SECRET))!;
   expect(found).toMatchObject({
@@ -137,7 +149,8 @@ it("corrects a name by replacing the Certificate: a new id, same Expiry, not cou
     }),
   ).toEqual({ ok: false, reason: "invalid" });
 
-  expect(await stats()).toMatchObject({ revoked: 0, certificatesIssued: 2, passed: 1 });
+  // A replacement is neither a Revocation nor a new issue.
+  expect(await stats()).toMatchObject({ revoked: 0, certificatesIssued: 1, passed: 1 });
 });
 
 it("erases a Learner's rows everywhere, leaving statistics and other Learners alone", async () => {
@@ -162,4 +175,8 @@ it("erases a Learner's rows everywhere, leaving statistics and other Learners al
   expect(await learnerCertificates(db, "bia")).toHaveLength(1);
   expect((await db.select().from(schema.invite)).length).toBe(1);
   expect(await db.select().from(schema.statsDay)).toEqual(before);
+  // Nothing left holds Ana back: no Valid Certificate, no counted Attempts.
+  expect(await startAttempt(db, { assessmentId: "a1", learner: ana, now: at(5) })).toMatchObject({
+    ok: true,
+  });
 });

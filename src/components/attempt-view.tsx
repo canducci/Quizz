@@ -8,8 +8,8 @@ import {
   saveLearnerAnswer,
   startLearnerAttempt,
   submitLearnerAttempt,
-  type EntryError,
 } from "@/app/a/[id]/actions";
+import type { EntryError } from "@/domain/one-time-code";
 import { MAX_NAME, type Answers, type LearnerQuestion } from "@/domain/attempt";
 import { QuestionView, questionLabels } from "./question-view";
 

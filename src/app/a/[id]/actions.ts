@@ -14,14 +14,8 @@ import { requestCode, sentToday, verifyCode } from "@/server/one-time-code";
 import { mailCertificate } from "@/server/certificate-mail";
 import { DAILY_CAP, clientIp } from "@/server/learner-request";
 import { learnerCertificate } from "@/server/certificates";
-import { CODE_MINUTES } from "@/domain/one-time-code";
-import { shownBlock, type ShownBlock } from "@/domain/retake";
-
-export type EntryError =
-  | { reason: "badEmail" | "sendFailed" | "dailyCap" | "email" | "ip" | "locked" | "expired" }
-  | { reason: "wrong"; left: number }
-  | ShownBlock
-  | { reason: "notInvited" | "closed"; creator: string };
+import { CODE_MINUTES, type EntryError } from "@/domain/one-time-code";
+import { shownBlock } from "@/domain/retake";
 
 /** An open Assessment, or the error a Learner sees. Ids from the browser are never trusted. */
 async function openAssessment(id: string) {

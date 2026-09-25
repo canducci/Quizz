@@ -33,7 +33,7 @@ Schema sketch: [`data-model.md`](data-model.md).
 - Certificate branding: one fixed layout. The Creator sets the logo, accent colour, signer name and signature image.
 - Creators never see an individual Learner. They see Assessment Statistics only, from the first Attempt, with no minimum group size (ADR 0002).
 - Assessment Statistics: Attempt count (including Timed out), pass rate, score distribution, correct-answer rate per Question, median time taken, Certificates issued, revoked and expired; date filter. No per-Attempt rows and no export of individuals.
-- Assessment Statistics are running counters: Learner Erasure never lowers them. Revocations for a name correction aren't counted as revoked.
+- Assessment Statistics are running counters: Learner Erasure never lowers them. A name correction counts neither as revoked nor as a new Certificate issued.
 - Deleting a Creator account keeps their Certificates valid. A Creator Ban revokes every Certificate that Creator issued; the Operator applies it with a CLI script (`npm run operator -- ban <creator email>`). Instance settings (Operator email, daily email cap) live in `.env`.
 
 ## Assessments
