@@ -1,0 +1,372 @@
+<!doctype html>
+<!--
+  PROTOTYPE: throwaway. Lives on branch prototype/attempt-ui, never on main.
+  Three variants of the Learner Attempt flow, switchable via ?variant=A|B|C (and ?step=...),
+  with a floating bar at the bottom. Fake data, in-memory state, no backend.
+  Open with: xdg-open prototypes/attempt-flow.prototype.html
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quizz prototype: Attempt flow</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body { font: 16px/1.5 system-ui, sans-serif; color: #111827; }
+  button { font: inherit; cursor: pointer; }
+  input { font: inherit; }
+  pre { margin: 0; }
+
+  /* ---------- Prototype switcher (not part of the design) ---------- */
+  #switcher { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 1000;
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 999px;
+    background: #111; color: #fff; font: 13px/1.2 ui-monospace, monospace; box-shadow: 0 6px 24px rgba(0,0,0,.35); white-space: nowrap; }
+  #switcher button { background: #333; color: #fff; border: 0; border-radius: 999px; width: 28px; height: 28px; }
+  #switcher button:hover { background: #555; }
+  #switcher select { font: inherit; background: #333; color: #fff; border: 0; border-radius: 6px; padding: 4px 6px; }
+  #switcher .state { color: #9ca3af; }
+
+  /* ---------- Variant A: Focused, one question per screen ---------- */
+  .vA { min-height: 100vh; background: #fdfcf8; display: flex; flex-direction: column; }
+  .vA .top { display: flex; justify-content: space-between; align-items: center; padding: 20px 32px; color: #6b7280; font-size: 14px; }
+  .vA .brand { font-weight: 600; color: #111827; }
+  .vA .bar { height: 4px; background: #eee; } .vA .bar i { display: block; height: 100%; background: #111827; transition: width .2s; }
+  .vA .stage { flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px 24px 120px; }
+  .vA .inner { width: 100%; max-width: 640px; }
+  .vA h1 { font-size: 40px; line-height: 1.15; margin: 0 0 16px; letter-spacing: -.02em; }
+  .vA h2 { font-size: 28px; line-height: 1.25; margin: 0 0 24px; letter-spacing: -.01em; }
+  .vA .lede { font-size: 18px; color: #4b5563; margin: 0 0 28px; }
+  .vA .facts { display: flex; gap: 28px; margin: 0 0 32px; color: #374151; }
+  .vA .facts b { display: block; font-size: 24px; color: #111827; }
+  .vA .opt { display: flex; gap: 14px; align-items: center; width: 100%; text-align: left; padding: 14px 18px; margin: 0 0 10px;
+    background: #fff; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 18px; }
+  .vA .opt:hover { border-color: #111827; }
+  .vA .opt.on { border-color: #111827; background: #111827; color: #fff; }
+  .vA .opt kbd { font: 12px ui-monospace, monospace; border: 1px solid currentColor; border-radius: 4px; padding: 1px 6px; opacity: .6; }
+  .vA .go { background: #111827; color: #fff; border: 0; border-radius: 10px; padding: 14px 26px; font-size: 18px; }
+  .vA .ghost { background: none; border: 0; color: #6b7280; padding: 14px 10px; font-size: 16px; }
+  .vA .field { width: 100%; font-size: 22px; padding: 12px 0; border: 0; border-bottom: 2px solid #111827; background: transparent; outline: none; margin-bottom: 8px; }
+  .vA .hint { color: #6b7280; font-size: 14px; margin: 0 0 28px; }
+  .vA .timer { font-variant-numeric: tabular-nums; font-weight: 600; color: #111827; }
+  .vA .timer.low { color: #b42318; }
+  .vA pre { background: #111827; color: #e5e7eb; padding: 16px; border-radius: 10px; font-size: 15px; margin: 0 0 24px; overflow: auto; }
+  .vA .row { display: flex; gap: 8px; align-items: center; margin-top: 24px; }
+  .vA .cert { border: 1.5px solid #111827; border-radius: 12px; padding: 28px; background: #fff; margin: 24px 0; }
+  .vA .cert small { color: #6b7280; text-transform: uppercase; letter-spacing: .08em; font-size: 12px; }
+  .vA .big { font-size: 72px; font-weight: 700; letter-spacing: -.03em; line-height: 1; margin: 0 0 8px; }
+
+  /* ---------- Variant B: Exam paper with navigator sidebar ---------- */
+  .vB { min-height: 100vh; background: #f3f4f6; display: grid; grid-template-columns: 280px 1fr; }
+  .vB aside { background: #0f2a4a; color: #dbe7f5; padding: 24px 20px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 20px; }
+  .vB aside .brand { color: #fff; font-weight: 700; font-size: 18px; }
+  .vB aside .sub { font-size: 13px; opacity: .8; }
+  .vB .clock { background: #16385f; border-radius: 8px; padding: 14px; text-align: center; }
+  .vB .clock b { display: block; font-size: 34px; font-variant-numeric: tabular-nums; color: #fff; }
+  .vB .clock.low { background: #7a1c14; }
+  .vB .clock span { font-size: 12px; opacity: .8; }
+  .vB .nav { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .vB .nav button { aspect-ratio: 1; border: 1px solid #3b5f8a; background: transparent; color: #dbe7f5; border-radius: 6px; font-weight: 600; }
+  .vB .nav button.done { background: #dbe7f5; color: #0f2a4a; }
+  .vB .legend { font-size: 12px; opacity: .8; }
+  .vB aside .primary { margin-top: auto; background: #f5b400; color: #111; border: 0; border-radius: 6px; padding: 12px; font-weight: 700; }
+  .vB main { padding: 32px 48px 120px; max-width: 900px; }
+  .vB .paper { background: #fff; border: 1px solid #d1d5db; border-radius: 4px; padding: 28px 32px; margin-bottom: 18px; }
+  .vB .qhead { display: flex; justify-content: space-between; color: #6b7280; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+  .vB .qtext { font-size: 18px; font-weight: 600; margin: 0 0 14px; }
+  .vB label { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 4px; }
+  .vB label:hover { background: #f3f4f6; }
+  .vB pre { background: #f8fafc; border: 1px solid #e5e7eb; padding: 12px; font-size: 14px; margin: 0 0 14px; overflow: auto; }
+  .vB h1 { margin: 0 0 6px; font-size: 26px; } .vB h2 { margin: 0 0 12px; font-size: 20px; }
+  .vB table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; } .vB td { padding: 8px 0; border-bottom: 1px solid #e5e7eb; } .vB td:last-child { text-align: right; font-weight: 600; }
+  .vB .input { width: 100%; padding: 10px 12px; border: 1px solid #9ca3af; border-radius: 4px; margin: 6px 0 4px; }
+  .vB .btn { background: #0f2a4a; color: #fff; border: 0; border-radius: 6px; padding: 10px 18px; font-weight: 600; }
+  .vB .btn.alt { background: #fff; color: #0f2a4a; border: 1px solid #0f2a4a; }
+  .vB .note { font-size: 14px; color: #4b5563; }
+  .vB .banner { background: #fff7e0; border: 1px solid #f5b400; border-radius: 4px; padding: 12px 16px; margin-bottom: 18px; }
+  .vB .status { display: inline-block; padding: 2px 10px; border-radius: 999px; font-weight: 700; font-size: 14px; }
+  @media (max-width: 760px) { .vB { grid-template-columns: 1fr; } .vB aside { position: static; height: auto; } .vB main { padding: 20px 16px 120px; } }
+
+  /* ---------- Variant C: Conversational thread ---------- */
+  .vC { min-height: 100vh; background: #eef2f0; display: flex; justify-content: center; }
+  .vC .phone { width: 100%; max-width: 520px; background: #fff; min-height: 100vh; display: flex; flex-direction: column; box-shadow: 0 0 0 1px #dfe5e2; }
+  .vC header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; background: #fff; z-index: 2; }
+  .vC .avatar { width: 38px; height: 38px; border-radius: 50%; background: #0e7c66; color: #fff; display: grid; place-items: center; font-weight: 700; }
+  .vC header .who { flex: 1; line-height: 1.2; } .vC header small { color: #6b7280; }
+  .vC .ring { font-variant-numeric: tabular-nums; font-weight: 700; color: #0e7c66; border: 2px solid #0e7c66; border-radius: 999px; padding: 2px 10px; font-size: 14px; }
+  .vC .ring.low { color: #b42318; border-color: #b42318; }
+  .vC .thread { flex: 1; padding: 18px 16px 8px; display: flex; flex-direction: column; gap: 8px; }
+  .vC .msg { max-width: 85%; padding: 10px 14px; border-radius: 16px; background: #f1f5f4; align-self: flex-start; border-bottom-left-radius: 4px; }
+  .vC .msg.me { align-self: flex-end; background: #0e7c66; color: #fff; border-bottom-left-radius: 16px; border-bottom-right-radius: 4px; }
+  .vC .msg.sys { align-self: center; background: none; color: #6b7280; font-size: 13px; text-align: center; }
+  .vC .msg pre { background: #1f2937; color: #e5e7eb; padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 8px; overflow: auto; }
+  .vC .msg .card { background: #fff; border: 1px solid #d1d5db; border-radius: 12px; padding: 14px; margin-top: 6px; color: #111827; }
+  .vC .dock { position: sticky; bottom: 0; background: #fff; border-top: 1px solid #e5e7eb; padding: 12px 14px 76px; }
+  .vC .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .vC .chip { border: 1.5px solid #0e7c66; color: #0e7c66; background: #fff; border-radius: 999px; padding: 8px 14px; }
+  .vC .chip.on { background: #0e7c66; color: #fff; }
+  .vC .compose { display: flex; gap: 8px; }
+  .vC .compose input { flex: 1; border: 1px solid #d1d5db; border-radius: 999px; padding: 10px 16px; }
+  .vC .send { background: #0e7c66; color: #fff; border: 0; border-radius: 999px; padding: 10px 18px; font-weight: 600; }
+  .vC .dockhint { font-size: 12px; color: #6b7280; margin: 0 0 8px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="switcher"></div>
+
+<script>
+// ======================= Fake data =======================
+const ASSESSMENT = {
+  creator: 'Acme Academy', title: 'React Fundamentals', drawn: 5, minutes: 10, passing: 70, maxAttempts: 2, cooldown: 60,
+};
+const QUESTIONS = [
+  { id: 1, kind: 'single', text: 'Which hook adds state that re-renders the component when it changes?', options: ['useRef', 'useState', 'useMemo', 'useId'], correct: [1] },
+  { id: 2, kind: 'multi', text: 'Which of these make a component re-render? Select all that apply.', options: ['Its state changes', 'Its parent re-renders', 'A ref’s .current changes', 'Its props change'], correct: [0, 1, 3] },
+  { id: 3, kind: 'single', text: 'After one click, what does this button show?', code: 'function Count() {\n  const [n, setN] = useState(0);\n  return (\n    <button onClick={() => { setN(n + 1); setN(n + 1); }}>\n      {n}\n    </button>\n  );\n}', options: ['0', '1', '2', 'It throws an error'], correct: [1] },
+  { id: 4, kind: 'truefalse', text: 'Keys in a list only need to be unique among siblings, not across the whole app.', options: ['True', 'False'], correct: [0] },
+  { id: 5, kind: 'single', text: 'Where should a side effect like fetching data on mount go?', options: ['Directly in the render body', 'useEffect', 'useMemo', 'A CSS module'], correct: [1] },
+];
+const STEPS = ['landing', 'code', 'questions', 'submit', 'resumed', 'passed', 'failed', 'timedout'];
+const STEP_LABELS = { landing: '1 Landing + email', code: '2 One-time code', questions: '3 Questions', submit: '4 Name + submit', resumed: 'Resumed after leaving', passed: 'Result: passed', failed: 'Result: failed', timedout: 'Timed out' };
+
+// ======================= Shared in-memory state + actions =======================
+const S = { step: 'landing', email: '', code: '', current: 0, answers: {}, name: '', secondsLeft: ASSESSMENT.minutes * 60 };
+
+const answered = () => QUESTIONS.filter(q => (S.answers[q.id] || []).length).length;
+const score = () => Math.round(100 * QUESTIONS.filter(q => {
+  const a = (S.answers[q.id] || []).slice().sort().join(); return a === q.correct.slice().sort().join();
+}).length / QUESTIONS.length);
+const mmss = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+const low = () => S.secondsLeft <= 60;
+const masked = () => (S.email || 'ana@example.com').replace(/^(.).*(@.*)$/, '$1•••$2');
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const kindHint = q => q.kind === 'multi' ? 'Select all that apply' : q.kind === 'truefalse' ? 'True or false' : 'Choose one';
+
+const ACT = {
+  email: v => { S.email = v; },
+  sendCode: () => { S.email ||= 'ana@example.com'; go('code'); },
+  code: v => { S.code = v; },
+  verify: () => { S.secondsLeft = ASSESSMENT.minutes * 60; S.current = 0; go('questions'); },
+  pick: (qid, i) => {
+    const q = QUESTIONS.find(q => q.id === +qid), cur = S.answers[q.id] || [];
+    S.answers[q.id] = q.kind === 'multi' ? (cur.includes(+i) ? cur.filter(x => x !== +i) : [...cur, +i]) : [+i];
+  },
+  next: () => { if (S.current < QUESTIONS.length - 1) S.current++; else go('submit'); },
+  prev: () => { if (S.step === 'submit') go('questions'); else if (S.current > 0) S.current--; },
+  jump: i => { S.current = +i; go('questions'); },
+  review: () => go('submit'),
+  name: v => { S.name = v; },
+  submit: () => { if (!S.name.trim()) { alert('Enter your full name first.'); return; } go(score() >= ASSESSMENT.passing ? 'passed' : 'failed'); },
+  continue: () => go('questions'),
+};
+
+// Jumping straight to a step (from the switcher) sets up plausible data for it.
+function go(step, fromSwitcher) {
+  S.step = step;
+  if (fromSwitcher) {
+    const right = () => QUESTIONS.forEach(q => { S.answers[q.id] = q.correct.slice(); });
+    S.email ||= 'ana@example.com';
+    if (step === 'landing' || step === 'code') { S.answers = {}; S.secondsLeft = ASSESSMENT.minutes * 60; }
+    if (step === 'questions') { S.answers = {}; S.current = 0; S.secondsLeft = ASSESSMENT.minutes * 60; }
+    if (step === 'submit') { right(); S.secondsLeft = 212; }
+    if (step === 'resumed') { S.answers = {}; [0, 1, 2].forEach(i => { S.answers[QUESTIONS[i].id] = QUESTIONS[i].correct.slice(); }); S.current = 3; S.secondsLeft = 252; }
+    if (step === 'passed') { right(); S.answers[4] = [1]; S.name ||= 'Ana Souza'; }
+    if (step === 'failed') { S.answers = { 1: [1], 2: [0], 3: [2] }; S.name ||= 'Ana Souza'; }
+    if (step === 'timedout') { S.secondsLeft = 0; }
+  }
+  render();
+}
+
+// Ticking clock during the Attempt; runs out into "Timed out" (no auto-submit).
+setInterval(() => {
+  if (!['questions', 'submit'].includes(S.step)) return;
+  S.secondsLeft = Math.max(0, S.secondsLeft - 1);
+  if (S.secondsLeft === 0) go('timedout'); else { document.querySelectorAll('[data-clock]').forEach(el => { el.textContent = mmss(S.secondsLeft); el.classList.toggle('low', low()); el.parentElement.classList.toggle('low', low()); }); }
+}, 1000);
+
+// ======================= Variant A: Focused =======================
+function VariantA() {
+  const q = QUESTIONS[S.current];
+  const top = inAttempt => `<div class="top"><span><span class="brand">${ASSESSMENT.creator}</span> · ${ASSESSMENT.title}</span>
+    ${inAttempt ? `<span><span class="timer ${low() ? 'low' : ''}" data-clock>${mmss(S.secondsLeft)}</span> left</span>` : '<span>Quizz</span>'}</div>
+    ${inAttempt ? `<div class="bar"><i style="width:${100 * answered() / QUESTIONS.length}%"></i></div>` : ''}`;
+  const wrap = (inner, inAttempt) => `<div class="vA">${top(inAttempt)}<div class="stage"><div class="inner">${inner}</div></div></div>`;
+  switch (S.step) {
+    case 'landing': return wrap(`
+      <h1>${ASSESSMENT.title}</h1>
+      <p class="lede">Show what you know and earn a verifiable Certificate from ${ASSESSMENT.creator}.</p>
+      <div class="facts"><div><b>${ASSESSMENT.drawn}</b>questions</div><div><b>${ASSESSMENT.minutes} min</b>time limit</div><div><b>${ASSESSMENT.passing}%</b>to pass</div><div><b>${ASSESSMENT.maxAttempts}</b>attempts</div></div>
+      <input class="field" type="email" placeholder="you@example.com" value="${esc(S.email)}" data-input="email" autofocus>
+      <p class="hint">We'll email you a code. The clock starts when you begin and keeps running if you leave.</p>
+      <button class="go" data-act="sendCode">Send my code →</button>`);
+    case 'code': return wrap(`
+      <h2>Check your email</h2><p class="lede">We sent a 6-digit code to ${esc(masked())}.</p>
+      <input class="field" inputmode="numeric" maxlength="6" placeholder="••••••" value="${esc(S.code)}" data-input="code" autofocus style="letter-spacing:.4em">
+      <p class="hint">The ${ASSESSMENT.minutes}-minute clock starts as soon as you continue.</p>
+      <button class="go" data-act="verify">Start the Assessment →</button> <button class="ghost" data-act="sendCode">Resend</button>`);
+    case 'resumed': return wrap(`
+      <h2>Welcome back. Your ${answered()} answers were saved.</h2>
+      <p class="lede">The clock kept running while you were away. You have <b>${mmss(S.secondsLeft)}</b> left.</p>
+      <button class="go" data-act="continue">Continue from question ${S.current + 1} →</button>`);
+    case 'questions': return wrap(`
+      <p class="hint" style="margin-bottom:8px">Question ${S.current + 1} of ${QUESTIONS.length} · ${kindHint(q)}</p>
+      <h2>${esc(q.text)}</h2>${q.code ? `<pre>${esc(q.code)}</pre>` : ''}
+      ${q.options.map((o, i) => `<button class="opt ${(S.answers[q.id] || []).includes(i) ? 'on' : ''}" data-act="pick" data-a="${q.id}" data-b="${i}"><kbd>${i + 1}</kbd>${esc(o)}</button>`).join('')}
+      <div class="row"><button class="go" data-act="next">${S.current < QUESTIONS.length - 1 ? 'OK →' : 'Finish →'}</button>
+        ${S.current > 0 ? '<button class="ghost" data-act="prev">← Back</button>' : ''}<span class="hint" style="margin:0 0 0 auto">press <b>Enter</b></span></div>`, true);
+    case 'submit': return wrap(`
+      <h2>Almost done. What name should go on your Certificate?</h2>
+      <input class="field" placeholder="Your full name" value="${esc(S.name)}" data-input="name" autofocus>
+      <p class="hint">Exactly as it should appear if you pass. If you don't pass, we don't keep it. You answered ${answered()} of ${QUESTIONS.length}.</p>
+      <button class="go" data-act="submit">Submit my answers</button> <button class="ghost" data-act="prev">← Review answers</button>`, true);
+    case 'passed': return wrap(`
+      <p class="big">${score()}%</p><h2>You passed. Congratulations, ${esc(S.name.split(' ')[0])}!</h2>
+      <div class="cert"><small>Certificate · ${ASSESSMENT.creator}</small><h2 style="margin:8px 0 4px">${esc(S.name)}</h2>
+        <div>${ASSESSMENT.title} · ${score()}% · ${new Date().toLocaleDateString()}</div><div class="hint" style="margin:10px 0 0">quizz.app/c/7K2P9Q</div></div>
+      <button class="go">Download PDF</button> <button class="ghost">Copy verification link</button>
+      <p class="hint">We also emailed it to ${esc(masked())}. Find it any time at My Certificates.</p>`);
+    case 'failed': return wrap(`
+      <p class="big">${score()}%</p><h2>Not this time. You need ${ASSESSMENT.passing}% to pass.</h2>
+      <p class="lede">You have 1 Attempt left. You can try again in ${ASSESSMENT.cooldown} minutes. Questions are drawn at random, so the next Attempt will be different.</p>
+      <button class="ghost" style="padding-left:0">Remind me by email</button>`);
+    case 'timedout': return wrap(`
+      <h2>Time's up.</h2><p class="lede">This Attempt wasn't submitted before the clock ran out, so it has no score. It counts as 1 of your ${ASSESSMENT.maxAttempts} Attempts.</p>
+      <p class="lede">You can try again in ${ASSESSMENT.cooldown} minutes.</p>`);
+  }
+}
+
+// ======================= Variant B: Exam paper =======================
+function VariantB() {
+  const attempt = ['questions', 'submit', 'resumed'].includes(S.step);
+  const side = `<aside>
+    <div><div class="brand">${ASSESSMENT.creator}</div><div class="sub">${ASSESSMENT.title}</div></div>
+    ${attempt ? `<div class="clock ${low() ? 'low' : ''}"><b data-clock>${mmss(S.secondsLeft)}</b><span>time remaining · saved automatically</span></div>
+      <div><div class="legend" style="margin-bottom:8px">Questions (${answered()}/${QUESTIONS.length} answered)</div>
+      <div class="nav">${QUESTIONS.map((q, i) => `<button class="${(S.answers[q.id] || []).length ? 'done' : ''}" data-act="jump" data-a="${i}">${i + 1}</button>`).join('')}</div></div>
+      <button class="primary" data-act="review">Review & submit</button>`
+    : `<div class="sub">${ASSESSMENT.drawn} questions · ${ASSESSMENT.minutes} min · ${ASSESSMENT.passing}% to pass · ${ASSESSMENT.maxAttempts} attempts</div><div class="sub" style="margin-top:auto">Powered by Quizz</div>`}
+  </aside>`;
+  const page = inner => `<div class="vB">${side}<main>${inner}</main></div>`;
+  switch (S.step) {
+    case 'landing': return page(`<div class="paper"><h1>${ASSESSMENT.title}</h1><p class="note">Issued by ${ASSESSMENT.creator}</p>
+      <table><tr><td>Questions</td><td>${ASSESSMENT.drawn}, drawn at random</td></tr><tr><td>Time limit</td><td>${ASSESSMENT.minutes} minutes</td></tr>
+      <tr><td>Passing Score</td><td>${ASSESSMENT.passing}%</td></tr><tr><td>Attempts allowed</td><td>${ASSESSMENT.maxAttempts}, ${ASSESSMENT.cooldown} min apart</td></tr>
+      <tr><td>If time runs out</td><td>The Attempt is not scored</td></tr></table>
+      <label style="padding:0;display:block">Email address<input class="input" type="email" value="${esc(S.email)}" data-input="email" placeholder="you@example.com"></label>
+      <p class="note">Used only to send your code and Certificate. The Creator never sees it.</p>
+      <button class="btn" data-act="sendCode">Send verification code</button></div>`);
+    case 'code': return page(`<div class="paper"><h2>Enter your verification code</h2><p class="note">Sent to ${esc(masked())}.</p>
+      <input class="input" style="max-width:200px;letter-spacing:.3em" maxlength="6" value="${esc(S.code)}" data-input="code" placeholder="000000">
+      <p class="note">Starting begins the ${ASSESSMENT.minutes}-minute clock. It keeps running if you close the page.</p>
+      <button class="btn" data-act="verify">Verify and begin</button> <button class="btn alt" data-act="sendCode">Resend code</button></div>`);
+    case 'resumed':
+    case 'questions': return page(`${S.step === 'resumed' ? `<div class="banner"><b>Welcome back.</b> Your ${answered()} answers were saved; the clock kept running. <button class="btn" style="margin-left:8px" data-act="continue">Continue</button></div>` : ''}
+      ${QUESTIONS.map((q, qi) => `<div class="paper" id="q${qi}"><div class="qhead"><span>Question ${qi + 1}</span><span>${kindHint(q)}</span></div>
+        <p class="qtext">${esc(q.text)}</p>${q.code ? `<pre>${esc(q.code)}</pre>` : ''}
+        ${q.options.map((o, i) => `<label><input type="${q.kind === 'multi' ? 'checkbox' : 'radio'}" name="q${q.id}" ${(S.answers[q.id] || []).includes(i) ? 'checked' : ''} data-act="pick" data-a="${q.id}" data-b="${i}"> ${esc(o)}</label>`).join('')}</div>`).join('')}
+      <button class="btn" data-act="review">Review & submit</button>`);
+    case 'submit': return page(`<div class="paper"><h2>Review and submit</h2>
+      <table>${QUESTIONS.map((q, i) => `<tr><td>Question ${i + 1}</td><td>${(S.answers[q.id] || []).length ? 'Answered' : '<span style="color:#b42318">Not answered</span>'} · <a href="#" data-act="jump" data-a="${i}">change</a></td></tr>`).join('')}</table>
+      <label style="padding:0;display:block"><b>Full name for your Certificate</b><input class="input" value="${esc(S.name)}" data-input="name" placeholder="As it should appear on the Certificate"></label>
+      <p class="note">Only kept if you pass. It can't be changed once issued without reissuing the Certificate.</p>
+      <button class="btn" data-act="submit">Submit final answers</button> <button class="btn alt" data-act="prev">Back to questions</button></div>`);
+    case 'passed': return page(`<div class="paper"><span class="status" style="background:#dcfce7;color:#166534">PASSED</span>
+      <h1 style="margin-top:10px">Score: ${score()}%</h1><p class="note">Passing Score ${ASSESSMENT.passing}%. Your Certificate has been issued.</p>
+      <table><tr><td>Certificate ID</td><td>7K2P9Q</td></tr><tr><td>Name</td><td>${esc(S.name)}</td></tr><tr><td>Issued</td><td>${new Date().toLocaleDateString()}</td></tr><tr><td>Verification page</td><td>quizz.app/c/7K2P9Q</td></tr></table>
+      <button class="btn">Download PDF</button> <button class="btn alt">Copy verification link</button></div>`);
+    case 'failed': return page(`<div class="paper"><span class="status" style="background:#fee2e2;color:#991b1b">NOT PASSED</span>
+      <h1 style="margin-top:10px">Score: ${score()}%</h1><p class="note">Passing Score ${ASSESSMENT.passing}%.</p>
+      <table><tr><td>Attempts used</td><td>1 of ${ASSESSMENT.maxAttempts}</td></tr><tr><td>Next Attempt available</td><td>in ${ASSESSMENT.cooldown} minutes</td></tr></table>
+      <p class="note">Per-question results aren't shown, so the question pool stays fair for everyone.</p></div>`);
+    case 'timedout': return page(`<div class="paper"><span class="status" style="background:#fef3c7;color:#92400e">TIMED OUT</span>
+      <h1 style="margin-top:10px">No score</h1><p class="note">The Attempt wasn't submitted within ${ASSESSMENT.minutes} minutes.</p>
+      <table><tr><td>Attempts used</td><td>1 of ${ASSESSMENT.maxAttempts}</td></tr><tr><td>Next Attempt available</td><td>in ${ASSESSMENT.cooldown} minutes</td></tr></table></div>`);
+  }
+}
+
+// ======================= Variant C: Conversation =======================
+function VariantC() {
+  const bot = t => `<div class="msg">${t}</div>`, me = t => `<div class="msg me">${t}</div>`, sys = t => `<div class="msg sys">${t}</div>`;
+  const history = [];
+  history.push(bot(`Hi! This is <b>${ASSESSMENT.title}</b> by ${ASSESSMENT.creator}: ${ASSESSMENT.drawn} questions in ${ASSESSMENT.minutes} minutes, ${ASSESSMENT.passing}% to pass. What's your email? I'll send you a code.`));
+  if (S.step !== 'landing') history.push(me(esc(S.email || 'ana@example.com')), bot(`Sent a 6-digit code to ${esc(masked())}. Once you enter it, the clock starts.`));
+  const inAttempt = ['questions', 'submit', 'resumed', 'passed', 'failed', 'timedout'].includes(S.step);
+  if (inAttempt) history.push(me('••••••'), sys(`Attempt started · ${ASSESSMENT.minutes}:00 on the clock`));
+  if (S.step === 'resumed') history.push(sys(`You left and came back · your answers were saved · ${mmss(S.secondsLeft)} left`));
+  const upto = S.step === 'questions' || S.step === 'resumed' ? S.current : inAttempt && S.step !== 'timedout' ? QUESTIONS.length : S.step === 'timedout' ? 2 : 0;
+  QUESTIONS.slice(0, inAttempt ? upto + (S.step === 'questions' || S.step === 'resumed' ? 1 : 0) : 0).forEach((q, i) => {
+    history.push(bot(`<b>${i + 1}/${QUESTIONS.length}</b> ${esc(q.text)}${q.code ? `<pre>${esc(q.code)}</pre>` : ''}<div style="font-size:12px;color:#6b7280;margin-top:4px">${kindHint(q)}</div>`));
+    const a = S.answers[q.id];
+    if (i < upto && a && a.length) history.push(me(a.map(x => esc(q.options[x])).join(', ')));
+  });
+  if (['submit', 'passed', 'failed'].includes(S.step)) history.push(bot(`That's all ${QUESTIONS.length}. Last thing: what's your full name, <b>exactly</b> as it should appear on your Certificate? If you don't pass, I won't keep it.`));
+  if (['passed', 'failed'].includes(S.step)) history.push(me(esc(S.name)));
+  if (S.step === 'passed') history.push(bot(`🎉 <b>${score()}%, you passed!</b><div class="card"><div style="font-size:12px;color:#6b7280">CERTIFICATE · ${ASSESSMENT.creator}</div><b>${esc(S.name)}</b><div>${ASSESSMENT.title} · ${score()}%</div><div style="font-size:13px;color:#0e7c66">quizz.app/c/7K2P9Q</div></div>`));
+  if (S.step === 'failed') history.push(bot(`<b>${score()}%.</b> You need ${ASSESSMENT.passing}% to pass. You have 1 Attempt left, available in ${ASSESSMENT.cooldown} minutes. The questions will be different next time.`));
+  if (S.step === 'timedout') history.push(sys('⏰ Time ran out before you submitted'), bot(`This Attempt has no score and counts as 1 of your ${ASSESSMENT.maxAttempts}. You can try again in ${ASSESSMENT.cooldown} minutes.`));
+
+  const q = QUESTIONS[S.current];
+  let dock = '';
+  if (S.step === 'landing') dock = `<div class="compose"><input type="email" placeholder="you@example.com" value="${esc(S.email)}" data-input="email"><button class="send" data-act="sendCode">Send</button></div>`;
+  if (S.step === 'code') dock = `<p class="dockhint">The clock starts when you send the code.</p><div class="compose"><input inputmode="numeric" maxlength="6" placeholder="6-digit code" value="${esc(S.code)}" data-input="code"><button class="send" data-act="verify">Start</button></div>`;
+  if (S.step === 'resumed') dock = `<button class="send" style="width:100%" data-act="continue">Continue</button>`;
+  if (S.step === 'questions') dock = `<p class="dockhint">${kindHint(q)}${q.kind === 'multi' ? ', then send' : ''}</p><div class="chips">${q.options.map((o, i) => `<button class="chip ${(S.answers[q.id] || []).includes(i) ? 'on' : ''}" data-act="pick" data-a="${q.id}" data-b="${i}">${esc(o)}</button>`).join('')}</div>
+    <div class="compose" style="margin-top:10px">${S.current > 0 ? '<button class="chip" data-act="prev">↩ Previous</button>' : ''}<span style="flex:1"></span><button class="send" data-act="next">Send ↑</button></div>`;
+  if (S.step === 'submit') dock = `<div class="compose"><input placeholder="Your full name" value="${esc(S.name)}" data-input="name"><button class="send" data-act="submit">Submit</button></div>`;
+  if (S.step === 'passed') dock = `<div class="compose"><button class="send" style="flex:1">Download PDF</button><button class="chip">Copy link</button></div>`;
+
+  const clock = ['questions', 'submit', 'resumed'].includes(S.step) ? `<span class="ring ${low() ? 'low' : ''}"><span data-clock>${mmss(S.secondsLeft)}</span></span>` : '';
+  return `<div class="vC"><div class="phone"><header><div class="avatar">A</div><div class="who"><b>${ASSESSMENT.creator}</b><br><small>${ASSESSMENT.title} · via Quizz</small></div>${clock}</header>
+    <div class="thread">${history.join('')}</div>${dock ? `<div class="dock">${dock}</div>` : ''}</div></div>`;
+}
+
+// ======================= Switcher + wiring =======================
+const VARIANTS = { A: ['Focused, one question per screen', VariantA], B: ['Exam paper with navigator', VariantB], C: ['Conversation', VariantC] };
+const params = new URLSearchParams(location.search);
+let variant = VARIANTS[params.get('variant')] ? params.get('variant') : 'A';
+
+
+function setUrl() { const p = new URLSearchParams({ variant, step: S.step }); history.replaceState(null, '', '?' + p); }
+function cycle(d) { const k = Object.keys(VARIANTS); variant = k[(k.indexOf(variant) + d + k.length) % k.length]; render(); }
+
+function render() {
+  const focus = document.activeElement?.dataset?.input;
+  document.getElementById('app').innerHTML = VARIANTS[variant][1]();
+  if (focus) { const el = document.querySelector(`[data-input="${focus}"]`); if (el) { el.focus(); el.setSelectionRange?.(el.value.length, el.value.length); } }
+  document.getElementById('switcher').innerHTML = `<button data-sw="-1" title="Previous variant (←)">‹</button>
+    <span><b>${variant}</b> (${VARIANTS[variant][0]})</span><button data-sw="1" title="Next variant (→)">›</button>
+    <select data-step>${STEPS.map(s => `<option value="${s}" ${s === S.step ? 'selected' : ''}>${STEP_LABELS[s]}</option>`).join('')}</select>
+    <span class="state">${answered()}/${QUESTIONS.length} answered · ${mmss(S.secondsLeft)} · score ${score()}%</span>`;
+  setUrl();
+  if (variant === 'C') window.scrollTo(0, document.body.scrollHeight); // chat threads stick to the latest message
+}
+
+document.addEventListener('click', e => {
+  const sw = e.target.closest('[data-sw]'); if (sw) return cycle(+sw.dataset.sw);
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  if (el.tagName === 'A') e.preventDefault();
+  ACT[el.dataset.act](el.dataset.a, el.dataset.b);
+  render();
+  if (el.dataset.act === 'jump' && variant === 'B') document.getElementById('q' + S.current)?.scrollIntoView({ block: 'center' });
+});
+document.addEventListener('input', e => { const k = e.target.dataset.input; if (k) { ACT[k](e.target.value); } });
+document.addEventListener('change', e => { if (e.target.matches('[data-step]')) go(e.target.value, true); });
+document.addEventListener('keydown', e => {
+  const typing = e.target.closest('input, textarea, select, [contenteditable]');
+  if (!typing && e.key === 'ArrowLeft') return cycle(-1);
+  if (!typing && e.key === 'ArrowRight') return cycle(1);
+  if (variant === 'A' && S.step === 'questions' && !typing) {
+    const q = QUESTIONS[S.current], n = +e.key;
+    if (n >= 1 && n <= q.options.length) { ACT.pick(q.id, n - 1); render(); }
+    if (e.key === 'Enter') { ACT.next(); render(); }
+  }
+  if (typing && e.key === 'Enter' && e.target.dataset.input) {
+    ({ email: ACT.sendCode, code: ACT.verify, name: ACT.submit })[e.target.dataset.input]();
+  }
+});
+
+go(STEPS.includes(params.get('step')) ? params.get('step') : 'landing', true);
+</script>
+</body>
+</html>
