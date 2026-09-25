@@ -1,6 +1,6 @@
 # Assessment editor: Questions
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 02
 
 ## What to build
@@ -9,13 +9,13 @@ A Creator creates a Draft Assessment and writes its Question Pool in the editor 
 
 ## Acceptance criteria
 
-- [ ] Dashboard lists the Creator's Assessments; "New Assessment" creates a Draft with a title.
-- [ ] Editor top bar (title, Assessment Status, version, tabs Questions / Rules / Access & language / Publish) as in the design; this ticket builds the Questions tab.
-- [ ] Questions tab: pool list (incomplete Questions flagged), editor for the selected Question (type single / multi / true-false, Markdown text, up to 8 options with correct ones marked, keep order), delete.
-- [ ] Markdown via react-markdown + remark-gfm + rehype-sanitize then rehype-highlight; one shared component for preview and Attempt. Images only from `/files/…`; image upload from the editor (PNG/JPEG).
-- [ ] Live Learner preview pane in the Attempt style.
-- [ ] Vitest: sanitiser strips script, raw HTML and external image URLs; Question completeness rules.
-- [ ] Playwright: create a Draft, add one Question of each type, see it in the preview.
+- [x] Dashboard lists the Creator's Assessments; "New Assessment" creates a Draft with a title.
+- [x] Editor top bar (title, Assessment Status, version, tabs Questions / Rules / Access & language / Publish) as in the design; this ticket builds the Questions tab.
+- [x] Questions tab: pool list (incomplete Questions flagged), editor for the selected Question (type single / multi / true-false, Markdown text, up to 8 options with correct ones marked, keep order), delete.
+- [x] Markdown via react-markdown + remark-gfm + rehype-sanitize then rehype-highlight; one shared component for preview and Attempt. Images only from `/files/…`; image upload from the editor (PNG/JPEG).
+- [x] Live Learner preview pane in the Attempt style.
+- [x] Vitest: sanitiser strips script, raw HTML and external image URLs; Question completeness rules.
+- [x] Playwright: create a Draft, add one Question of each type, see it in the preview.
 
 ## Design reference
 

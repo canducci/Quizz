@@ -17,7 +17,9 @@
   },
   "dashboard": {
     "title": "Suas Avaliações",
-    "empty": "Nenhuma Avaliação ainda."
+    "empty": "Nenhuma Avaliação ainda.",
+    "new": "Nova Avaliação",
+    "newTitle": "Título da Avaliação"
   },
   "settings": {
     "title": "Configurações",
@@ -42,5 +44,72 @@
       "subject": "Seu link de acesso ao Quizz",
       "body": "Abra este link para entrar no Quizz:\n\n{url}\n\nSe você não pediu, ignore este e-mail."
     }
+  },
+  "editor": {
+    "status": {
+      "draft": "Rascunho",
+      "published": "Publicada",
+      "closed": "Encerrada"
+    },
+    "tabs": {
+      "questions": "Questões ({n})",
+      "rules": "Regras",
+      "access": "Acesso e idioma",
+      "publish": "Publicar"
+    },
+    "pool": "Banco de Questões",
+    "untitled": "Questão sem título",
+    "incomplete": "incompleta",
+    "newQuestion": "+ Nova questão",
+    "noQuestions": "Nenhuma Questão ainda. Adicione a primeira.",
+    "question": "Questão {n}",
+    "delete": "Excluir",
+    "confirmDelete": "Excluir a Questão {n}?",
+    "type": "Tipo",
+    "types": {
+      "single": "Múltipla escolha (uma resposta)",
+      "multi": "Múltipla escolha (várias respostas)",
+      "truefalse": "Verdadeiro / falso"
+    },
+    "text": "Questão (Markdown)",
+    "insertImage": "Inserir imagem (PNG ou JPEG, até 2 MB)",
+    "imageAlt": "Descreva a imagem",
+    "imageErrors": {
+      "badImage": "As imagens devem ser PNG ou JPEG.",
+      "tooLarge": "As imagens devem ter no máximo 2 MB."
+    },
+    "options": "Alternativas",
+    "option": "Alternativa {n}",
+    "correct": "Alternativa {n} está correta",
+    "removeOption": "Remover alternativa {n}",
+    "addOption": "+ Adicionar alternativa",
+    "tickAll": "Marque todas as alternativas corretas.",
+    "pickOne": "Escolha a alternativa correta.",
+    "keepOrder": "Manter a ordem das alternativas (não embaralhar)",
+    "problems": {
+      "noText": "Escreva o texto da questão.",
+      "tooFewOptions": "Dê pelo menos duas alternativas.",
+      "emptyOption": "Preencha ou remova as alternativas vazias.",
+      "noCorrect": "Marque a resposta correta.",
+      "tooManyCorrect": "Só uma alternativa pode estar correta."
+    },
+    "save": {
+      "saving": "Salvando…",
+      "saved": "Salvo",
+      "failed": "Não foi possível salvar. Verifique a conexão e edite de novo."
+    },
+    "preview": "Prévia do Participante",
+    "keptOrder": "As alternativas aparecem nesta ordem.",
+    "shuffled": "As alternativas são embaralhadas para cada Participante."
+  },
+  "attempt": {
+    "heading": "Questão {n}",
+    "hint": {
+      "single": "Escolha uma",
+      "multi": "Selecione todas as que se aplicam",
+      "truefalse": "Verdadeiro ou falso"
+    },
+    "true": "Verdadeiro",
+    "false": "Falso"
   }
 }

@@ -17,7 +17,9 @@
   },
   "dashboard": {
     "title": "Your Assessments",
-    "empty": "No Assessments yet."
+    "empty": "No Assessments yet.",
+    "new": "New Assessment",
+    "newTitle": "Assessment title"
   },
   "settings": {
     "title": "Settings",
@@ -42,5 +44,72 @@
       "subject": "Your Quizz sign-in link",
       "body": "Open this link to sign in to Quizz:\n\n{url}\n\nIf you didn't ask for it, ignore this email."
     }
+  },
+  "editor": {
+    "status": {
+      "draft": "Draft",
+      "published": "Published",
+      "closed": "Closed"
+    },
+    "tabs": {
+      "questions": "Questions ({n})",
+      "rules": "Rules",
+      "access": "Access & language",
+      "publish": "Publish"
+    },
+    "pool": "Question Pool",
+    "untitled": "Untitled question",
+    "incomplete": "incomplete",
+    "newQuestion": "+ New question",
+    "noQuestions": "No Questions yet. Add the first one.",
+    "question": "Question {n}",
+    "delete": "Delete",
+    "confirmDelete": "Delete Question {n}?",
+    "type": "Type",
+    "types": {
+      "single": "Multiple choice (one answer)",
+      "multi": "Multiple choice (several answers)",
+      "truefalse": "True / false"
+    },
+    "text": "Question (Markdown)",
+    "insertImage": "Insert image (PNG or JPEG, up to 2 MB)",
+    "imageAlt": "Describe the image",
+    "imageErrors": {
+      "badImage": "Images must be PNG or JPEG.",
+      "tooLarge": "Images must be 2 MB or smaller."
+    },
+    "options": "Answer options",
+    "option": "Option {n}",
+    "correct": "Option {n} is correct",
+    "removeOption": "Remove option {n}",
+    "addOption": "+ Add option",
+    "tickAll": "Tick every correct option.",
+    "pickOne": "Pick the correct option.",
+    "keepOrder": "Keep option order (don't shuffle)",
+    "problems": {
+      "noText": "Write the question text.",
+      "tooFewOptions": "Give at least two answer options.",
+      "emptyOption": "Fill in or remove empty options.",
+      "noCorrect": "Mark the correct answer.",
+      "tooManyCorrect": "Only one option can be correct."
+    },
+    "save": {
+      "saving": "Saving…",
+      "saved": "Saved",
+      "failed": "Couldn't save. Check your connection and edit again."
+    },
+    "preview": "Learner preview",
+    "keptOrder": "Options are shown in this order.",
+    "shuffled": "Options are shuffled for each Learner."
+  },
+  "attempt": {
+    "heading": "Question {n}",
+    "hint": {
+      "single": "Choose one",
+      "multi": "Select all that apply",
+      "truefalse": "True or false"
+    },
+    "true": "True",
+    "false": "False"
   }
 }
