@@ -1,0 +1,385 @@
+<!doctype html>
+<!--
+  SHOWCASE copy of prototype/editor-ui with only the chosen variant (published on GitHub Pages).
+  Three variants of the Creator's Assessment editor, switchable via ?variant=A|B|C (and ?scenario=...),
+  with a floating bar at the bottom. Fake data, in-memory state, no backend.
+  Open with: xdg-open prototypes/assessment-editor.prototype.html
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quizz prototype: Assessment editor</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 system-ui, sans-serif; color: #111827; background: #f3f4f6; }
+  button, input, select, textarea { font: inherit; }
+  button { cursor: pointer; }
+  pre { margin: 6px 0; background: #f8fafc; border: 1px solid #e5e7eb; padding: 10px; border-radius: 4px; font-size: 13px; overflow: auto; }
+  code { background: #f1f5f9; padding: 0 4px; border-radius: 3px; font-size: 13px; }
+
+  /* Shared bits (Quizz brand: navy + yellow, as chosen for the Attempt flow) */
+  .btn { background: #0f2a4a; color: #fff; border: 0; border-radius: 6px; padding: 9px 16px; font-weight: 600; }
+  .btn.alt { background: #fff; color: #0f2a4a; border: 1px solid #0f2a4a; }
+  .btn.pub { background: #f5b400; color: #111; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .link { background: none; border: 0; color: #0f2a4a; text-decoration: underline; padding: 0; }
+  .danger { color: #b42318; }
+  .pill { display: inline-block; padding: 1px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: .03em; }
+  .pill.Draft { background: #e5e7eb; color: #374151; } .pill.Published { background: #dcfce7; color: #166534; } .pill.Closed { background: #fee2e2; color: #991b1b; }
+  .muted { color: #6b7280; font-size: 13px; }
+  .input, .area, .sel { border: 1px solid #cbd5e1; border-radius: 6px; padding: 7px 10px; background: #fff; width: 100%; }
+  .area { min-height: 70px; font-family: ui-monospace, monospace; font-size: 13px; }
+  .num { width: 64px; text-align: center; border: 0; border-bottom: 2px solid #0f2a4a; background: transparent; font-weight: 700; padding: 0 2px; }
+  .opts .opt { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+  .opts .opt input[type=text] { flex: 1; }
+  .problems { background: #fff7e0; border: 1px solid #f5b400; border-radius: 6px; padding: 10px 14px; font-size: 14px; }
+  .problems ul { margin: 4px 0 0; padding-left: 18px; }
+  .ok { background: #ecfdf3; border: 1px solid #abefc6; border-radius: 6px; padding: 10px 14px; font-size: 14px; color: #067647; }
+  .versionwarn { background: #eef3f9; border: 1px solid #0f2a4a; border-radius: 6px; padding: 10px 14px; font-size: 14px; }
+  .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); background: #111; color: #fff; padding: 10px 18px; border-radius: 8px; z-index: 2000; }
+
+  /* Switcher (not part of the design) */
+  #switcher { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 1000; display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 999px; background: #111; color: #fff; font: 13px/1.2 ui-monospace, monospace; box-shadow: 0 6px 24px rgba(0,0,0,.35); white-space: nowrap; }
+  #switcher button { background: #333; color: #fff; border: 0; border-radius: 999px; width: 28px; height: 28px; }
+  #switcher select { font: inherit; background: #333; color: #fff; border: 0; border-radius: 6px; padding: 4px 6px; }
+  #switcher .state { color: #9ca3af; }
+
+  /* ---------- A: One document ---------- */
+  .vA { max-width: 860px; margin: 0 auto; padding: 32px 24px 140px; }
+  .vA .head { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .vA .title { flex: 1; font-size: 30px; font-weight: 700; border: 0; background: transparent; padding: 4px 0; border-bottom: 2px dashed transparent; }
+  .vA .title:focus { outline: none; border-bottom-color: #cbd5e1; }
+  .vA .rules { background: #fff; border-radius: 10px; padding: 20px 24px; font-size: 18px; line-height: 2.1; border: 1px solid #e5e7eb; }
+  .vA .rules select { border: 0; border-bottom: 2px solid #0f2a4a; background: transparent; font-weight: 700; }
+  .vA h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: #6b7280; margin: 32px 0 10px; display: flex; justify-content: space-between; align-items: center; }
+  .vA .q { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px 20px; margin-bottom: 12px; }
+  .vA .q .qbar { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .vA .q .qbar b { flex: 1; }
+  .vA .q.bad { border-color: #f5b400; }
+  .vA .adders { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* ---------- B: Split list + editor + Learner preview ---------- */
+  .vB { display: grid; grid-template-rows: auto 1fr; height: 100vh; }
+  .vB .topbar { background: #0f2a4a; color: #fff; display: flex; align-items: center; gap: 16px; padding: 0 20px; height: 56px; }
+  .vB .topbar .t { font-weight: 700; } .vB .topbar .spacer { flex: 1; }
+  .vB .tabs { display: flex; gap: 2px; height: 100%; }
+  .vB .tabs button { background: none; border: 0; color: #cbd5e1; padding: 0 14px; border-bottom: 3px solid transparent; }
+  .vB .tabs button.on { color: #fff; border-bottom-color: #f5b400; }
+  .vB .body { display: grid; grid-template-columns: 300px 1fr 380px; min-height: 0; }
+  .vB .list { background: #fff; border-right: 1px solid #e5e7eb; overflow: auto; padding-bottom: 90px; }
+  .vB .list .item { display: flex; gap: 10px; padding: 12px 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
+  .vB .list .item.on { background: #eef3f9; box-shadow: inset 3px 0 #0f2a4a; }
+  .vB .list .item .n { color: #6b7280; width: 20px; } .vB .list .item .tx { flex: 1; font-size: 14px; }
+  .vB .list .foot { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .vB .edit { overflow: auto; padding: 24px 28px 110px; }
+  .vB .edit label.f { display: block; font-weight: 600; margin: 14px 0 4px; }
+  .vB .preview { background: #e5e7eb; border-left: 1px solid #d1d5db; overflow: auto; padding: 20px 20px 110px; }
+  .vB .paper { background: #fff; border: 1px solid #d1d5db; border-radius: 4px; padding: 20px; }
+  .vB .paper .qhead { display: flex; justify-content: space-between; color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  .vB .paper .qt { font-weight: 600; font-size: 17px; margin: 6px 0 10px; }
+  .vB .paper label { display: flex; gap: 8px; padding: 8px 10px; border: 1px solid #e5e7eb; margin-bottom: 6px; border-radius: 4px; }
+  .vB .wide { grid-column: 1 / -1; overflow: auto; padding: 28px 40px 110px; max-width: 900px; }
+  .vB .wide .row { display: grid; grid-template-columns: 240px 1fr; gap: 16px; padding: 14px 0; border-bottom: 1px solid #e5e7eb; align-items: center; }
+
+  /* ---------- C: Guided steps ---------- */
+  .vC { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+  .vC .steps { background: #fff; border-right: 1px solid #e5e7eb; padding: 28px 20px; }
+  .vC .steps .brand { font-weight: 700; margin-bottom: 4px; }
+  .vC .step { display: flex; gap: 12px; align-items: center; padding: 10px 8px; border-radius: 8px; cursor: pointer; margin-top: 6px; }
+  .vC .step .dot { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; border: 2px solid #cbd5e1; font-weight: 700; font-size: 13px; color: #6b7280; }
+  .vC .step.on { background: #eef3f9; } .vC .step.on .dot { border-color: #0f2a4a; color: #0f2a4a; }
+  .vC .step.done .dot { background: #0f2a4a; border-color: #0f2a4a; color: #fff; }
+  .vC .step.warn .dot { background: #f5b400; border-color: #f5b400; color: #111; }
+  .vC .main { padding: 40px 56px 140px; max-width: 900px; }
+  .vC h1 { margin: 0 0 4px; font-size: 26px; } .vC .lead { color: #4b5563; margin: 0 0 24px; }
+  .vC .field { margin-bottom: 20px; } .vC .field label { display: block; font-weight: 600; margin-bottom: 6px; }
+  .vC .choice { display: flex; gap: 10px; } .vC .choice button { flex: 1; text-align: left; background: #fff; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 12px 14px; }
+  .vC .choice button.on { border-color: #0f2a4a; background: #eef3f9; }
+  .vC table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; }
+  .vC td, .vC th { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; text-align: left; font-size: 14px; vertical-align: top; }
+  .vC th { color: #6b7280; font-weight: 500; }
+  .vC .qedit { background: #fff; border: 1px solid #0f2a4a; border-radius: 8px; padding: 16px; margin: 8px 0 16px; }
+  .vC .nav { display: flex; justify-content: space-between; margin-top: 32px; }
+  .vC .check li { margin: 6px 0; list-style: none; } .vC .check { padding: 0; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="switcher"></div>
+
+<script>
+// ======================= Fake data =======================
+const SAMPLE = [
+  { kind: 'single', text: 'Which hook adds state that re-renders the component when it changes?', options: ['useRef', 'useState', 'useMemo', 'useId'], correct: [1], keepOrder: false, rate: 82 },
+  { kind: 'multi', text: 'Which of these make a component re-render? Select all that apply.', options: ['Its state changes', 'Its parent re-renders', 'A ref’s `.current` changes', 'Its props change'], correct: [0, 1, 3], keepOrder: false, rate: 41 },
+  { kind: 'single', text: 'After one click, what does this button show?\n\n```jsx\nconst [n, setN] = useState(0);\n<button onClick={() => { setN(n + 1); setN(n + 1); }}>{n}</button>\n```', options: ['0', '1', '2', 'It throws an error'], correct: [1], keepOrder: true, rate: 37 },
+  { kind: 'truefalse', text: 'Keys in a list only need to be unique among siblings.', options: ['True', 'False'], correct: [0], keepOrder: true, rate: 90 },
+  { kind: 'single', text: 'Where should a side effect like fetching data on mount go?', options: ['The render body', '`useEffect`', '`useMemo`', 'A CSS module'], correct: [1], keepOrder: false, rate: 88 },
+  { kind: 'single', text: 'What does `React.memo` skip?', options: ['Re-rendering when props are shallow-equal', 'Running effects', 'State updates', 'All of the above'], correct: [0], keepOrder: true, rate: 64 },
+  { kind: 'truefalse', text: 'You can call hooks inside an `if` statement.', options: ['True', 'False'], correct: [1], keepOrder: true, rate: 95 },
+];
+const IMPORTED = [
+  { kind: 'single', text: 'Which prop lets a parent read a child DOM node?', options: ['key', 'ref', 'id', 'children'], correct: [1], keepOrder: false },
+  { kind: 'truefalse', text: '`useLayoutEffect` runs before the browser paints.', options: ['True', 'False'], correct: [0], keepOrder: true },
+  { kind: 'multi', text: 'Which are valid ways to share state between siblings? Select all that apply.', options: ['Lift it to the parent', 'Context', 'Pass it through `key`'], correct: [0, 1], keepOrder: false },
+];
+const clone = x => JSON.parse(JSON.stringify(x));
+let uid = 1; const withIds = qs => qs.map(q => ({ id: uid++, ...clone(q) }));
+
+const SCENARIOS = {
+  new: 'New Draft (empty)',
+  draft: 'Draft with problems',
+  published: 'Published, editing (214 Certificates)',
+};
+function scenario(key) {
+  const base = { title: 'React Fundamentals', language: 'English', access: 'Public', invited: 0, status: 'Draft', version: 0, certificates: 0,
+    rules: { drawn: 5, minutes: 10, passing: 70, attempts: 2, cooldown: 60, expiry: 0 }, questions: [], selected: 0, dirty: false, wiz: 0, tab: 'questions' };
+  if (key === 'new') return { ...base, title: '', questions: withIds([{ kind: 'single', text: '', options: ['', ''], correct: [], keepOrder: false }]) };
+  if (key === 'draft') { const qs = withIds(SAMPLE.slice(0, 4)); qs[3].correct = []; return { ...base, questions: qs }; }
+  return { ...base, status: 'Published', version: 2, certificates: 214, questions: withIds(SAMPLE) };
+}
+
+// ======================= State + rules =======================
+let S = scenario('draft'), scenarioKey = 'draft';
+const KIND = { single: 'Multiple choice (one answer)', multi: 'Multiple choice (several answers)', truefalse: 'True / false' };
+const KIND_SHORT = { single: 'One answer', multi: 'Several answers', truefalse: 'True/false' };
+
+function problems() {
+  const p = [];
+  if (!S.title.trim()) p.push('Give the Assessment a title.');
+  if (S.questions.length < S.rules.drawn) p.push(`The Question Pool has ${S.questions.length} Question(s) but each Attempt draws ${S.rules.drawn}. Add ${S.rules.drawn - S.questions.length} more or draw fewer.`);
+  S.questions.forEach((q, i) => {
+    if (!q.text.trim()) p.push(`Question ${i + 1} has no text.`);
+    if (q.options.filter(o => o.trim()).length < 2) p.push(`Question ${i + 1} needs at least two answer options.`);
+    if (!q.correct.length) p.push(`Question ${i + 1} has no correct answer marked.`);
+  });
+  if (S.rules.passing < 1 || S.rules.passing > 100) p.push('The Passing Score must be between 1% and 100%.');
+  if (S.access === 'Invite-only' && !S.invited) p.push('Invite-only, but nobody is invited yet.');
+  return p;
+}
+const qProblems = q => !q.text.trim() || q.options.filter(o => o.trim()).length < 2 || !q.correct.length;
+const canPublish = () => !problems().length && (S.status === 'Draft' || S.dirty);
+const publishLabel = () => S.status === 'Draft' ? 'Publish' : S.dirty ? `Publish as Version ${S.version + 1}` : `Published · Version ${S.version}`;
+
+// Tiny Markdown: ```code```, `inline`, **bold**. Enough to show what Learners will see.
+function md(t) {
+  const e = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  return t.split(/```\w*\n?/).map((part, i) => i % 2 ? `<pre>${e(part.replace(/\n$/, ''))}</pre>` :
+    e(part).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>')).join('');
+}
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+let toastMsg = '';
+function toast(m) { toastMsg = m; setTimeout(() => { toastMsg = ''; render(); }, 2600); }
+
+const ACT = {
+  set: (path, v) => { const [a, b] = path.split('.'); if (b) S[a][b] = isNaN(+v) || v === '' ? v : +v; else S[a] = v; S.dirty = true; },
+  qtext: (i, v) => { S.questions[i].text = v; S.dirty = true; },
+  opt: (i, j, v) => { S.questions[+i].options[+j] = v; S.dirty = true; },
+  correct: (i, j) => { const q = S.questions[+i]; j = +j; q.correct = q.kind === 'multi' ? (q.correct.includes(j) ? q.correct.filter(x => x !== j) : [...q.correct, j]) : [j]; S.dirty = true; },
+  addOpt: i => { S.questions[+i].options.push(''); S.dirty = true; },
+  delOpt: (i, j) => { const q = S.questions[+i]; j = +j; q.options.splice(j, 1); q.correct = q.correct.filter(x => x !== j).map(x => x > j ? x - 1 : x); S.dirty = true; },
+  kind: (i, v) => { const q = S.questions[+i]; q.kind = v; if (v === 'truefalse') { q.options = ['True', 'False']; q.correct = q.correct.filter(x => x < 2).slice(0, 1); q.keepOrder = true; } else if (v === 'single') q.correct = q.correct.slice(0, 1); S.dirty = true; },
+  keep: i => { S.questions[+i].keepOrder = !S.questions[+i].keepOrder; S.dirty = true; },
+  add: kind => { S.questions.push({ id: uid++, kind, text: '', options: kind === 'truefalse' ? ['True', 'False'] : ['', ''], correct: [], keepOrder: kind === 'truefalse' }); S.selected = S.questions.length - 1; S.dirty = true; },
+  del: i => { if (!confirm(`Delete Question ${+i + 1}?`)) return; S.questions.splice(+i, 1); S.selected = Math.max(0, Math.min(S.selected, S.questions.length - 1)); S.dirty = true; },
+  select: i => { S.selected = +i; },
+  import: () => { S.questions.push(...withIds(IMPORTED)); S.dirty = true; toast(`Imported ${IMPORTED.length} Questions from react-extra.csv`); },
+  invite: () => { S.invited += 3; S.dirty = true; toast('Invited 3 emails. Only their keyed hashes are stored.'); },
+  publish: () => {
+    if (!canPublish()) return;
+    if (S.status === 'Draft') { S.status = 'Published'; S.version = 1; toast('Published. Share the link with your Learners.'); }
+    else { S.version++; toast(`Version ${S.version} published. The ${S.certificates} existing Certificates stay on Version ${S.version - 1}.`); }
+    S.dirty = false;
+  },
+  discard: () => { S = scenario(scenarioKey); toast('Changes discarded.'); },
+  tab: t => { S.tab = t; },
+  wiz: n => { S.wiz = +n; },
+};
+
+// Shared question editor fields (each variant lays them out its own way).
+function optionsEditor(i) {
+  const q = S.questions[i];
+  return `<div class="opts">${q.options.map((o, j) => `<div class="opt">
+      <input type="${q.kind === 'multi' ? 'checkbox' : 'radio'}" name="c${q.id}" title="Mark as correct" ${q.correct.includes(j) ? 'checked' : ''} data-act="correct" data-a="${i}" data-b="${j}">
+      <input type="text" class="input" value="${esc(o)}" placeholder="Answer option ${j + 1}" data-k="opt-${i}-${j}" data-in="opt" data-a="${i}" data-b="${j}" ${q.kind === 'truefalse' ? 'readonly' : ''}>
+      ${q.kind !== 'truefalse' && q.options.length > 2 ? `<button class="link danger" data-act="delOpt" data-a="${i}" data-b="${j}" title="Remove option">✕</button>` : ''}</div>`).join('')}
+    ${q.kind !== 'truefalse' ? `<button class="link" data-act="addOpt" data-a="${i}">+ Add option</button>` : ''}
+    <span class="muted" style="margin-left:12px">${q.kind === 'multi' ? 'Tick every correct option.' : 'Pick the correct option.'}</span></div>`;
+}
+const kindSelect = i => `<select class="sel" style="width:auto" data-in="kind" data-a="${i}">${Object.entries(KIND).map(([k, v]) => `<option value="${k}" ${S.questions[i].kind === k ? 'selected' : ''}>${v}</option>`).join('')}</select>`;
+const keepBox = i => `<label class="muted"><input type="checkbox" ${S.questions[i].keepOrder ? 'checked' : ''} data-act="keep" data-a="${i}"> Keep option order (don't shuffle)</label>`;
+const problemBox = () => { const p = problems(); return p.length ? `<div class="problems"><b>Before you can publish:</b><ul>${p.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : `<div class="ok">Ready to publish.</div>`; };
+const versionWarn = () => S.status === 'Published' && S.dirty ? `<div class="versionwarn">You're editing a published Assessment. Publishing creates <b>Version ${S.version + 1}</b>. The ${S.certificates} Certificates already issued stay on Version ${S.version}; Attempts in progress finish on the version they started. <button class="link" data-act="discard">Discard changes</button></div>` : '';
+const rateTag = q => S.status === 'Published' && q.rate !== undefined ? `<span class="muted" title="Share of Attempts that answered correctly">${q.rate}% correct</span>` : '';
+
+// ======================= Variant A: One document =======================
+function VariantA() {
+  const r = S.rules;
+  const n = (k, w) => `<input class="num" style="width:${w || 56}px" value="${r[k]}" data-k="r-${k}" data-in="set" data-a="rules.${k}">`;
+  return `<div class="vA">
+    <div class="head"><input class="title" value="${esc(S.title)}" placeholder="Untitled Assessment" data-k="title" data-in="set" data-a="title">
+      <span class="pill ${S.status}">${S.status}${S.version ? ' · v' + S.version : ''}</span>
+      <button class="btn pub" data-act="publish" ${canPublish() ? '' : 'disabled'}>${publishLabel()}</button></div>
+    ${versionWarn()}
+    <div class="rules">
+      Learners get ${n('minutes')} minutes to answer ${n('drawn')} questions, drawn at random from the ${S.questions.length} below.
+      They need ${n('passing')}% to pass and can try ${n('attempts', 44)} times, at least ${n('cooldown')} minutes apart.
+      Certificates <select data-in="set" data-a="rules.expiry"><option value="0" ${!r.expiry ? 'selected' : ''}>never expire</option>${[30, 90, 365, 730].map(d => `<option value="${d}" ${r.expiry == d ? 'selected' : ''}>expire after ${d} days</option>`).join('')}</select>.
+      The Assessment is in <select data-in="set" data-a="language">${['English', 'Português (Brasil)'].map(l => `<option ${S.language === l ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      and open to <select data-in="set" data-a="access"><option value="Public" ${S.access === 'Public' ? 'selected' : ''}>anyone with the link</option><option value="Invite-only" ${S.access === 'Invite-only' ? 'selected' : ''}>invited emails only</option></select>${S.access === 'Invite-only' ? ` (${S.invited} invited, <button class="link" data-act="invite">invite more</button>)` : ''}.
+    </div>
+    <div style="margin-top:14px">${problemBox()}</div>
+    <h2><span>Question Pool · ${S.questions.length}</span><button class="link" data-act="import">Import from CSV</button></h2>
+    ${S.questions.map((q, i) => `<div class="q ${qProblems(q) ? 'bad' : ''}">
+      <div class="qbar"><b>${i + 1}.</b>${kindSelect(i)} ${rateTag(q)} <button class="link danger" data-act="del" data-a="${i}">Delete</button></div>
+      <textarea class="area" placeholder="Question text. Markdown works: \`code\`, **bold**, and \`\`\` code blocks." data-k="q-${i}" data-in="qtext" data-a="${i}">${esc(q.text)}</textarea>
+      ${optionsEditor(i)}<div style="margin-top:6px">${keepBox(i)}</div></div>`).join('')}
+    <div class="adders"><button class="btn alt" data-act="add" data-a="single">+ One answer</button><button class="btn alt" data-act="add" data-a="multi">+ Several answers</button><button class="btn alt" data-act="add" data-a="truefalse">+ True / false</button></div>
+  </div>`;
+}
+
+// ======================= Variant B: Split list + editor + preview =======================
+function learnerPreview(q, i) {
+  return `<div class="muted" style="margin-bottom:8px">Learner preview (as in the Attempt flow)</div><div class="paper">
+    <div class="qhead"><span>Question ${i + 1} of ${S.rules.drawn}</span><span>${q.kind === 'multi' ? 'Select all that apply' : q.kind === 'truefalse' ? 'True or false' : 'Choose one'}</span></div>
+    <div class="qt">${md(q.text) || '<span class="muted">No question text yet</span>'}</div>
+    ${q.options.map(o => `<label><input type="${q.kind === 'multi' ? 'checkbox' : 'radio'}" disabled> ${md(o) || '<span class="muted">empty</span>'}</label>`).join('')}
+    <div class="muted" style="margin-top:8px">${q.keepOrder ? 'Options shown in this order.' : 'Options are shuffled for each Learner.'}</div></div>`;
+}
+function VariantB() {
+  const tabs = [['questions', `Questions (${S.questions.length})`], ['rules', 'Rules'], ['access', 'Access & language'], ['publish', 'Publish']];
+  const top = `<div class="topbar"><span class="t">${esc(S.title || 'Untitled Assessment')}</span><span class="pill ${S.status}">${S.status}${S.version ? ' · v' + S.version : ''}</span>
+    <div class="tabs">${tabs.map(([k, l]) => `<button class="${S.tab === k ? 'on' : ''}" data-act="tab" data-a="${k}">${l}${k === 'publish' && problems().length ? ` <span style="color:#f5b400">●</span>` : ''}</button>`).join('')}</div>
+    <span class="spacer"></span><button class="btn pub" data-act="publish" ${canPublish() ? '' : 'disabled'}>${publishLabel()}</button></div>`;
+  let body;
+  if (S.tab === 'questions') {
+    const i = Math.min(S.selected, S.questions.length - 1), q = S.questions[i];
+    body = `<div class="body"><div class="list">
+      ${S.questions.map((x, k) => `<div class="item ${k === i ? 'on' : ''}" data-act="select" data-a="${k}"><span class="n">${k + 1}</span><span class="tx">${esc((x.text.split('\n')[0] || 'Untitled question').slice(0, 70))}<br><span class="muted">${KIND_SHORT[x.kind]}${qProblems(x) ? ' · <span class="danger">incomplete</span>' : ''}</span></span>${rateTag(x)}</div>`).join('')}
+      <div class="foot"><button class="btn alt" data-act="add" data-a="single">+ New question</button><button class="link" data-act="import">Import from CSV</button></div></div>
+      <div class="edit">${versionWarn()}${q ? `<div style="display:flex;justify-content:space-between;align-items:center"><b>Question ${i + 1}</b><button class="link danger" data-act="del" data-a="${i}">Delete</button></div>
+        <label class="f">Type</label>${kindSelect(i)}
+        <label class="f">Question <span class="muted">(Markdown)</span></label><textarea class="area" style="min-height:120px" data-k="q-${i}" data-in="qtext" data-a="${i}">${esc(q.text)}</textarea>
+        <label class="f">Answer options</label>${optionsEditor(i)}<div style="margin-top:10px">${keepBox(i)}</div>` : '<p class="muted">No questions yet.</p>'}</div>
+      <div class="preview">${q ? learnerPreview(q, i) : ''}</div></div>`;
+  } else if (S.tab === 'rules') {
+    const r = S.rules, row = (l, h, k, unit) => `<div class="row"><div><b>${l}</b><div class="muted">${h}</div></div><div><input class="input" style="width:110px" value="${r[k]}" data-k="r-${k}" data-in="set" data-a="rules.${k}"> ${unit}</div></div>`;
+    body = `<div class="wide">${versionWarn()}
+      ${row('Questions per Attempt', `Drawn at random from the ${S.questions.length} in the pool.`, 'drawn', 'questions')}
+      ${row('Time limit', 'Not submitted in time = Timed out, no score.', 'minutes', 'minutes')}
+      ${row('Passing Score', 'Minimum score for a Certificate.', 'passing', '%')}
+      ${row('Attempts allowed', 'Resets when a Certificate expires.', 'attempts', 'per Learner')}
+      ${row('Cooldown', 'Wait between Attempts.', 'cooldown', 'minutes')}
+      <div class="row"><div><b>Expiry</b><div class="muted">Certificates show as expired after this.</div></div><div><select class="sel" style="width:auto" data-in="set" data-a="rules.expiry"><option value="0" ${!r.expiry ? 'selected' : ''}>Never</option>${[30, 90, 365, 730].map(d => `<option value="${d}" ${r.expiry == d ? 'selected' : ''}>${d} days</option>`).join('')}</select></div></div></div>`;
+  } else if (S.tab === 'access') {
+    body = `<div class="wide">${versionWarn()}
+      <div class="row"><div><b>Title</b></div><div><input class="input" value="${esc(S.title)}" data-k="title" data-in="set" data-a="title"></div></div>
+      <div class="row"><div><b>Assessment Language</b><div class="muted">Questions, Certificate and Verification Page content.</div></div><div><select class="sel" style="width:auto" data-in="set" data-a="language">${['English', 'Português (Brasil)'].map(l => `<option ${S.language === l ? 'selected' : ''}>${l}</option>`).join('')}</select></div></div>
+      <div class="row"><div><b>Access Mode</b></div><div><select class="sel" style="width:auto" data-in="set" data-a="access"><option ${S.access === 'Public' ? 'selected' : ''}>Public</option><option ${S.access === 'Invite-only' ? 'selected' : ''}>Invite-only</option></select>
+        ${S.access === 'Invite-only' ? ` <span class="muted">${S.invited} invited</span> <button class="link" data-act="invite">Invite emails…</button>` : ' <span class="muted">Anyone with the link can start.</span>'}</div></div></div>`;
+  } else {
+    body = `<div class="wide">${versionWarn()}${problemBox()}<p class="muted" style="margin-top:16px">${S.status === 'Draft' ? 'Publishing freezes Version 1 and opens the Assessment to Learners.' : S.dirty ? '' : 'No unpublished changes.'}</p>
+      <button class="btn pub" data-act="publish" ${canPublish() ? '' : 'disabled'}>${publishLabel()}</button></div>`;
+  }
+  return `<div class="vB">${top}${body}</div>`;
+}
+
+// ======================= Variant C: Guided steps =======================
+function VariantC() {
+  const p = problems();
+  const steps = [
+    ['Basics', 'Title, language, who can take it', !!S.title.trim() && !(S.access === 'Invite-only' && !S.invited)],
+    ['Questions', 'Build the Question Pool', !S.questions.some(qProblems) && S.questions.length >= S.rules.drawn],
+    ['Rules', 'Scoring, time, retakes, expiry', S.rules.passing >= 1 && S.rules.passing <= 100],
+    ['Review & publish', S.status === 'Draft' ? 'Check and go live' : 'Publish a new version', false],
+  ];
+  const side = `<div class="steps"><div class="brand">${esc(S.title || 'New Assessment')}</div><span class="pill ${S.status}">${S.status}${S.version ? ' · v' + S.version : ''}</span>
+    ${steps.map(([t, d, ok], k) => `<div class="step ${k === S.wiz ? 'on' : ''} ${k < 3 ? (ok ? 'done' : 'warn') : ''}" data-act="wiz" data-a="${k}"><span class="dot">${k < 3 ? (ok ? '✓' : '!') : k + 1}</span><span><b>${t}</b><br><span class="muted">${d}</span></span></div>`).join('')}</div>`;
+  const nav = `<div class="nav">${S.wiz > 0 ? `<button class="btn alt" data-act="wiz" data-a="${S.wiz - 1}">← Back</button>` : '<span></span>'}${S.wiz < 3 ? `<button class="btn" data-act="wiz" data-a="${S.wiz + 1}">Continue →</button>` : ''}</div>`;
+  let main;
+  if (S.wiz === 0) main = `<h1>Basics</h1><p class="lead">What is this Assessment, and who can take it?</p>
+    <div class="field"><label>Title</label><input class="input" value="${esc(S.title)}" placeholder="e.g. React Fundamentals" data-k="title" data-in="set" data-a="title"></div>
+    <div class="field"><label>Assessment Language</label><div class="choice">${['English', 'Português (Brasil)'].map(l => `<button class="${S.language === l ? 'on' : ''}" data-act="setv" data-a="language" data-b="${l}"><b>${l}</b><br><span class="muted">Questions, Certificate and Verification Page content</span></button>`).join('')}</div></div>
+    <div class="field"><label>Who can take it?</label><div class="choice">
+      <button class="${S.access === 'Public' ? 'on' : ''}" data-act="setv" data-a="access" data-b="Public"><b>Anyone with the link</b><br><span class="muted">Share it on your course page</span></button>
+      <button class="${S.access === 'Invite-only' ? 'on' : ''}" data-act="setv" data-a="access" data-b="Invite-only"><b>Only people I invite</b><br><span class="muted">${S.access === 'Invite-only' ? `${S.invited} invited · ` : ''}Paste or upload emails</span></button></div>
+      ${S.access === 'Invite-only' ? `<p><button class="link" data-act="invite">Invite emails…</button></p>` : ''}</div>`;
+  if (S.wiz === 1) {
+    const i = S.selected;
+    main = `<h1>Question Pool</h1><p class="lead">Each Attempt draws ${S.rules.drawn} at random from these ${S.questions.length}. Click a row to edit it.</p>${versionWarn()}
+    <table><tr><th>#</th><th>Question</th><th>Type</th><th>${S.status === 'Published' ? 'Correct rate' : ''}</th><th></th></tr>
+    ${S.questions.map((q, k) => `<tr data-act="select" data-a="${k}" style="cursor:pointer;${k === i ? 'background:#eef3f9' : ''}"><td>${k + 1}</td><td>${esc((q.text.split('\n')[0] || 'Untitled').slice(0, 80))}${qProblems(q) ? ' <span class="danger">· incomplete</span>' : ''}</td><td class="muted">${KIND_SHORT[q.kind]}</td><td>${rateTag(q)}</td><td><button class="link danger" data-act="del" data-a="${k}">Delete</button></td></tr>
+      ${k === i ? `<tr><td colspan="5"><div class="qedit"><div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">${kindSelect(k)} ${keepBox(k)}</div>
+        <textarea class="area" data-k="q-${k}" data-in="qtext" data-a="${k}" placeholder="Question text (Markdown)">${esc(q.text)}</textarea>${optionsEditor(k)}</div></td></tr>` : ''}`).join('')}</table>
+    <p><button class="btn alt" data-act="add" data-a="single">+ Add question</button> <button class="link" data-act="import" style="margin-left:10px">Import from CSV</button>
+    <span class="muted" style="margin-left:10px">Columns: type, question, option 1–6, correct options, keep order</span></p>`;
+  }
+  if (S.wiz === 2) {
+    const r = S.rules, f = (l, k, unit, h) => `<div class="field"><label>${l}</label><input class="input" style="width:120px" value="${r[k]}" data-k="r-${k}" data-in="set" data-a="rules.${k}"> ${unit}<div class="muted">${h}</div></div>`;
+    main = `<h1>Rules</h1><p class="lead">How Attempts are scored and how often Learners can try.</p>${versionWarn()}
+      ${f('Questions per Attempt', 'drawn', `of ${S.questions.length} in the pool`, 'Drawn at random for each Attempt.')}
+      ${f('Time limit', 'minutes', 'minutes', 'If the Learner doesn\'t submit in time, the Attempt is Timed out with no score.')}
+      ${f('Passing Score', 'passing', '%', 'Learners at or above this get a Certificate straight away.')}
+      ${f('Attempts allowed', 'attempts', 'per Learner', 'The count starts again when a Certificate expires.')}
+      ${f('Cooldown between Attempts', 'cooldown', 'minutes', '')}
+      <div class="field"><label>Certificate Expiry</label><select class="sel" style="width:auto" data-in="set" data-a="rules.expiry"><option value="0" ${!r.expiry ? 'selected' : ''}>Never expires</option>${[30, 90, 365, 730].map(d => `<option value="${d}" ${r.expiry == d ? 'selected' : ''}>${d} days</option>`).join('')}</select></div>`;
+  }
+  if (S.wiz === 3) {
+    const r = S.rules;
+    main = `<h1>Review & publish</h1><p class="lead">${S.status === 'Draft' ? 'Publishing freezes Version 1 and opens it to Learners.' : 'Publishing your changes creates a new version.'}</p>${versionWarn()}
+      <ul class="check">
+        <li>${S.title.trim() ? '✅' : '⚠️'} <b>${esc(S.title || 'No title')}</b>, in ${S.language}, ${S.access === 'Public' ? 'open to anyone with the link' : `invite-only (${S.invited} invited)`}</li>
+        <li>${S.questions.length >= r.drawn && !S.questions.some(qProblems) ? '✅' : '⚠️'} ${r.drawn} of ${S.questions.length} Questions per Attempt</li>
+        <li>✅ ${r.minutes} minutes · ${r.passing}% to pass · ${r.attempts} Attempts, ${r.cooldown} min apart · ${r.expiry ? `expires after ${r.expiry} days` : 'never expires'}</li></ul>
+      ${problemBox()}<p style="margin-top:20px"><button class="btn pub" data-act="publish" ${canPublish() ? '' : 'disabled'}>${publishLabel()}</button></p>`;
+  }
+  return `<div class="vC">${side}<div class="main">${main}${nav}</div></div>`;
+}
+ACT.setv = (k, v) => { S[k] = v; S.dirty = true; };
+
+// ======================= Switcher + wiring =======================
+const VARIANTS = { A: ['One document', VariantA], B: ['List + editor + Learner preview', VariantB], C: ['Guided steps', VariantC] };
+const params = new URLSearchParams(location.search);
+let variant = 'B'; // showcase: chosen variant only
+if (SCENARIOS[params.get('scenario')]) { scenarioKey = params.get('scenario'); S = scenario(scenarioKey); }
+
+function render() {
+  const f = document.activeElement, k = f?.dataset?.k, pos = f?.selectionStart;
+  document.getElementById('app').innerHTML = VARIANTS[variant][1]() + (toastMsg ? `<div class="toast">${esc(toastMsg)}</div>` : '');
+  if (k) { const el = document.querySelector(`[data-k="${k}"]`); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch {} } }
+  const p = problems().length;
+  document.getElementById('switcher').innerHTML = `
+    <select data-scn>${Object.entries(SCENARIOS).map(([k, l]) => `<option value="${k}" ${k === scenarioKey ? 'selected' : ''}>${l}</option>`).join('')}</select>
+    <span class="state">${S.status}${S.version ? ' v' + S.version : ''}${S.dirty && S.status !== 'Draft' ? ' (edited)' : ''} · pool ${S.questions.length} / draw ${S.rules.drawn} · ${p} problem${p === 1 ? '' : 's'}</span>`;
+  history.replaceState(null, '', '?' + new URLSearchParams({ variant, scenario: scenarioKey }));
+}
+function cycle(d) { const ks = Object.keys(VARIANTS); variant = ks[(ks.indexOf(variant) + d + ks.length) % ks.length]; render(); }
+
+document.addEventListener('click', e => {
+  const sw = e.target.closest('[data-sw]'); if (sw) return cycle(+sw.dataset.sw);
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  if (el.dataset.act === 'select' && e.target.closest('input, textarea, select, button')) return;
+  ACT[el.dataset.act](el.dataset.a, el.dataset.b); render();
+});
+document.addEventListener('input', e => {
+  const el = e.target, a = el.dataset.in; if (!a || el.tagName === 'SELECT') return;
+  if (a === 'set') ACT.set(el.dataset.a, el.value); if (a === 'qtext') ACT.qtext(+el.dataset.a, el.value); if (a === 'opt') ACT.opt(el.dataset.a, el.dataset.b, el.value);
+  render();
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.matches('[data-scn]')) { scenarioKey = el.value; S = scenario(scenarioKey); return render(); }
+  if (el.tagName !== 'SELECT' || !el.dataset.in) return;
+  if (el.dataset.in === 'set') ACT.set(el.dataset.a, el.value); if (el.dataset.in === 'kind') ACT.kind(el.dataset.a, el.value);
+  render();
+});
+document.addEventListener('keydown', e => {
+  if (e.target.closest('input, textarea, select, [contenteditable]')) return;
+   
+});
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!doctype html>
+<!--
+  SHOWCASE copy of prototype/dashboard-ui with only the chosen variant (published on GitHub Pages).
+  Three variants of the Creator's Assessment Statistics, shown as a "Statistics" tab inside the
+  chosen editor chrome (Variant B of the editor prototype). Switch via ?variant=A|B|C or the floating bar.
+  Fake aggregate data only: no Learner rows exist anywhere (ADR 0002). Light mode only.
+  Open with: xdg-open prototypes/statistics-dashboard.prototype.html
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quizz prototype: Assessment Statistics</title>
+<style>
+  :root {
+    --surface: #fcfcfb; --page: #f3f4f6; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+    --grid: #e1e0d9; --axis: #c3c2b7; --series: #2a78d6; --wash: rgba(42,120,214,.10); --deemph: #c3c2b7;
+    --good: #006300; --critical: #d03b3b; --navy: #0f2a4a; --yellow: #f5b400; --ring: rgba(11,11,11,.10);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); background: var(--page); }
+  button, select { font: inherit; cursor: pointer; }
+  svg text { font: 12px system-ui, sans-serif; fill: var(--muted); }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* Editor chrome (from editor Variant B) */
+  .topbar { background: var(--navy); color: #fff; display: flex; align-items: center; gap: 16px; padding: 0 20px; height: 56px; }
+  .topbar .t { font-weight: 700; } .topbar .spacer { flex: 1; }
+  .pill { display: inline-block; padding: 1px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #dcfce7; color: #166534; }
+  .tabs { display: flex; gap: 2px; height: 100%; }
+  .tabs span { color: #cbd5e1; padding: 0 14px; display: flex; align-items: center; border-bottom: 3px solid transparent; }
+  .tabs span.on { color: #fff; border-bottom-color: var(--yellow); }
+  .pub { background: #6b5a1c; color: #e5e7eb; border: 0; border-radius: 6px; padding: 8px 14px; font-weight: 600; }
+
+  /* Filters: one row above the charts */
+  .filters { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 16px 32px 0; }
+  .seg { display: inline-flex; background: #fff; border: 1px solid var(--ring); border-radius: 8px; overflow: hidden; }
+  .seg button { border: 0; background: none; padding: 6px 12px; color: var(--ink-2); }
+  .seg button.on { background: var(--navy); color: #fff; }
+  .filters .note { color: var(--muted); font-size: 13px; margin-left: auto; }
+
+  .card { background: var(--surface); border: 1px solid var(--ring); border-radius: 10px; padding: 18px 20px; }
+  .card h3 { margin: 0 0 2px; font-size: 15px; } .card .sub { color: var(--ink-2); font-size: 13px; margin: 0 0 12px; }
+  .tile .label { color: var(--ink-2); font-size: 13px; } .tile .value { font-size: 28px; font-weight: 600; line-height: 1.2; margin-top: 2px; }
+  .tile .delta { font-size: 13px; color: var(--ink-2); }
+  details { margin-top: 8px; font-size: 13px; color: var(--ink-2); } summary { cursor: pointer; }
+  table.data { border-collapse: collapse; width: 100%; margin-top: 6px; } table.data td, table.data th { padding: 4px 8px; border-bottom: 1px solid var(--grid); text-align: left; }
+  table.data td.r, table.data th.r { text-align: right; font-variant-numeric: tabular-nums; }
+  .flag { color: var(--critical); font-size: 13px; white-space: nowrap; }
+  #tip { position: fixed; pointer-events: none; background: #111; color: #fff; font-size: 12px; padding: 6px 9px; border-radius: 6px; z-index: 3000; display: none; white-space: nowrap; }
+
+  /* A: KPI row + grid */
+  .vA { padding: 16px 32px 120px; }
+  .vA .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 12px; }
+  .vA .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* B: Narrative report */
+  .vB { max-width: 760px; margin: 0 auto; padding: 24px 24px 120px; }
+  .vB .hero { font-size: 56px; font-weight: 600; line-height: 1; margin: 12px 0 6px; }
+  .vB .lead { font-size: 18px; color: var(--ink-2); margin: 0 0 28px; }
+  .vB section { margin: 0 0 28px; } .vB h2 { font-size: 20px; margin: 0 0 6px; } .vB p { margin: 0 0 12px; color: var(--ink-2); }
+  .vB .callout { border-left: 3px solid var(--critical); background: #fff; padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 10px 0; }
+
+  /* C: Question-first */
+  .vC { padding: 16px 32px 120px; display: grid; grid-template-columns: 1fr 340px; gap: 16px; align-items: start; }
+  .vC .strip { grid-column: 1 / -1; display: flex; gap: 28px; background: var(--surface); border: 1px solid var(--ring); border-radius: 10px; padding: 12px 20px; }
+  .vC .strip div b { display: block; font-size: 20px; font-weight: 600; } .vC .strip div span { color: var(--ink-2); font-size: 13px; }
+  .vC table.qs { width: 100%; border-collapse: collapse; } .vC table.qs th { text-align: left; color: var(--ink-2); font-weight: 500; font-size: 13px; padding: 8px 10px; border-bottom: 1px solid var(--grid); cursor: pointer; user-select: none; }
+  .vC table.qs td { padding: 12px 10px; border-bottom: 1px solid var(--grid); vertical-align: middle; }
+  .vC .meter { width: 160px; height: 8px; border-radius: 4px; background: #cde2fb; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 8px; }
+  .vC .meter i { display: block; height: 100%; background: var(--series); border-radius: 0 4px 4px 0; }
+  .vC .side { display: flex; flex-direction: column; gap: 16px; }
+
+  #switcher { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 1000; display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 999px; background: #111; color: #fff; font: 13px/1.2 ui-monospace, monospace; box-shadow: 0 6px 24px rgba(0,0,0,.35); white-space: nowrap; }
+  #switcher button { background: #333; color: #fff; border: 0; border-radius: 999px; width: 28px; height: 28px; }
+  #switcher .state { color: #9ca3af; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="tip"></div>
+<div id="switcher"></div>
+
+<script>
+// ======================= Fake aggregate data (running counters) =======================
+// Seeded so every reload shows the same numbers.
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const DAYS = 120, TODAY = new Date(2026, 8, 25);
+const V2_FROM = 45; // Version 2 (Passing Score 70% -> 80%) published 45 days ago
+const daily = Array.from({ length: DAYS }, (_, i) => {
+  const daysAgo = DAYS - 1 - i, weekend = [0, 6].includes(new Date(TODAY - daysAgo * 864e5).getDay());
+  const attempts = Math.round((weekend ? 3 : 7) + rnd() * 6 + (daysAgo < 20 ? 4 : 0));
+  return { daysAgo, date: new Date(TODAY - daysAgo * 864e5), attempts, version: daysAgo < V2_FROM ? 2 : 1 };
+});
+const VERSIONS = {
+  1: { passing: 70, passRate: .68, timedOut: .06, minutes: 7.2, buckets: [2, 3, 5, 7, 10, 12, 15, 18, 16, 12], rates: [84, 43, 35, 91, 89, 62, 95] },
+  2: { passing: 80, passRate: .52, timedOut: .08, minutes: 7.9, buckets: [1, 3, 4, 7, 9, 13, 16, 19, 16, 12], rates: [80, 39, 38, 90, 87, 66, 94] },
+};
+const QUESTIONS = ['Which hook adds state that re-renders…', 'Which of these make a component re-render?', 'After one click, what does this button show?', 'Keys in a list only need to be unique among siblings.', 'Where should a side effect like fetching go?', 'What does React.memo skip?', 'You can call hooks inside an if statement.'];
+const KIND = ['One answer', 'Several answers', 'One answer · code', 'True/false', 'One answer', 'One answer', 'True/false'];
+
+const F = { range: 30, version: 'all' };
+const RANGES = [[7, 'Last 7 days'], [30, 'Last 30 days'], [90, 'Last 90 days'], [DAYS, 'All time']];
+
+function stats() {
+  const days = daily.filter(d => d.daysAgo < F.range && (F.version === 'all' || d.version === +F.version));
+  const byV = v => days.filter(d => d.version === v).reduce((s, d) => s + d.attempts, 0);
+  const n = { 1: byV(1), 2: byV(2) }, attempts = n[1] + n[2];
+  const w = v => attempts ? n[v] / attempts : 0;
+  const mix = f => w(1) * f(VERSIONS[1]) + w(2) * f(VERSIONS[2]);
+  const passed = Math.round(n[1] * VERSIONS[1].passRate + n[2] * VERSIONS[2].passRate);
+  const timedOut = Math.round(n[1] * VERSIONS[1].timedOut + n[2] * VERSIONS[2].timedOut);
+  const submitted = attempts - timedOut;
+  const buckets = Array.from({ length: 10 }, (_, b) => Math.round(submitted * mix(v => v.buckets[b] / 100)));
+  // Each Attempt draws 5 of the 7 Questions, so each Question is seen by ~5/7 of Attempts.
+  const qs = QUESTIONS.map((t, i) => ({ i, text: t, kind: KIND[i], seen: Math.round(submitted * 5 / 7), rate: Math.round(mix(v => v.rates[i])) }));
+  const passing = F.version === 'all' ? null : VERSIONS[F.version].passing;
+  return { days, attempts, passed, timedOut, submitted, passRate: attempts ? passed / attempts : 0, minutes: mix(v => v.minutes), buckets, qs, passing,
+    issued: passed + Math.round(passed * .03), revoked: Math.round(passed * .015), expired: 0 };
+}
+const fmt = n => n.toLocaleString('en-US');
+const pct = x => Math.round(x * 100) + '%';
+const mmss = m => `${Math.floor(m)}m ${String(Math.round((m % 1) * 60)).padStart(2, '0')}s`;
+const rangeLabel = () => RANGES.find(r => r[0] === F.range)[1].toLowerCase();
+const flagged = s => s.qs.filter(q => q.rate < 50);
+
+// ======================= Chart pieces (plain SVG) =======================
+const tip = (html, cls = '') => `data-tip="${html.replace(/"/g, '&quot;')}"`;
+
+function lineChart(days, w = 520, h = 180) {
+  const pad = { l: 34, r: 12, t: 10, b: 24 }, iw = w - pad.l - pad.r, ih = h - pad.t - pad.b;
+  const max = Math.max(10, Math.ceil(Math.max(...days.map(d => d.attempts)) / 5) * 5);
+  const x = i => pad.l + (days.length === 1 ? iw / 2 : i * iw / (days.length - 1)), y = v => pad.t + ih - v / max * ih;
+  const pts = days.map((d, i) => `${x(i)},${y(d.attempts)}`).join(' ');
+  const ticks = [0, max / 2, max];
+  const labelIdx = [0, Math.floor((days.length - 1) / 2), days.length - 1];
+  const v2 = days.findIndex(d => d.version === 2);
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="Attempts per day">
+    ${ticks.map(t => `<line x1="${pad.l}" x2="${w - pad.r}" y1="${y(t)}" y2="${y(t)}" stroke="var(--grid)"/><text x="${pad.l - 6}" y="${y(t) + 4}" text-anchor="end" class="num">${t}</text>`).join('')}
+    ${v2 > 0 && F.version === 'all' ? `<line x1="${x(v2)}" x2="${x(v2)}" y1="${pad.t}" y2="${pad.t + ih}" stroke="var(--axis)"/><text x="${x(v2) + 4}" y="${pad.t + 10}" text-anchor="start">Version 2</text>` : ''}
+    <polygon points="${pad.l},${y(0)} ${pts} ${x(days.length - 1)},${y(0)}" fill="var(--wash)"/>
+    <polyline points="${pts}" fill="none" stroke="var(--series)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${labelIdx.map(i => days[i] ? `<text x="${x(i)}" y="${h - 6}" text-anchor="${i === 0 ? 'start' : i === days.length - 1 ? 'end' : 'middle'}">${days[i].date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</text>` : '').join('')}
+    ${days.map((d, i) => `<rect x="${x(i) - iw / days.length / 2}" y="${pad.t}" width="${Math.max(4, iw / days.length)}" height="${ih}" fill="transparent" ${tip(`${d.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · <b>${d.attempts}</b> Attempts · v${d.version}`)} data-cross="${x(i)}"/>`).join('')}
+    <line class="cross" x1="0" x2="0" y1="${pad.t}" y2="${pad.t + ih}" stroke="var(--ink-2)" stroke-width="1" visibility="hidden"/>
+  </svg>`;
+}
+
+function histogram(buckets, passing, w = 520, h = 200) {
+  const pad = { l: 34, r: 12, t: 16, b: 26 }, iw = w - pad.l - pad.r, ih = h - pad.t - pad.b;
+  const max = Math.max(1, ...buckets), band = iw / 10, bw = Math.min(24, band - 2);
+  const y = v => pad.t + ih - v / max * ih;
+  const bar = (x, top, bw) => { const r = Math.min(4, (pad.t + ih - top) / 2); return `M${x},${pad.t + ih} V${top + r} Q${x},${top} ${x + r},${top} H${x + bw - r} Q${x + bw},${top} ${x + bw},${top + r} V${pad.t + ih} Z`; };
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="Score distribution">
+    <line x1="${pad.l}" x2="${w - pad.r}" y1="${pad.t + ih}" y2="${pad.t + ih}" stroke="var(--axis)"/>
+    ${buckets.map((b, i) => { const x = pad.l + i * band + (band - bw) / 2, top = y(b), pass = passing && i * 10 >= passing;
+      return `<path d="${bar(x, top, bw)}" fill="${passing ? (pass ? 'var(--series)' : 'var(--deemph)') : 'var(--series)'}" ${tip(`Score ${i * 10}–${i === 9 ? 100 : i * 10 + 9}% · <b>${fmt(b)}</b> Attempts`)}/>
+        <text x="${pad.l + i * band + band / 2}" y="${h - 8}" text-anchor="middle">${i * 10}</text>`; }).join('')}
+    ${passing ? `<line x1="${pad.l + passing / 10 * band}" x2="${pad.l + passing / 10 * band}" y1="${pad.t - 6}" y2="${pad.t + ih}" stroke="var(--ink)" stroke-width="1.5"/>
+      <text x="${pad.l + passing / 10 * band + 4}" y="${pad.t}" style="fill:var(--ink)">Passing Score ${passing}%</text>` : ''}
+  </svg>`;
+}
+
+function questionBars(qs, w = 520) {
+  const rowH = 30, pad = { l: 34, r: 48 }, iw = w - pad.l - pad.r, h = qs.length * rowH + 20;
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="Correct-answer rate per Question">
+    ${[0, 50, 100].map(t => `<line x1="${pad.l + t / 100 * iw}" x2="${pad.l + t / 100 * iw}" y1="0" y2="${h - 20}" stroke="var(--grid)"/><text x="${pad.l + t / 100 * iw}" y="${h - 4}" text-anchor="middle">${t}%</text>`).join('')}
+    ${qs.map((q, k) => { const y = k * rowH + 7, bw = q.rate / 100 * iw, hot = q.rate < 50;
+      return `<text x="${pad.l - 8}" y="${y + 12}" text-anchor="end" style="fill:var(--ink-2)">Q${q.i + 1}</text>
+        <path d="M${pad.l},${y} H${pad.l + bw - 4} Q${pad.l + bw},${y} ${pad.l + bw},${y + 4} V${y + 12} Q${pad.l + bw},${y + 16} ${pad.l + bw - 4},${y + 16} H${pad.l} Z" fill="${hot ? 'var(--series)' : 'var(--deemph)'}" ${tip(`Q${q.i + 1}: ${q.text}<br><b>${q.rate}%</b> correct · seen in ${fmt(q.seen)} Attempts`)}/>
+        <text x="${pad.l + bw + 6}" y="${y + 12}" style="fill:var(--ink)" class="num">${q.rate}%</text>`; }).join('')}
+  </svg>`;
+}
+
+const tableOf = (head, rows) => `<details><summary>Show as table</summary><table class="data"><tr>${head.map((h, i) => `<th class="${i ? 'r' : ''}">${h}</th>`).join('')}</tr>${rows.map(r => `<tr>${r.map((c, i) => `<td class="${i ? 'r' : ''}">${c}</td>`).join('')}</tr>`).join('')}</table></details>`;
+const tables = s => ({
+  daily: tableOf(['Day', 'Attempts'], s.days.map(d => [d.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), d.attempts])),
+  hist: tableOf(['Score', 'Attempts'], s.buckets.map((b, i) => [`${i * 10}–${i === 9 ? 100 : i * 10 + 9}%`, fmt(b)])),
+  qs: tableOf(['Question', 'Correct', 'Seen'], s.qs.map(q => [`Q${q.i + 1} ${q.text}`, q.rate + '%', fmt(q.seen)])),
+});
+const tile = (label, value, delta) => `<div class="card tile"><div class="label">${label}</div><div class="value">${value}</div>${delta ? `<div class="delta">${delta}</div>` : ''}</div>`;
+
+// ======================= Variants =======================
+function VariantA() {
+  const s = stats(), t = tables(s);
+  return `<div class="vA">
+    <div class="kpis">
+      ${tile('Attempts', fmt(s.attempts), `${fmt(s.timedOut)} Timed out`)}
+      ${tile('Pass rate', pct(s.passRate), `${fmt(s.passed)} passed`)}
+      ${tile('Median time', mmss(s.minutes), 'of 10 minutes')}
+      ${tile('Certificates issued', fmt(s.issued), `${fmt(s.revoked)} revoked · ${s.expired} expired`)}
+      ${tile('Questions to review', flagged(s).length, flagged(s).length ? '<span class="flag">⚠ below 50% correct</span>' : 'all above 50% correct')}
+    </div>
+    <div class="grid">
+      <div class="card"><h3>Attempts per day</h3><p class="sub">${rangeLabel()}</p>${lineChart(s.days)}${t.daily}</div>
+      <div class="card"><h3>Score distribution</h3><p class="sub">Submitted Attempts only; Timed out Attempts have no score.${s.passing ? '' : ' Pick a version to see its Passing Score.'}</p>${histogram(s.buckets, s.passing)}${t.hist}</div>
+      <div class="card" style="grid-column:1/-1"><h3>Correct-answer rate per Question</h3><p class="sub">Questions under 50% are highlighted: they may be too hard or have a wrong answer key.</p>${questionBars(s.qs, 1040)}${t.qs}</div>
+    </div></div>`;
+}
+
+function VariantB() {
+  const s = stats(), t = tables(s), hard = flagged(s);
+  const v = F.version === 'all' ? 'all versions' : 'Version ' + F.version;
+  return `<div class="vB">
+    <div class="hero">${pct(s.passRate)}</div>
+    <p class="lead">of the ${fmt(s.attempts)} Attempts in the ${rangeLabel()} passed (${v}). ${fmt(s.issued)} Certificates were issued; ${fmt(s.revoked)} were revoked.</p>
+    <section><h2>Who's taking it</h2><p>${fmt(s.attempts)} Attempts, ${fmt(Math.round(s.attempts / Math.max(1, s.days.length)))} a day on average. ${F.version === 'all' && s.days.some(d => d.version === 2) && s.days.some(d => d.version === 1) ? 'The line marks when Version 2 was published.' : ''}</p>
+      <div class="card">${lineChart(s.days, 700, 170)}${t.daily}</div></section>
+    <section><h2>How they score</h2><p>Median time ${mmss(s.minutes)} of 10 minutes. ${fmt(s.timedOut)} Attempts (${pct(s.timedOut / Math.max(1, s.attempts))}) ran out of time and have no score.</p>
+      <div class="card">${histogram(s.buckets, s.passing, 700, 200)}${t.hist}</div>
+      ${s.passing ? '' : '<p style="margin-top:8px;font-size:13px">Version 1 needed 70% to pass and Version 2 needs 80%. Pick a version above to see its Passing Score on the chart.</p>'}</section>
+    <section><h2>Questions worth a look</h2>
+      ${hard.length ? hard.map(q => `<div class="callout"><b>Q${q.i + 1}: ${q.text}</b><br>Only <b>${q.rate}%</b> answer it correctly (seen in ${fmt(q.seen)} Attempts). Check the answer key, or whether the wording is ambiguous.</div>`).join('') : '<p>Every Question is answered correctly by at least half of Learners.</p>'}
+      <div class="card" style="margin-top:12px">${questionBars(s.qs, 700)}${t.qs}</div></section>
+  </div>`;
+}
+
+let sortKey = 'rate', sortDir = 1;
+function VariantC() {
+  const s = stats();
+  const qs = s.qs.slice().sort((a, b) => sortDir * (sortKey === 'rate' ? a.rate - b.rate : sortKey === 'seen' ? a.seen - b.seen : a.i - b.i));
+  const arrow = k => sortKey === k ? (sortDir > 0 ? ' ↑' : ' ↓') : '';
+  return `<div class="vC">
+    <div class="strip"><div><b>${fmt(s.attempts)}</b><span>Attempts</span></div><div><b>${pct(s.passRate)}</b><span>pass rate</span></div>
+      <div><b>${fmt(s.timedOut)}</b><span>Timed out</span></div><div><b>${mmss(s.minutes)}</b><span>median time</span></div>
+      <div><b>${fmt(s.issued)}</b><span>Certificates issued</span></div><div><b>${fmt(s.revoked)}</b><span>revoked</span></div><div><b>${s.expired}</b><span>expired</span></div></div>
+    <div class="card"><h3>Questions</h3><p class="sub">Sorted by correct-answer rate. Hardest first: check these for ambiguous wording or a wrong answer key.</p>
+      <table class="qs"><tr><th data-sort="i">#${arrow('i')}</th><th>Question</th><th data-sort="rate">Correct${arrow('rate')}</th><th data-sort="seen" style="text-align:right">Seen in${arrow('seen')}</th></tr>
+      ${qs.map(q => `<tr><td class="num" style="color:var(--ink-2)">${q.i + 1}</td><td>${q.text}<br><span style="color:var(--muted);font-size:13px">${q.kind}</span></td>
+        <td><span class="meter"><i style="width:${q.rate}%"></i></span><span class="num">${q.rate}%</span> ${q.rate < 50 ? '<span class="flag">⚠ review</span>' : ''}</td>
+        <td class="num" style="text-align:right">${fmt(q.seen)}</td></tr>`).join('')}</table></div>
+    <div class="side">
+      <div class="card"><h3>Score distribution</h3><p class="sub">${s.passing ? `Passing Score ${s.passing}%` : 'All versions'}</p>${histogram(s.buckets, s.passing, 320, 170)}${tables(s).hist}</div>
+      <div class="card"><h3>Attempts per day</h3><p class="sub">${rangeLabel()}</p>${lineChart(s.days, 320, 140)}${tables(s).daily}</div>
+    </div></div>`;
+}
+
+// ======================= Chrome, filters, switcher =======================
+const VARIANTS = { A: ['KPI row + chart grid', VariantA], B: ['Narrative report', VariantB], C: ['Questions first', VariantC] };
+const params = new URLSearchParams(location.search);
+let variant = 'A'; // showcase: chosen variant only
+
+function render() {
+  const chrome = `<div class="topbar"><span class="t">React Fundamentals</span><span class="pill">Published · v2</span>
+    <div class="tabs"><span>Questions (7)</span><span>Rules</span><span>Access & language</span><span class="on">Statistics</span><span>Publish</span></div>
+    <span class="spacer"></span><button class="pub" disabled>Published · Version 2</button></div>
+    <div class="filters">
+      <div class="seg">${RANGES.map(([d, l]) => `<button class="${F.range === d ? 'on' : ''}" data-range="${d}">${l}</button>`).join('')}</div>
+      <div class="seg">${[['all', 'All versions'], ['1', 'Version 1 (pass 70%)'], ['2', 'Version 2 (pass 80%)']].map(([k, l]) => `<button class="${F.version === k ? 'on' : ''}" data-ver="${k}">${l}</button>`).join('')}</div>
+      <span class="note">Totals only. Learners are never shown individually. Counts don't drop when a Learner erases their data.</span></div>`;
+  const empty = !stats().attempts;
+  document.getElementById('app').innerHTML = chrome + (empty
+    ? `<div style="padding:16px 32px"><div class="card"><h3>No Attempts in this range</h3><p class="sub">No Learner took Version ${F.version} in the ${rangeLabel()}. Try a longer range or another version.</p></div></div>`
+    : VARIANTS[variant][1]());
+  const s = stats();
+  document.getElementById('switcher').innerHTML = `
+    <span class="state">${RANGES.find(r => r[0] === F.range)[1]} · ${F.version === 'all' ? 'all versions' : 'v' + F.version} · ${fmt(s.attempts)} Attempts · ${pct(s.passRate)} pass</span>`;
+  history.replaceState(null, '', '?variant=' + variant);
+}
+function cycle(d) { const k = Object.keys(VARIANTS); variant = k[(k.indexOf(variant) + d + k.length) % k.length]; render(); }
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-sw],[data-range],[data-ver],[data-sort]'); if (!t) return;
+  if (t.dataset.sw) cycle(+t.dataset.sw);
+  else if (t.dataset.range) { F.range = +t.dataset.range; render(); }
+  else if (t.dataset.ver) { F.version = t.dataset.ver; render(); }
+  else { const k = t.dataset.sort; sortDir = sortKey === k ? -sortDir : 1; sortKey = k; render(); }
+});
+document.addEventListener('keydown', e => { if (e.target.closest('input, textarea, select')) return;   });
+const tipEl = document.getElementById('tip');
+document.addEventListener('mousemove', e => {
+  const t = e.target.closest('[data-tip]');
+  document.querySelectorAll('.cross').forEach(c => c.setAttribute('visibility', 'hidden'));
+  if (!t) { tipEl.style.display = 'none'; return; }
+  tipEl.innerHTML = t.dataset.tip; tipEl.style.display = 'block';
+  tipEl.style.left = Math.min(e.clientX + 12, innerWidth - tipEl.offsetWidth - 8) + 'px'; tipEl.style.top = (e.clientY - 36) + 'px';
+  if (t.dataset.cross) { const c = t.ownerSVGElement.querySelector('.cross'); c.setAttribute('x1', t.dataset.cross); c.setAttribute('x2', t.dataset.cross); c.setAttribute('visibility', 'visible'); }
+});
+render();
+</script>
+</body>
+</html>
