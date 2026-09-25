@@ -1,7 +1,7 @@
 # Pilot box and accounts
 
 Type: task
-Status: open
+Status: claimed
 Blocked by:
 
 ## Question

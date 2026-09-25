@@ -18,6 +18,7 @@ A build-ready plan for Quizz v1: every open question in `spec.md` answered, and 
 
 <!-- one line per resolved ticket: [title](issues/NN-slug.md): gist -->
 
+- [Stack choices inside Next.js](issues/01-stack-choices-research.md): recommends Drizzle on libsql (async transactions, Postgres-portable), next-intl, react-pdf, react-markdown with sanitising, AWS S3 SDK to Silo behind an app route, Vitest and Playwright; findings on branch `research/stack-choices`.
 - [Product gaps before build](issues/04-product-gaps.md): no invite emails, abuse reports mailto the Operator, CSV columns fixed, one-time code limits and daily email cap, and what a Learner sees when they can't start.
 
 ## Not yet specified
