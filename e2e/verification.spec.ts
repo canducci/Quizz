@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { expect, test } from "@playwright/test";
+import { expect, test, type APIRequestContext } from "@playwright/test";
 import { brandCreator, freshNetwork, publishNew, verifyLearner } from "./learner-helper";
 import { fromMail, signInAsNewCreator } from "./sign-in-helper";
 
@@ -8,8 +8,10 @@ test.describe.configure({ mode: "serial" });
 
 /** Runs SQL in the app container: the one way to seed states nothing in the UI reaches yet. */
 function sql(query: string, ...args: (string | number | null)[]) {
-  const run = `require("@libsql/client").createClient({ url: process.env.DATABASE_URL })
-    .execute({ sql: process.argv[1], args: JSON.parse(process.argv[2]) })`;
+  // The app writes too, from parallel tests: wait for its lock instead of failing SQLITE_BUSY.
+  const run = `const db = require("@libsql/client").createClient({ url: process.env.DATABASE_URL });
+    db.execute("pragma busy_timeout = 5000")
+      .then(() => db.execute({ sql: process.argv[1], args: JSON.parse(process.argv[2]) }))`;
   execFileSync("docker", [
     "compose",
     "exec",
@@ -41,7 +43,7 @@ const seed = (
     reason,
     id,
   );
-const pdfStatus = async (request: import("@playwright/test").APIRequestContext) =>
+const pdfStatus = async (request: APIRequestContext) =>
   (await request.get(`/c/${id}/pdf`)).status();
 
 test("a Learner earns a Certificate", async ({ page, request }) => {
@@ -130,5 +132,7 @@ test("replaced: its date, no link to the replacement", async ({ page, request })
 test("not found: the status only", async ({ page }) => {
   await page.goto("/c/0000-0000-0000-0000");
   await expect(page.getByRole("status")).toContainText("Certificate not found");
-  await expect(page.locator(".cert, dl")).toHaveCount(0);
+  await expect(page.locator(".cert, dl")).toHaveCount(0); // A stray % in the address is just another id that isn't there.
+  await page.goto("/c/100%25");
+  await expect(page.getByRole("status")).toContainText("Certificate not found");
 });

@@ -1,19 +1,21 @@
 /* eslint-disable @next/next/no-img-element -- files are served as-is from /files */
 import localFont from "next/font/local";
 import { getLocale, getTranslations } from "next-intl/server";
-import QRCode from "qrcode";
 import { db } from "@/db";
 import {
+  PAGE_WIDTH,
   formatId,
   longDate,
   nameSize,
-  parsePublicId,
   shownStatus,
+  shownUrl,
+  signerLine,
   verificationUrl,
+  type ShownStatus,
 } from "@/domain/certificate";
 import { DEFAULT_ACCENT } from "@/domain/publish";
-import { serifWidth } from "@/server/certificate-pdf";
-import { verifiedCertificate } from "@/server/certificates";
+import { qrCode, serifWidth } from "@/server/certificate-pdf";
+import { publicCertificate } from "@/server/certificates";
 
 // The PDF's own fonts, so the drawing matches it. next/font names each family after its variable,
 // so these mustn't be called serif or sans: those are CSS generic families.
@@ -25,14 +27,20 @@ const sourceSans = localFont({
   ],
 });
 
-const ICONS = { valid: "✓", expired: "⏱", revoked: "✕", replaced: "↻", notFound: "?" };
+type Tone = "good" | "warn" | "bad";
+const LOOK: Record<ShownStatus | "notFound", { tone: Tone; icon: string }> = {
+  valid: { tone: "good", icon: "✓" },
+  expired: { tone: "warn", icon: "⏱" },
+  replaced: { tone: "warn", icon: "↻" },
+  revoked: { tone: "bad", icon: "✕" },
+  notFound: { tone: "bad", icon: "?" },
+};
 
 /** The public Verification Page (Variant B). Labels follow the viewer's interface language; the
  * Certificate itself stays in its Assessment Language, as on the PDF. */
 export default async function VerificationPage(props: { params: Promise<{ id: string }> }) {
-  const typed = decodeURIComponent((await props.params).id);
-  const publicId = parsePublicId(typed);
-  const found = publicId && (await verifiedCertificate(db, publicId));
+  const typed = (await props.params).id;
+  const found = await publicCertificate(db, typed);
   const t = await getTranslations("verify");
   const ui = await getLocale();
 
@@ -40,7 +48,7 @@ export default async function VerificationPage(props: { params: Promise<{ id: st
     return (
       <div className="verify">
         <p className="muted">{typed}</p>
-        <Status tone="bad" icon={ICONS.notFound} title={t("notFound")} sub={t("notFoundSub")} />
+        <Status {...LOOK.notFound} title={t("notFound")} sub={t("notFoundSub")} />
       </div>
     );
 
@@ -52,15 +60,14 @@ export default async function VerificationPage(props: { params: Promise<{ id: st
   const { status, since } = shownStatus(cert, new Date());
   const id = formatId(cert.publicId);
   const url = verificationUrl(cert.publicId);
-  const tone = { valid: "good", expired: "warn", replaced: "warn", revoked: "bad" }[status];
   const title = t(status);
   const sub = t(`${status}Sub`, { date: since ? longDate(since, ui) : "" });
-  const signer = [branding.signerName, branding.signerTitle].filter(Boolean).join(" · ");
   const subject = encodeURIComponent(t("reportSubject", { id }));
+  const operator = process.env.OPERATOR_EMAIL;
 
   return (
     <div className="verify">
-      <p className="muted">{url.replace(/^\w+:\/\//, "")}</p>
+      <p className="muted">{shownUrl(url)}</p>
       <div
         className={`cert ${sourceSans.className}${status === "valid" ? "" : " void"}`}
         lang={locale}
@@ -74,9 +81,9 @@ export default async function VerificationPage(props: { params: Promise<{ id: st
           <div className="lead">{c("lead")}</div>
           <div
             className={`holder ${sourceSerif.className}`}
-            // The PDF's size in points, as a share of the page's 842.
+            // The PDF's size in points, as a share of its page's width.
             style={{
-              fontSize: `${(nameSize(cert.holderName, serifWidth(cert.holderName)) / 842) * 100}cqw`,
+              fontSize: `${(nameSize(cert.holderName, serifWidth(cert.holderName)) / PAGE_WIDTH) * 100}cqw`,
             }}
           >
             {cert.holderName}
@@ -101,22 +108,22 @@ export default async function VerificationPage(props: { params: Promise<{ id: st
               {c.rich("id", { id, mono: (chunks) => <span className="mono">{chunks}</span> })}
             </div>
             <div className="qr">
-              <img src={await QRCode.toDataURL(url, { margin: 0, width: 288 })} alt="" />
-              <div className="mono">{url.replace(/^\w+:\/\//, "")}</div>
+              <img src={await qrCode(url)} alt="" />
+              <div className="mono">{shownUrl(url)}</div>
             </div>
             <div className="signer">
               {branding.signatureKey && <img src={`/files/${branding.signatureKey}`} alt="" />}
-              <div>{signer}</div>
+              <div>{signerLine(branding)}</div>
             </div>
           </div>
         </div>
         {status !== "valid" && (
-          <div className={`stamp ${tone}`} aria-hidden>
+          <div className={`stamp ${LOOK[status].tone}`} aria-hidden>
             {title}
           </div>
         )}
       </div>
-      <Status tone={tone} icon={ICONS[status]} title={title} sub={sub} />
+      <Status {...LOOK[status]} title={title} sub={sub} />
       <div className="below">
         <dl>
           <dt>{t("holder")}</dt>
@@ -154,16 +161,19 @@ export default async function VerificationPage(props: { params: Promise<{ id: st
               {t("download")}
             </a>
           )}
-          <a className="muted" href={`mailto:${process.env.OPERATOR_EMAIL}?subject=${subject}`}>
-            {t("report")}
-          </a>
+          {/* ponytail: an unset OPERATOR_EMAIL hides the link rather than stopping the app; require it at start if instances forget it. */}
+          {operator && (
+            <a className="muted" href={`mailto:${operator}?subject=${subject}`}>
+              {t("report")}
+            </a>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-function Status(p: { tone: string; icon: string; title: string; sub: string }) {
+function Status(p: { tone: Tone; icon: string; title: string; sub: string }) {
   return (
     <div className={`status ${p.tone}`} role="status">
       <span aria-hidden>{p.icon}</span>

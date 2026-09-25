@@ -1,6 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import * as schema from "../db/schema";
+import { parsePublicId } from "../domain/certificate";
 
 type Db = LibSQLDatabase<typeof schema>;
 const { assessmentVersion, certificate, creator } = schema;
@@ -27,9 +28,12 @@ export async function learnerCertificate(db: Db, assessmentId: string, learner: 
   return row ?? null;
 }
 
-/** A Certificate as its Verification Page shows it, or null. Only public columns are read: the
- * Revocation reason and the replacement never leave the database. */
-export async function verifiedCertificate(db: Db, publicId: string) {
+/** A Certificate as its Verification Page shows it, whatever its status, or null. `typed` is the
+ * id from the URL, dashed or not. Only public columns are read: the Revocation reason and the
+ * replacement never leave the database. */
+export async function publicCertificate(db: Db, typed: string) {
+  const publicId = parsePublicId(typed);
+  if (!publicId) return null;
   const [row] = await db
     .select({
       publicId: certificate.publicId,

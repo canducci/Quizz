@@ -11,8 +11,13 @@ import { emailHash, normalizeEmail, parseEmailList } from "@/server/email-hash";
 import { LEARNER_COOKIE, learnerEmail, learnerToken } from "@/server/learner-session";
 import { sendMail } from "@/server/mail";
 import { countEmail, requestCode, sentToday, verifyCode } from "@/server/one-time-code";
-import { brandingImages, certificatePdf, type CertificateFacts } from "@/server/certificate-pdf";
-import { formatId, verificationUrl, type CertificateVersion } from "@/domain/certificate";
+import {
+  brandingImages,
+  certificateFile,
+  certificatePdf,
+  type CertificateFacts,
+} from "@/server/certificate-pdf";
+import { verificationUrl, type CertificateVersion } from "@/domain/certificate";
 import { learnerCertificate } from "@/server/certificates";
 import { CODE_MINUTES } from "@/domain/one-time-code";
 
@@ -160,7 +165,7 @@ async function mailCertificate(email: string, cert: CertificateFacts, version: C
       url: verificationUrl(cert.publicId),
     };
     await sendMail(email, t("mail.subject", values), t("mail.body", values), [
-      { filename: t("file", { id: formatId(cert.publicId) }), content: pdf },
+      { filename: await certificateFile(cert.publicId, version), content: pdf },
     ]);
     await countEmail(db);
     return true;

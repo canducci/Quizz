@@ -526,6 +526,10 @@ button.link {
   color: #6b7280;
 }
 
+.cert .mono {
+  font-family: Courier, monospace;
+}
+
 .cert .bottom > :first-child {
   text-align: left;
 }
@@ -541,6 +545,7 @@ button.link {
 
 .cert .signer img {
   height: 3.56cqw;
+  margin-bottom: 0.36cqw;
   object-fit: contain;
 }
 

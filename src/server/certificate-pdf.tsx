@@ -21,6 +21,8 @@ import {
   formatId,
   longDate,
   nameSize,
+  shownUrl,
+  signerLine,
   verificationUrl,
   type CertificateVersion,
 } from "../domain/certificate";
@@ -125,6 +127,23 @@ export const brandingImages = async ({ branding }: Snapshot): Promise<Certificat
   signature: await dataUrl(branding.signatureKey),
 });
 
+/** The QR code to the Verification Page, as a PNG data URL: on the PDF and on the page itself. */
+export const qrCode = (url: string) => QRCode.toDataURL(url, { margin: 0, width: 288 });
+
+// Not getTranslations: this also renders outside a Next request (Vitest, and later the sweep).
+async function certificateT({ snapshot }: CertificateVersion) {
+  const locale = snapshot.settings.language;
+  return createTranslator({
+    locale,
+    messages: await messagesFor(locale),
+    namespace: "certificate",
+  });
+}
+
+/** The PDF's file name, in the Assessment Language. */
+export const certificateFile = async (publicId: string, version: CertificateVersion) =>
+  (await certificateT(version))("file", { id: formatId(publicId) });
+
 /** The Certificate PDF (Variant C), all text in the Assessment Language. Never stored: rendered
  * from the Certificate and its Version whenever it's needed. */
 export async function certificatePdf(
@@ -134,18 +153,12 @@ export async function certificatePdf(
   appUrl = process.env.APP_URL,
 ) {
   const locale = snapshot.settings.language;
-  // Not getTranslations: this also renders outside a Next request (Vitest, and later the sweep).
-  const t = createTranslator({
-    locale,
-    messages: await messagesFor(locale),
-    namespace: "certificate",
-  });
+  const t = await certificateT({ number, snapshot });
   const { branding } = snapshot;
   const accent = branding.accentColour ?? DEFAULT_ACCENT;
   const url = verificationUrl(cert.publicId, appUrl);
   const date = (d: Date) => longDate(d, locale);
-  const qr = await QRCode.toDataURL(url, { margin: 0, width: 288 });
-  const signer = [branding.signerName, branding.signerTitle].filter(Boolean).join(" · ");
+  const qr = await qrCode(url);
 
   return renderToBuffer(
     <Document title={`${t("title")} ${formatId(cert.publicId)}`} author={branding.name}>
@@ -200,13 +213,11 @@ export async function certificatePdf(
             <View style={styles.qr}>
               <Image src={qr} style={{ width: px(80), height: px(80) }} />
             </View>
-            <Text style={[styles.meta, styles.mono, { marginTop: px(4) }]}>
-              {url.replace(/^\w+:\/\//, "")}
-            </Text>
+            <Text style={[styles.meta, styles.mono, { marginTop: px(4) }]}>{shownUrl(url)}</Text>
           </View>
           <View style={styles.side}>
             {images.signature && <Image src={images.signature} style={styles.signature} />}
-            <Text style={styles.signer}>{signer}</Text>
+            <Text style={styles.signer}>{signerLine(branding)}</Text>
           </View>
         </View>
       </Page>

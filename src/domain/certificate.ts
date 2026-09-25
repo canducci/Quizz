@@ -44,6 +44,16 @@ export const expiryOf = (issuedAt: Date, expiryDays: number | null) =>
 export const verificationUrl = (publicId: string, appUrl = process.env.APP_URL) =>
   `${appUrl}/c/${publicId}`;
 
+/** The verification URL as printed under the QR code: without its scheme. */
+export const shownUrl = (url: string) => url.replace(/^\w+:\/\//, "");
+
+/** "Name · Title", or whichever of the two the Creator set. */
+export const signerLine = (b: { signerName: string | null; signerTitle: string | null }) =>
+  [b.signerName, b.signerTitle].filter(Boolean).join(" · ");
+
+/** A4 landscape's width in points: the PDF's page, which the Verification Page scales to. */
+export const PAGE_WIDTH = 842;
+
 /** The holder's name on the PDF, in points: the line width inside its hairline's padding, its line
  * height, and the height left beside the longest title and branding. The PDF lays the name out
  * from these too. */
