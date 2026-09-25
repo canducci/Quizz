@@ -19,7 +19,7 @@ Vocabulary follows `CONTEXT.md`. Decisions recorded in `docs/adr/`.
 - Multi-tenant: any Creator can sign up. Certificates carry the Creator's name and brand.
 - Free for now. Pricing will be decided later; nothing in v1 meters or charges.
 - Open source under AGPL-3.0 (ADR 0003). Tech stack: TypeScript/Next.js as a portable Docker image, and email over SMTP (ADR 0004).
-- Self-hosted first, including the pilot: SQLite for data, Silo (S3-compatible) for files (ADR 0005).
+- Self-hosted first, including the pilot: SQLite for data, Silo (pgsty/silo, S3-compatible) for files (ADR 0005).
 
 ## Creators
 

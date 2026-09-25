@@ -1,6 +1,6 @@
 # Self-hosted first: SQLite and Silo instead of Postgres and managed hosting
 
-v1 is built for self-hosting first, and the pilot runs self-hosted too. The app keeps its data in SQLite instead of PostgreSQL, and keeps files (the Creator's logo and signature, images in Questions) in Silo, a self-hosted S3-compatible object store, reached over the S3 API. This replaces the database and pilot hosting parts of ADR 0004 (Neon; Vercel Hobby or Cloud Run). Next.js, Better Auth, SMTP email and the Docker image stay. We chose it because a single box running `docker compose` with no external database is the simplest thing for self-hosters, and for the pilot.
+v1 is built for self-hosting first, and the pilot runs self-hosted too. The app keeps its data in SQLite instead of PostgreSQL, and keeps files (the Creator's logo and signature, images in Questions) in Silo (pgsty/silo, a maintained MinIO fork), a self-hosted S3-compatible object store, reached over the S3 API. This replaces the database and pilot hosting parts of ADR 0004 (Neon; Vercel Hobby or Cloud Run). Next.js, Better Auth, SMTP email and the Docker image stay. We chose it because a single box running `docker compose` with no external database is the simplest thing for self-hosters, and for the pilot.
 
 ## Consequences
 

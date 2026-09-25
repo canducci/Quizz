@@ -12,6 +12,6 @@ Which libraries fill the gaps inside the fixed stack (Next.js, TypeScript, Bette
 - i18n for English and pt-BR UI (next-intl or similar), with content in the Assessment Language.
 - Certificate PDF generation that can match the chosen design (A4 landscape, custom serif fonts, QR code, images): react-pdf vs headless Chromium vs pdf-lib.
 - Safe Markdown rendering with code blocks and images (sanitising Creator input).
-- S3 client for Silo, and which Silo (eteran/silo vs pgsty/silo) suits a small single-box deployment.
+- S3 client for Silo (pgsty/silo, already decided and running locally): what it needs from the client.
 - In-process scheduling for the daily cleanup job.
 - Tests and CI: unit (Vitest), end-to-end (Playwright), GitHub Actions.
