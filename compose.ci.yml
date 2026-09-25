@@ -1,0 +1,21 @@
+# CI has no .env: supply throwaway values. Google stays on the placeholder, so its button is hidden.
+services:
+  app:
+    environment:
+      APP_URL: http://localhost:3000
+      BETTER_AUTH_SECRET: ci-only-better-auth-secret-not-for-real-use
+      EMAIL_HMAC_SECRET: ci-only-email-hmac-secret-not-for-real-use
+      S3_REGION: us-east-1
+      S3_BUCKET: quizz
+      S3_ACCESS_KEY_ID: ci-silo-user
+      S3_SECRET_ACCESS_KEY: ci-silo-password
+      EMAIL_FROM: Quizz <no-reply@quizz.localhost>
+      DAILY_EMAIL_CAP: "300"
+      GOOGLE_CLIENT_ID: placeholder
+      GOOGLE_CLIENT_SECRET: placeholder
+      OPERATOR_EMAIL: operator@quizz.localhost
+
+  silo:
+    environment:
+      MINIO_ROOT_USER: ci-silo-user
+      MINIO_ROOT_PASSWORD: ci-silo-password

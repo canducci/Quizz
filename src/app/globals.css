@@ -1,0 +1,39 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  color: #1f2328;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid #d0d7de;
+}
+
+.language {
+  margin-left: auto;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.language button[aria-pressed="true"] {
+  font-weight: bold;
+}
+
+.main {
+  max-width: 40rem;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}

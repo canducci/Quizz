@@ -1,0 +1,8 @@
+.scratch/
+.remember/
+docs/
+drizzle/
+data/
+test-results/
+playwright-report/
+*.md

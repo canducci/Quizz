@@ -1,0 +1,26 @@
+{
+  "header": {
+    "language": "Idioma",
+    "signOut": "Sair"
+  },
+  "signIn": {
+    "title": "Entrar no Quizz",
+    "intro": "Crie Avaliações e emita Certificados verificáveis com a sua marca.",
+    "email": "E-mail",
+    "sendLink": "Enviar link de acesso por e-mail",
+    "sent": "Confira sua caixa de entrada: enviamos um link de acesso para {email}.",
+    "failed": "Não conseguimos enviar o link. Tente de novo em um minuto.",
+    "or": "ou",
+    "google": "Continuar com o Google"
+  },
+  "dashboard": {
+    "title": "Suas Avaliações",
+    "empty": "Nenhuma Avaliação ainda."
+  },
+  "email": {
+    "magicLink": {
+      "subject": "Seu link de acesso ao Quizz",
+      "body": "Abra este link para entrar no Quizz:\n\n{url}\n\nSe você não pediu, ignore este e-mail."
+    }
+  }
+}

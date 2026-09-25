@@ -1,0 +1,26 @@
+{
+  "header": {
+    "language": "Language",
+    "signOut": "Sign out"
+  },
+  "signIn": {
+    "title": "Sign in to Quizz",
+    "intro": "Build Assessments and issue verifiable Certificates under your own brand.",
+    "email": "Email",
+    "sendLink": "Email me a sign-in link",
+    "sent": "Check your inbox: we sent a sign-in link to {email}.",
+    "failed": "We couldn't send the link. Try again in a minute.",
+    "or": "or",
+    "google": "Continue with Google"
+  },
+  "dashboard": {
+    "title": "Your Assessments",
+    "empty": "No Assessments yet."
+  },
+  "email": {
+    "magicLink": {
+      "subject": "Your Quizz sign-in link",
+      "body": "Open this link to sign in to Quizz:\n\n{url}\n\nIf you didn't ask for it, ignore this email."
+    }
+  }
+}

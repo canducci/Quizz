@@ -1,0 +1,45 @@
+services:
+  app:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: file:/data/quizz.db
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      S3_ENDPOINT: http://silo:9000
+    ports:
+      - "3000:3000"
+    volumes:
+      - app-data:/data
+    depends_on:
+      mailpit:
+        condition: service_started
+      silo:
+        condition: service_healthy
+
+  # Not published: the app is the only way in. A standalone Silo may already hold host port 9000.
+  silo:
+    image: pgsty/silo
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY}
+    volumes:
+      - silo-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  app-data:
+  silo-data:
