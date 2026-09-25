@@ -1,0 +1,254 @@
+<!doctype html>
+<!--
+  PROTOTYPE: throwaway. Lives on branch prototype/verification-ui, never on main.
+  Three variants of the public Verification Page (quizz.app/c/<id>), switchable via ?variant=A|B|C,
+  with ?status=... and ?lang=en|pt. Fake data. The Assessment is in pt-BR, so English labels
+  surround Portuguese content, as decided: labels follow the viewer, content stays as issued.
+  Open with: xdg-open prototypes/verification-page.prototype.html
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quizz prototype: Verification Page</title>
+<style>
+  :root { --accent: #7c3aed; --ink: #111827; --ink2: #4b5563; --muted: #6b7280; --line: #e5e7eb;
+    --good: #067647; --goodbg: #ecfdf3; --bad: #b42318; --badbg: #fef3f2; --warn: #b54708; --warnbg: #fffaeb; --navy: #0f2a4a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); background: #f6f7f9; }
+  button, select { font: inherit; cursor: pointer; }
+  a { color: inherit; }
+  .logo { width: 44px; height: 44px; border-radius: 10px; background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 800; letter-spacing: -.02em; flex: none; }
+  .langs button { background: none; border: 1px solid var(--line); padding: 2px 8px; border-radius: 6px; font-size: 13px; color: var(--muted); }
+  .langs button.on { border-color: var(--ink); color: var(--ink); }
+  .quizz { color: var(--muted); font-size: 13px; }
+  .icon { font-size: 22px; line-height: 1; }
+  .report { background: none; border: 0; padding: 0; color: var(--muted); text-decoration: underline; font-size: 13px; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 20px; margin: 0; }
+  dt { color: var(--muted); } dd { margin: 0; font-weight: 500; }
+  .mono { font-family: ui-monospace, monospace; font-size: 14px; }
+
+  /* A: status first */
+  .vA { max-width: 640px; margin: 0 auto; padding: 24px 20px 120px; }
+  .vA .head { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .vA .head .who { flex: 1; } .vA .head b { display: block; }
+  .vA .band { border-radius: 14px; padding: 28px; display: flex; gap: 18px; align-items: center; margin-bottom: 20px; }
+  .vA .band .icon { font-size: 44px; }
+  .vA .band h1 { margin: 0; font-size: 30px; line-height: 1.15; } .vA .band p { margin: 4px 0 0; }
+  .vA .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 24px; margin-bottom: 16px; }
+  .vA .name { font-size: 26px; font-weight: 700; margin: 0 0 16px; }
+  .vA .foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+  /* B: certificate replica */
+  .vB { max-width: 900px; margin: 0 auto; padding: 24px 20px 120px; }
+  .vB .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .vB .cert { position: relative; background: #fff; aspect-ratio: 1.414; border: 1px solid #d1d5db; box-shadow: 0 8px 30px rgba(0,0,0,.08); padding: 6%; display: flex; flex-direction: column; overflow: hidden; }
+  .vB .cert::before { content: ""; position: absolute; inset: 14px; border: 2px solid var(--accent); opacity: .5; pointer-events: none; }
+  .vB .cert .brand { display: flex; align-items: center; gap: 12px; }
+  .vB .cert .kicker { margin-top: 5%; text-transform: uppercase; letter-spacing: .2em; color: var(--muted); font-size: 13px; }
+  .vB .cert .holder { font-size: clamp(28px, 5vw, 48px); font-weight: 700; margin: 8px 0; letter-spacing: -.01em; }
+  .vB .cert .what { font-size: 18px; color: var(--ink2); max-width: 70%; }
+  .vB .cert .bottom { margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end; }
+  .vB .cert .sig { border-top: 1px solid var(--ink); padding-top: 4px; min-width: 200px; font-size: 14px; }
+  .vB .cert .sig .scrawl { font: italic 28px/1 "Brush Script MT", cursive; color: var(--navy); margin-bottom: 4px; }
+  .vB .qr { width: 84px; height: 84px; background: repeating-conic-gradient(#111 0 25%, #fff 0 50%) 0 0/12px 12px; border: 6px solid #fff; outline: 1px solid #d1d5db; }
+  .vB .stamp { position: absolute; top: 34%; left: 50%; transform: translate(-50%, -50%) rotate(-12deg); border: 5px solid; border-radius: 12px; padding: 8px 26px; font-size: clamp(28px, 6vw, 56px); font-weight: 900; letter-spacing: .08em; text-transform: uppercase; background: rgba(255,255,255,.85); }
+  .vB .cert.void > *:not(.stamp) { opacity: .35; filter: grayscale(1); }
+  .vB .status { display: flex; gap: 12px; align-items: center; padding: 14px 18px; border-radius: 10px; margin: 16px 0; }
+  .vB .below { display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: start; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
+
+  /* C: verification record */
+  .vC { min-height: 100vh; }
+  .vC header { background: #fff; border-bottom: 1px solid var(--line); }
+  .vC header .in { max-width: 1040px; margin: 0 auto; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .vC .qz { font-weight: 800; color: var(--navy); }
+  .vC main { max-width: 1040px; margin: 0 auto; padding: 28px 20px 120px; display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start; }
+  .vC .rec { background: #fff; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .vC .rec .st { padding: 16px 22px; display: flex; gap: 12px; align-items: center; font-weight: 700; font-size: 18px; }
+  .vC .rec table { width: 100%; border-collapse: collapse; }
+  .vC .rec td { padding: 12px 22px; border-top: 1px solid var(--line); vertical-align: top; }
+  .vC .rec td:first-child { color: var(--muted); width: 38%; }
+  .vC aside .box { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 18px; margin-bottom: 16px; font-size: 14px; }
+  .vC aside h3 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .vC .tl { list-style: none; padding: 0; margin: 0; } .vC .tl li { padding: 0 0 12px 18px; border-left: 2px solid var(--line); position: relative; }
+  .vC .tl li::before { content: ""; position: absolute; left: -6px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background: var(--ink2); }
+  @media (max-width: 800px) { .vC main { grid-template-columns: 1fr; } .vB .below { grid-template-columns: 1fr; } }
+
+  #switcher { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 1000; display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 999px; background: #111; color: #fff; font: 13px/1.2 ui-monospace, monospace; box-shadow: 0 6px 24px rgba(0,0,0,.35); white-space: nowrap; }
+  #switcher button { background: #333; color: #fff; border: 0; border-radius: 999px; width: 28px; height: 28px; }
+  #switcher select { font: inherit; background: #333; color: #fff; border: 0; border-radius: 6px; padding: 4px 6px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="switcher"></div>
+
+<script>
+// ======================= Fake data =======================
+// Content as issued: stays in the Assessment Language (pt-BR here).
+const CERT = {
+  id: '7K2P9Q', holder: 'Ana Souza', assessment: 'Fundamentos de React', version: 2, score: 86, passing: 80,
+  issued: new Date(2026, 2, 14), expires: new Date(2027, 2, 14),
+  creator: { name: 'Acme Academia', initials: 'AA', joined: new Date(2025, 10, 3), signer: 'Marina Costa', signerTitle: 'Diretora de Ensino' },
+};
+const STATUSES = {
+  valid: 'Valid', expired: 'Expired', revoked: 'Revoked by the issuer', replaced: 'Replaced (name correction)', banned: 'Revoked: issuer removed', notfound: 'Not found (erased or never existed)',
+};
+// Labels follow the viewer's interface language.
+const T = {
+  en: {
+    valid: 'Valid certificate', validSub: 'This Certificate is genuine and in good standing.',
+    expired: 'Expired', expiredSub: d => `This Certificate was genuine but expired on ${d}.`,
+    revoked: 'Revoked', revokedSub: d => `The issuer revoked this Certificate on ${d}. It is no longer valid.`,
+    replaced: 'Replaced', replacedSub: d => `On ${d} this Certificate was replaced by a corrected one. Ask the holder for the new link.`,
+    banned: 'Revoked', bannedSub: d => `On ${d} Quizz removed this issuer for breaking its terms, and revoked every Certificate it issued.`,
+    notfound: 'Certificate not found', notfoundSub: 'There is no Certificate at this address. It may have been deleted at the holder’s request, or the link may be wrong.',
+    holder: 'Awarded to', assessment: 'Assessment', score: 'Score', passing: 'Passing Score', issued: 'Issued', expires: 'Expires', never: 'Never', id: 'Certificate ID', version: 'Version',
+    issuedBy: 'Issued by', via: 'via Quizz', memberSince: d => `On Quizz since ${d}`, report: 'Report a problem with this issuer',
+    download: 'Download PDF', how: 'How verification works',
+    howText: 'Quizz issued this record when the holder passed the Assessment. It can’t be edited: corrections produce a new Certificate. Only the issuer can revoke it.',
+    certifies: 'This certifies that', passed: (a, s) => `has passed <b>${a}</b> with a score of ${s}%.`,
+    history: 'History', hIssued: 'Issued', hExpired: 'Expired', hRevoked: 'Revoked by issuer', hReplaced: 'Replaced by a corrected Certificate', hBanned: 'Issuer removed by Quizz',
+    verifiedAt: d => `Checked ${d}`, record: 'Verification record', of: 'of',
+  },
+  pt: {
+    valid: 'Certificado válido', validSub: 'Este Certificado é autêntico e está válido.',
+    expired: 'Expirado', expiredSub: d => `Este Certificado era autêntico, mas expirou em ${d}.`,
+    revoked: 'Revogado', revokedSub: d => `O emissor revogou este Certificado em ${d}. Ele não é mais válido.`,
+    replaced: 'Substituído', replacedSub: d => `Em ${d} este Certificado foi substituído por um corrigido. Peça o novo link ao titular.`,
+    banned: 'Revogado', bannedSub: d => `Em ${d} o Quizz removeu este emissor por violar os termos e revogou todos os Certificados que ele emitiu.`,
+    notfound: 'Certificado não encontrado', notfoundSub: 'Não há Certificado neste endereço. Ele pode ter sido excluído a pedido do titular, ou o link está errado.',
+    holder: 'Concedido a', assessment: 'Avaliação', score: 'Nota', passing: 'Nota mínima', issued: 'Emitido em', expires: 'Expira em', never: 'Nunca', id: 'ID do Certificado', version: 'Versão',
+    issuedBy: 'Emitido por', via: 'via Quizz', memberSince: d => `No Quizz desde ${d}`, report: 'Denunciar um problema com este emissor',
+    download: 'Baixar PDF', how: 'Como a verificação funciona',
+    howText: 'O Quizz emitiu este registro quando o titular foi aprovado na Avaliação. Ele não pode ser editado: correções geram um novo Certificado. Só o emissor pode revogá-lo.',
+    certifies: 'Certificamos que', passed: (a, s) => `foi aprovado(a) em <b>${a}</b> com nota ${s}%.`,
+    history: 'Histórico', hIssued: 'Emitido', hExpired: 'Expirou', hRevoked: 'Revogado pelo emissor', hReplaced: 'Substituído por um Certificado corrigido', hBanned: 'Emissor removido pelo Quizz',
+    verifiedAt: d => `Verificado em ${d}`, record: 'Registro de verificação', of: 'de',
+  },
+};
+
+const S = { status: 'valid', lang: 'en' };
+const params = new URLSearchParams(location.search);
+if (STATUSES[params.get('status')]) S.status = params.get('status');
+if (T[params.get('lang')]) S.lang = params.get('lang');
+
+const t = () => T[S.lang];
+const date = d => d.toLocaleDateString(S.lang === 'pt' ? 'pt-BR' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+const EVENT = new Date(2026, 7, 2);
+function status() {
+  const x = t(), s = S.status;
+  const exp = s === 'expired' ? new Date(2026, 8, 1) : CERT.expires;
+  const map = {
+    valid: ['good', '✓', x.valid, x.validSub],
+    expired: ['warn', '⏱', x.expired, x.expiredSub(date(exp))],
+    revoked: ['bad', '✕', x.revoked, x.revokedSub(date(EVENT))],
+    replaced: ['warn', '↻', x.replaced, x.replacedSub(date(EVENT))],
+    banned: ['bad', '✕', x.banned, x.bannedSub(date(EVENT))],
+    notfound: ['bad', '?', x.notfound, x.notfoundSub],
+  };
+  const [tone, icon, title, sub] = map[s];
+  return { tone, icon, title, sub, exp, ok: s === 'valid', found: s !== 'notfound' };
+}
+const toneStyle = tone => `background:var(--${tone}bg);color:var(--${tone})`;
+const langs = () => `<span class="langs"><button class="${S.lang === 'en' ? 'on' : ''}" data-lang="en">EN</button> <button class="${S.lang === 'pt' ? 'on' : ''}" data-lang="pt">PT</button></span>`;
+const facts = st => { const x = t(); return `<dl>
+  <dt>${x.holder}</dt><dd>${CERT.holder}</dd>
+  <dt>${x.assessment}</dt><dd>${CERT.assessment} <span style="color:var(--muted)">· ${x.version} ${CERT.version}</span></dd>
+  <dt>${x.score}</dt><dd>${CERT.score}% <span style="color:var(--muted)">(${x.passing} ${CERT.passing}%)</span></dd>
+  <dt>${x.issued}</dt><dd>${date(CERT.issued)}</dd>
+  <dt>${x.expires}</dt><dd>${date(st.exp)}</dd>
+  <dt>${x.id}</dt><dd class="mono">${CERT.id}</dd></dl>`; };
+const issuer = () => { const x = t(), c = CERT.creator; return `<div style="display:flex;gap:12px;align-items:center"><div class="logo">${c.initials}</div>
+  <div><div style="color:var(--muted);font-size:13px">${x.issuedBy}</div><b>${c.name}</b> <span class="quizz">${x.via}</span><div class="quizz">${x.memberSince(date(c.joined))}</div></div></div>`; };
+
+// ======================= Variant A: Status first =======================
+function VariantA() {
+  const st = status(), x = t();
+  return `<div class="vA">
+    <div class="head"><div class="who"><span class="quizz">quizz.app/c/${CERT.id}</span></div>${langs()}</div>
+    <div class="band" style="${toneStyle(st.tone)}"><span class="icon">${st.icon}</span><div><h1>${st.title}</h1><p>${st.sub}</p></div></div>
+    ${st.found ? `<div class="card">${facts(st)}</div>
+      <div class="card">${issuer()}</div>
+      <div class="foot">${st.ok ? `<button style="background:var(--ink);color:#fff;border:0;border-radius:8px;padding:10px 16px">${x.download}</button>` : '<span></span>'}<button class="report">${x.report}</button></div>` : ''}
+  </div>`;
+}
+
+// ======================= Variant B: Certificate replica =======================
+function VariantB() {
+  const st = status(), x = t(), c = CERT.creator;
+  if (!st.found) return `<div class="vB"><div class="top"><span class="quizz">quizz.app/c/${CERT.id}</span>${langs()}</div>
+    <div class="status" style="${toneStyle(st.tone)}"><span class="icon">${st.icon}</span><div><b>${st.title}</b><br>${st.sub}</div></div></div>`;
+  return `<div class="vB">
+    <div class="top"><span class="quizz">quizz.app/c/${CERT.id}</span>${langs()}</div>
+    <div class="cert ${st.ok ? '' : 'void'}">
+      <div class="brand"><div class="logo">${c.initials}</div><b>${c.name}</b></div>
+      <div class="kicker">Certificado de aprovação</div>
+      <div style="color:var(--ink2)">Certificamos que</div>
+      <div class="holder">${CERT.holder}</div>
+      <div class="what">foi aprovado(a) na avaliação <b>${CERT.assessment}</b> com nota ${CERT.score}%, em ${CERT.issued.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}.</div>
+      <div class="bottom"><div class="sig"><div class="scrawl">${c.signer}</div>${c.signer} · ${c.signerTitle}</div>
+        <div style="text-align:right"><div class="qr"></div><div class="mono" style="font-size:11px;margin-top:4px">quizz.app/c/${CERT.id}</div></div></div>
+      ${st.ok ? '' : `<div class="stamp" style="color:var(--${st.tone});border-color:var(--${st.tone})">${st.title}</div>`}
+    </div>
+    <div class="status" style="${toneStyle(st.tone)}"><span class="icon">${st.icon}</span><div><b>${st.title}</b> · ${st.sub}</div></div>
+    <div class="below">${facts(st)}<div>${issuer()}<p>${st.ok ? `<button style="background:var(--ink);color:#fff;border:0;border-radius:8px;padding:8px 14px">${x.download}</button>` : ''}</p><button class="report">${x.report}</button></div></div>
+  </div>`;
+}
+
+// ======================= Variant C: Verification record =======================
+function VariantC() {
+  const st = status(), x = t();
+  const events = [[CERT.issued, x.hIssued]];
+  if (S.status === 'expired') events.push([st.exp, x.hExpired]);
+  if (S.status === 'revoked') events.push([EVENT, x.hRevoked]);
+  if (S.status === 'replaced') events.push([EVENT, x.hReplaced]);
+  if (S.status === 'banned') events.push([EVENT, x.hBanned]);
+  return `<div class="vC">
+    <header><div class="in"><span class="qz">Quizz · ${x.record}</span>${langs()}</div></header>
+    <main>
+      <div class="rec">
+        <div class="st" style="${toneStyle(st.tone)}"><span class="icon">${st.icon}</span><span>${st.title}<div style="font-weight:400;font-size:15px">${st.sub}</div></span></div>
+        ${st.found ? `<table>
+          <tr><td>${x.holder}</td><td><b style="font-size:20px">${CERT.holder}</b></td></tr>
+          <tr><td>${x.assessment}</td><td>${CERT.assessment}</td></tr>
+          <tr><td>${x.version}</td><td>${CERT.version}</td></tr>
+          <tr><td>${x.score}</td><td>${CERT.score}% <span style="color:var(--muted)">(${x.passing} ${CERT.passing}%)</span></td></tr>
+          <tr><td>${x.issued}</td><td>${date(CERT.issued)}</td></tr>
+          <tr><td>${x.expires}</td><td>${date(st.exp)}</td></tr>
+          <tr><td>${x.id}</td><td class="mono">${CERT.id} · quizz.app/c/${CERT.id}</td></tr>
+          <tr><td></td><td style="color:var(--muted);font-size:13px">${x.verifiedAt(new Date(2026, 8, 25).toLocaleString(S.lang === 'pt' ? 'pt-BR' : 'en-US'))}</td></tr></table>` : ''}
+      </div>
+      <aside>
+        ${st.found ? `<div class="box">${issuer()}<p style="margin:12px 0 0"><button class="report">${x.report}</button></p></div>
+        <div class="box"><h3>${x.history}</h3><ul class="tl">${events.map(([d, l]) => `<li><b>${l}</b><br><span class="quizz">${date(d)}</span></li>`).join('')}</ul></div>
+        ${st.ok ? `<div class="box"><button style="width:100%;background:var(--navy);color:#fff;border:0;border-radius:8px;padding:10px">${x.download}</button></div>` : ''}` : ''}
+        <div class="box"><h3>${x.how}</h3>${x.howText}</div>
+      </aside>
+    </main></div>`;
+}
+
+// ======================= Switcher =======================
+const VARIANTS = { A: ['Status first', VariantA], B: ['Certificate replica', VariantB], C: ['Verification record', VariantC] };
+let variant = VARIANTS[params.get('variant')] ? params.get('variant') : 'A';
+function render() {
+  document.documentElement.lang = S.lang === 'pt' ? 'pt-BR' : 'en';
+  document.getElementById('app').innerHTML = VARIANTS[variant][1]();
+  document.getElementById('switcher').innerHTML = `<button data-sw="-1">‹</button><span><b>${variant}</b> (${VARIANTS[variant][0]})</span><button data-sw="1">›</button>
+    <select data-status>${Object.entries(STATUSES).map(([k, l]) => `<option value="${k}" ${k === S.status ? 'selected' : ''}>${l}</option>`).join('')}</select>
+    <span style="color:#9ca3af">labels ${S.lang.toUpperCase()} · content pt-BR</span>`;
+  history.replaceState(null, '', '?' + new URLSearchParams({ variant, status: S.status, lang: S.lang }));
+}
+function cycle(d) { const k = Object.keys(VARIANTS); variant = k[(k.indexOf(variant) + d + k.length) % k.length]; render(); }
+document.addEventListener('click', e => {
+  const sw = e.target.closest('[data-sw]'); if (sw) return cycle(+sw.dataset.sw);
+  const l = e.target.closest('[data-lang]'); if (l) { S.lang = l.dataset.lang; render(); }
+  if (e.target.closest('.report')) alert('Prototype: this would open a short abuse report form (reason + optional contact).');
+});
+document.addEventListener('change', e => { if (e.target.matches('[data-status]')) { S.status = e.target.value; render(); } });
+document.addEventListener('keydown', e => { if (e.target.closest('input, select, textarea')) return; if (e.key === 'ArrowLeft') cycle(-1); if (e.key === 'ArrowRight') cycle(1); });
+render();
+</script>
+</body>
+</html>
