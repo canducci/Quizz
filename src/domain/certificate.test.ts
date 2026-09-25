@@ -5,6 +5,8 @@ import {
   formatId,
   nameSize,
   newPublicId,
+  parsePublicId,
+  shownStatus,
   verificationUrl,
 } from "./certificate";
 
@@ -57,4 +59,31 @@ it("shrinks further until the wrapped name fits its box", () => {
     expect(fits(ems, size / 0.95)).toBe(false);
   }
   expect(nameSize("x".repeat(200), 185)).toBeLessThan(nameSize("x".repeat(200), 90));
+});
+
+it("reads an id with or without dashes, in either case", () => {
+  for (const typed of ["7K2P-9QAB-CDEF-GH01", "7K2P9QABCDEFGH01", "7k2p-9qab-cdef-gh01"])
+    expect(parsePublicId(typed)).toBe("7K2P9QABCDEFGH01");
+  for (const typed of ["7K2P9QABCDEFGH0", "7K2P9QABCDEFGH012", "7K2P9QABCDEFGH0U", ""])
+    expect(parsePublicId(typed)).toBeNull();
+});
+
+const day = (d: number) => new Date(Date.UTC(2026, 8, d));
+const cert = { status: "valid" as const, statusAt: null, expiresAt: day(20) };
+
+it("shows a Certificate valid until its Expiry, then expired from that moment", () => {
+  expect(shownStatus(cert, day(19))).toEqual({ status: "valid", since: null });
+  expect(shownStatus(cert, day(20))).toEqual({ status: "expired", since: day(20) });
+  expect(shownStatus({ ...cert, expiresAt: null }, day(99))).toEqual({
+    status: "valid",
+    since: null,
+  });
+});
+
+it("shows Revoked or Replaced with their date, even past Expiry", () => {
+  for (const status of ["revoked", "replaced"] as const)
+    expect(shownStatus({ ...cert, status, statusAt: day(10) }, day(25))).toEqual({
+      status,
+      since: day(10),
+    });
 });

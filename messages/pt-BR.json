@@ -301,5 +301,31 @@
       "subject": "Seu Certificado de {title}",
       "body": "Parabéns, {name}! Você foi aprovado(a) em {title} com nota {score}%.\n\nSeu Certificado está em anexo. Qualquer pessoa pode verificá-lo em:\n{url}\n\nEmitido por {creator} via Quizz."
     }
+  },
+  "verify": {
+    "valid": "Certificado válido",
+    "validSub": "Este Certificado é autêntico e está válido.",
+    "expired": "Expirado",
+    "expiredSub": "Este Certificado era autêntico, mas expirou em {date}.",
+    "revoked": "Revogado",
+    "revokedSub": "O emissor revogou este Certificado em {date}. Ele não é mais válido.",
+    "replaced": "Substituído",
+    "replacedSub": "Em {date} este Certificado foi substituído por um corrigido. Peça o novo link ao titular.",
+    "notFound": "Certificado não encontrado",
+    "notFoundSub": "Não há Certificado neste endereço. Ele pode ter sido excluído a pedido do titular, ou o link está errado.",
+    "holder": "Concedido a",
+    "assessment": "Avaliação",
+    "version": "Versão {n}",
+    "score": "Nota",
+    "passing": "Nota mínima {n}%",
+    "issued": "Emitido em",
+    "expires": "Expira em",
+    "never": "Nunca",
+    "id": "ID do Certificado",
+    "issuedBy": "Emitido por <b>{creator}</b> via Quizz",
+    "since": "No Quizz desde {date}",
+    "report": "Denunciar um problema com este emissor",
+    "reportSubject": "Problema com o Certificado {id}",
+    "download": "Baixar PDF"
   }
 }

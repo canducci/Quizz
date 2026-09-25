@@ -19,6 +19,7 @@ import type { certificate } from "../db/schema";
 import {
   NAME_BOX,
   formatId,
+  longDate,
   nameSize,
   verificationUrl,
   type CertificateVersion,
@@ -43,7 +44,7 @@ Font.registerHyphenationCallback((word) => (word.length > 24 ? [...word] : [word
 
 const serif = fontkit.openSync(SERIF) as fontkit.Font;
 /** Text's width at 1pt in the serif, for nameSize. */
-const serifWidth = (text: string) => serif.layout(text).advanceWidth / serif.unitsPerEm;
+export const serifWidth = (text: string) => serif.layout(text).advanceWidth / serif.unitsPerEm;
 
 // The prototype's CSS pixels at 96 dpi, as points: A4 landscape is 1123 × 794 px, 842 × 595 pt.
 const px = (n: number) => n * 0.75;
@@ -142,13 +143,7 @@ export async function certificatePdf(
   const { branding } = snapshot;
   const accent = branding.accentColour ?? DEFAULT_ACCENT;
   const url = verificationUrl(cert.publicId, appUrl);
-  const date = (d: Date) =>
-    d.toLocaleDateString(locale, {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      timeZone: "UTC",
-    });
+  const date = (d: Date) => longDate(d, locale);
   const qr = await QRCode.toDataURL(url, { margin: 0, width: 288 });
   const signer = [branding.signerName, branding.signerTitle].filter(Boolean).join(" · ");
 

@@ -14,6 +14,29 @@ export const newPublicId = (random = (n: number) => randomBytes(n)) =>
 /** "XXXX-XXXX-XXXX-XXXX", as the id is shown. */
 export const formatId = (publicId: string) => publicId.match(/.{1,4}/g)!.join("-");
 
+/** The public id from a typed or linked one: dashes and case don't matter. Null if it can't be one. */
+export function parsePublicId(typed: string) {
+  const id = typed.replaceAll("-", "").toUpperCase();
+  return id.length === 16 && [...id].every((c) => CROCKFORD.includes(c)) ? id : null;
+}
+
+export type ShownStatus = "valid" | "expired" | "revoked" | "replaced";
+
+/** What the Verification Page says, and since when. A Revocation or replacement outranks Expiry,
+ * which is computed on read: a Certificate is expired from the moment of its `expiresAt`. */
+export function shownStatus(
+  cert: { status: "valid" | "revoked" | "replaced"; statusAt: Date | null; expiresAt: Date | null },
+  now: Date,
+): { status: ShownStatus; since: Date | null } {
+  if (cert.status !== "valid") return { status: cert.status, since: cert.statusAt };
+  if (cert.expiresAt && cert.expiresAt <= now) return { status: "expired", since: cert.expiresAt };
+  return { status: "valid", since: null };
+}
+
+/** A date as the Certificate shows it: "14 March 2026", in UTC so every server agrees. */
+export const longDate = (d: Date, locale: string) =>
+  d.toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+
 export const expiryOf = (issuedAt: Date, expiryDays: number | null) =>
   expiryDays === null ? null : new Date(issuedAt.getTime() + expiryDays * 24 * 60 * 60_000);
 

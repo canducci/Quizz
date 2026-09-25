@@ -301,5 +301,31 @@
       "subject": "Your Certificate for {title}",
       "body": "Congratulations, {name}! You passed {title} with a score of {score}%.\n\nYour Certificate is attached. Anyone can check it at:\n{url}\n\nIssued by {creator} via Quizz."
     }
+  },
+  "verify": {
+    "valid": "Valid Certificate",
+    "validSub": "This Certificate is genuine and in good standing.",
+    "expired": "Expired",
+    "expiredSub": "This Certificate was genuine but expired on {date}.",
+    "revoked": "Revoked",
+    "revokedSub": "The issuer revoked this Certificate on {date}. It is no longer valid.",
+    "replaced": "Replaced",
+    "replacedSub": "On {date} this Certificate was replaced by a corrected one. Ask the holder for the new link.",
+    "notFound": "Certificate not found",
+    "notFoundSub": "There is no Certificate at this address. It may have been deleted at the holder's request, or the link may be wrong.",
+    "holder": "Awarded to",
+    "assessment": "Assessment",
+    "version": "Version {n}",
+    "score": "Score",
+    "passing": "Passing Score {n}%",
+    "issued": "Issued",
+    "expires": "Expires",
+    "never": "Never",
+    "id": "Certificate ID",
+    "issuedBy": "Issued by <b>{creator}</b> via Quizz",
+    "since": "On Quizz since {date}",
+    "report": "Report a problem with this issuer",
+    "reportSubject": "Problem with Certificate {id}",
+    "download": "Download PDF"
   }
 }

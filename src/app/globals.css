@@ -424,3 +424,219 @@ button.link {
   font-weight: 700;
   margin: 0.25rem 0;
 }
+
+/* The Verification Page (Variant B). The drawing scales with its width like the PDF: its sizes are
+   the prototype's pixels on a 1123 px page, as cqw. */
+.main:has(.verify) {
+  max-width: 60rem;
+}
+
+.cert {
+  position: relative;
+  container-type: inline-size;
+  aspect-ratio: 1123 / 794;
+  overflow: hidden;
+  border: 1px solid #d1d5db;
+  box-shadow: 0 8px 30px rgb(0 0 0 / 8%);
+  background: #fff;
+  color: #111827;
+}
+
+/* On the sheet, not .cert: cqw measures the container .cert is, not .cert's own box. */
+.cert .sheet {
+  height: 100%;
+  background: radial-gradient(
+    circle 39.36cqw at 50% 120%,
+    color-mix(in srgb, var(--accent) 10%, transparent) 100%,
+    transparent 100%
+  );
+  padding: 5.7cqw 8.9cqw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.cert.void .sheet {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
+.cert .logo {
+  width: 5.7cqw;
+  height: 5.7cqw;
+  object-fit: contain;
+}
+
+.cert .creator {
+  margin-top: 1.07cqw;
+  font-size: 1.42cqw;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #374151;
+}
+
+.cert h2 {
+  margin: 3.03cqw 0 0.53cqw;
+  font-size: 3.92cqw;
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+
+.cert .rule {
+  width: 12.47cqw;
+  height: 0.18cqw;
+  margin: 1.25cqw 0 2.14cqw;
+  background: var(--accent);
+}
+
+.cert .lead {
+  font-size: 1.51cqw;
+  color: #4b5563;
+}
+
+.cert .holder {
+  max-width: 80.2cqw;
+  margin: 1.07cqw 0 1.6cqw;
+  padding: 0 2.67cqw 1.07cqw;
+  border-bottom: 1px solid #d1d5db;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.cert .statement {
+  max-width: 67.7cqw;
+  margin: 0;
+  font-size: 1.69cqw;
+  line-height: 1.5;
+  color: #374151;
+}
+
+.cert .bottom {
+  margin-top: auto;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 2.14cqw;
+  align-items: end;
+  font-size: 1.07cqw;
+  line-height: 1.6;
+  color: #6b7280;
+}
+
+.cert .bottom > :first-child {
+  text-align: left;
+}
+
+.cert .qr img {
+  display: block;
+  width: 8.9cqw;
+  padding: 0.71cqw;
+  margin: 0 auto 0.36cqw;
+  border: 1px solid #d1d5db;
+  background: #fff;
+}
+
+.cert .signer img {
+  height: 3.56cqw;
+  object-fit: contain;
+}
+
+.cert .signer div {
+  border-top: 1px solid #111827;
+  padding-top: 0.53cqw;
+  font-size: 1.25cqw;
+  color: #374151;
+}
+
+.mono {
+  font-family: ui-monospace, monospace;
+}
+
+.stamp {
+  position: absolute;
+  top: 34%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-12deg);
+  border: 0.45cqw solid;
+  border-radius: 1cqw;
+  padding: 0.7cqw 2.3cqw;
+  font-size: 5cqw;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgb(255 255 255 / 85%);
+}
+
+.good {
+  color: #067647;
+  background: #ecfdf3;
+}
+
+.warn {
+  color: #b54708;
+  background: #fffaeb;
+}
+
+.bad {
+  color: #b42318;
+  background: #fef3f2;
+}
+
+.verify .status {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.9rem 1.1rem;
+  border-radius: 10px;
+  margin: 1rem 0;
+}
+
+.verify .below {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.25rem;
+  align-items: start;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1.25rem;
+}
+
+.verify dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.5rem 1.25rem;
+  margin: 0;
+}
+
+.verify dt {
+  color: #6b7280;
+}
+
+.verify dd {
+  margin: 0;
+  font-weight: 500;
+}
+
+.verify .issuer {
+  width: 2.75rem;
+  height: 2.75rem;
+  object-fit: contain;
+}
+
+.verify .button {
+  align-self: start;
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  background: #111827;
+  color: #fff;
+  text-decoration: none;
+}
+
+@media (max-width: 40rem) {
+  .verify .below {
+    grid-template-columns: 1fr;
+  }
+}
