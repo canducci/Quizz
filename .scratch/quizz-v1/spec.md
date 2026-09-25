@@ -9,6 +9,7 @@ Vocabulary follows `CONTEXT.md`. Decisions recorded in `docs/adr/`.
 - Attempt and Certificate domain logic: branch `prototype/domain-logic`, file `prototypes/domain-logic.prototype.html`. It settled: no auto-submit (Timed out), name entered at submit, no retake while holding a Valid Certificate, statistics as running counters, name corrections not counted as revoked.
 - Learner Attempt flow UI: branch `prototype/attempt-ui`, file `prototypes/attempt-flow.prototype.html`. Four variants compared; the chosen one is **Variant D** (open with `?variant=D`).
 - Creator Assessment editor UI: branch `prototype/editor-ui`, file `prototypes/assessment-editor.prototype.html`. Three variants compared; the chosen one is **Variant B** (open with `?variant=B`).
+- Assessment Statistics UI: branch `prototype/dashboard-ui`, file `prototypes/statistics-dashboard.prototype.html`. Three variants compared; the chosen one is **Variant A** (open with `?variant=A`).
 
 ## Scope
 
@@ -71,6 +72,7 @@ Vocabulary follows `CONTEXT.md`. Decisions recorded in `docs/adr/`.
 - Attempt flow layout (Variant D of the UI prototype): a sidebar holds the Creator and Assessment name, a large clock marked "saved automatically", numbered question squares (answered ones filled, current one highlighted) for jumping between questions, and a "Review & submit" button. The main area shows one question at a time with Previous / Next. Before submitting, a review page lists every question as answered or not, with "change" links, followed by the name field and Submit.
 - Mobile: the sidebar stacks above the question.
 - Assessment editor layout (Variant B of the editor prototype): a top bar with the title, Assessment Status and version, tabs (Questions, Rules, Access & language, Publish) and the Publish button. The Questions tab has three panes: the Question Pool as a list (incomplete Questions flagged, correct-answer rate once published), the editor for the selected Question (type, Markdown text, answer options with correct ones marked, keep order), and a live Learner preview in the Attempt-flow style. Publish stays disabled while problems remain, and the Publish tab lists them. Editing a published Assessment shows that publishing creates a new Assessment Version and that existing Certificates stay on theirs.
+- Assessment Statistics layout (Variant A of the dashboard prototype): a Statistics tab in the editor's top bar. One row of filters above everything: date range (last 7, 30 or 90 days, all time) and Assessment Version (all, or one version, which draws its Passing Score on the score chart). Then a row of number tiles (Attempts with Timed out count, pass rate, median time, Certificates issued with revoked and expired, Questions to review), then Attempts per day, the score distribution of submitted Attempts, and the correct-answer rate per Question with Questions under 50% highlighted. Every chart has hover tooltips and a table view. A range with no Attempts shows an empty state.
 
 - The whole app can be switched between English and pt-BR. Each Assessment's content is in its single Assessment Language.
 
