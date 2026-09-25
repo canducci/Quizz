@@ -10,7 +10,10 @@ import { saveAnswer, startAttempt, submitAttempt } from "@/server/attempts";
 import { emailHash, normalizeEmail, parseEmailList } from "@/server/email-hash";
 import { LEARNER_COOKIE, learnerEmail, learnerToken } from "@/server/learner-session";
 import { sendMail } from "@/server/mail";
-import { requestCode, verifyCode } from "@/server/one-time-code";
+import { countEmail, requestCode, verifyCode } from "@/server/one-time-code";
+import { brandingImages, certificatePdf, type CertificateFacts } from "@/server/certificate-pdf";
+import { formatId } from "@/domain/certificate";
+import type { Snapshot } from "@/domain/publish";
 import { CODE_MINUTES } from "@/domain/one-time-code";
 
 export type EntryError =
@@ -115,7 +118,36 @@ export async function saveLearnerAnswer(assessmentId: string, questionId: string
   return saveAnswer(db, { assessmentId, learner: hash, questionId, choice });
 }
 
+/** Only the score and pass/fail go back to the browser. A pass's Certificate is emailed. */
 export async function submitLearnerAttempt(assessmentId: string, name: string) {
-  const { hash } = await learner(assessmentId);
-  return submitAttempt(db, { assessmentId, learner: hash, name: String(name) });
+  const { email, hash } = await learner(assessmentId);
+  const result = await submitAttempt(db, { assessmentId, learner: hash, name: String(name) });
+  if (!result.ok) return result;
+  if (result.certificate) await mailCertificate(email, result.certificate, result.snapshot);
+  return { ok: true as const, score: result.score, passed: result.passed };
+}
+
+/** Always sent, even past the daily cap. A failure is logged, not shown: the Certificate is issued
+ * and its Verification Page offers the PDF. */
+async function mailCertificate(email: string, cert: CertificateFacts, snapshot: Snapshot) {
+  try {
+    const pdf = await certificatePdf(cert, snapshot, await brandingImages(snapshot));
+    const t = await getTranslations({
+      locale: snapshot.settings.language,
+      namespace: "certificate",
+    });
+    const values = {
+      name: cert.holderName,
+      title: snapshot.title,
+      score: cert.score,
+      creator: snapshot.branding.name,
+      url: `${process.env.APP_URL}/c/${cert.publicId}`,
+    };
+    await sendMail(email, t("mail.subject", values), t("mail.body", values), [
+      { filename: t("file", { id: formatId(cert.publicId) }), content: pdf },
+    ]);
+    await countEmail(db);
+  } catch (e) {
+    console.error(`Certificate ${cert.publicId} not emailed`, e);
+  }
 }

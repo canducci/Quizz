@@ -13,17 +13,20 @@ import {
   scoreAttempt,
   tally,
 } from "../domain/attempt";
+import { expiryOf, newPublicId } from "../domain/certificate";
+import type { Snapshot } from "../domain/publish";
 import { utcDay } from "./one-time-code";
 
 type Db = LibSQLDatabase<typeof schema>;
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 type Attempt = typeof schema.attempt.$inferSelect;
-type Counter = "attempts" | "timedOut" | "submitted" | "passed";
+type Certificate = typeof schema.certificate.$inferSelect;
+type Counter = "attempts" | "timedOut" | "submitted" | "passed" | "certificatesIssued";
 type Tallies = Pick<
   typeof schema.statsDay.$inferSelect,
   "scoreHistogram" | "timeHistogram" | "questions"
 >;
-const { assessment, assessmentVersion, attempt, statsDay } = schema;
+const { assessment, assessmentVersion, attempt, certificate, statsDay } = schema;
 
 /** Adds one to each counter for the Version's day. The counter write comes first, so it holds the
  * row (and SQLite's write lock) before `tallies` reads and rewrites the JSON columns. */
@@ -166,11 +169,19 @@ export async function saveAnswer(
 }
 
 export type SubmitResult =
-  | { ok: true; score: number; passed: boolean }
+  | {
+      ok: true;
+      score: number;
+      passed: boolean;
+      certificate: Certificate | null;
+      /** The Attempt's own Version, which the Certificate renders from. */
+      snapshot: Snapshot;
+    }
   | { ok: false; reason: "name" | "timedOut" | "over" };
 
-/** Scores the running Attempt. Refused past the deadline, which times it out instead. `name` is what
- * a pass puts on the Certificate; a fail discards it. */
+/** Scores the running Attempt; a pass issues the Certificate in the same transaction. Refused past
+ * the deadline, which times it out instead. `name` is what a pass puts on the Certificate; a fail
+ * discards it. */
 export async function submitAttempt(
   db: Db,
   opts: { assessmentId: string; learner: string; name: string; now?: Date },
@@ -200,11 +211,39 @@ export async function submitAttempt(
     if (done.rowsAffected !== 1) return { ok: false, reason: "over" };
     // Per-Question counts come from submitted Attempts only, so a Timed out one doesn't lower the
     // correct-answer rate of Questions nobody answered.
-    await bump(tx, versionId, now, passed ? ["submitted", "passed"] : ["submitted"], (s) => ({
-      scoreHistogram: histogram(s.scoreHistogram, score),
-      timeHistogram: histogram(s.timeHistogram, minutesTaken(startedAt, now)),
-      questions: tally(s.questions, drawn, correct),
-    }));
-    return { ok: true, score, passed };
+    await bump(
+      tx,
+      versionId,
+      now,
+      passed ? ["submitted", "passed", "certificatesIssued"] : ["submitted"],
+      (s) => ({
+        scoreHistogram: histogram(s.scoreHistogram, score),
+        timeHistogram: histogram(s.timeHistogram, minutesTaken(startedAt, now)),
+        questions: tally(s.questions, drawn, correct),
+      }),
+    );
+    if (!passed) return { ok: true, score, passed, certificate: null, snapshot: row.snapshot };
+    const [{ creatorId }] = await tx
+      .select({ creatorId: assessment.creatorId })
+      .from(assessment)
+      .where(eq(assessment.id, opts.assessmentId));
+    const issued: Certificate = {
+      id: uuidv7(),
+      publicId: newPublicId(),
+      versionId,
+      creatorId,
+      emailHash: opts.learner,
+      holderName: name,
+      score,
+      issuedAt: now,
+      expiresAt: expiryOf(now, settings.expiryDays),
+      status: "valid",
+      statusAt: null,
+      revocationReason: null,
+      replacedById: null,
+      expiryCountedAt: null,
+    };
+    await tx.insert(certificate).values(issued);
+    return { ok: true, score, passed, certificate: issued, snapshot: row.snapshot };
   });
 }

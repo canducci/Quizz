@@ -1,6 +1,31 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { brandCreator, freshNetwork, publishNew, verifyLearner } from "./learner-helper";
-import { signInAsNewCreator } from "./sign-in-helper";
+import { MAILPIT, signInAsNewCreator } from "./sign-in-helper";
+
+type Mail = {
+  ID: string;
+  Subject: string;
+  Text: string;
+  Attachments: { PartID: string; FileName: string; ContentType: string }[];
+};
+
+/** The email to `email` carrying a PDF; the code email came first and may still be the newest. */
+async function mailWithPdf(request: APIRequestContext, email: string) {
+  let found: Mail | undefined;
+  await expect
+    .poll(async () => {
+      const search = await request.get(`${MAILPIT}/api/v1/search`, {
+        params: { query: `to:"${email}"` },
+      });
+      for (const { ID } of (await search.json()).messages) {
+        const mail: Mail = await (await request.get(`${MAILPIT}/api/v1/message/${ID}`)).json();
+        if (mail.Attachments.some((a) => a.ContentType === "application/pdf")) found = mail;
+      }
+      return !!found;
+    })
+    .toBe(true);
+  return found!;
+}
 
 test.use(freshNetwork());
 test.describe.configure({ mode: "serial" });
@@ -53,8 +78,11 @@ test("a Creator publishes a three-Question Assessment", async ({ page, request }
   link = await publishNew(page, "Git fundamentals", { csv: CSV });
 });
 
-test("a Learner answers every Question right and passes", async ({ page, request }) => {
-  await verifyLearner(page, request, link);
+test("a Learner answers every Question right, passes and gets the Certificate PDF by email", async ({
+  page,
+  request,
+}) => {
+  const email = await verifyLearner(page, request, link);
   await page.getByRole("button", { name: "Start Attempt" }).click();
   await expect(page.getByRole("timer")).toContainText("saved automatically");
   await expect(page.getByText("Question 1 of 3")).toBeVisible();
@@ -72,6 +100,16 @@ test("a Learner answers every Question right and passes", async ({ page, request
   await expect(page.getByText("Passing Score: 70%.")).toBeVisible();
   // Only the score and pass/fail: nothing names a Question.
   await expect(page.getByText("Which command stages files?")).toHaveCount(0);
+  await expect(page.getByText(`Your Certificate is on its way to ${email}.`)).toBeVisible();
+
+  const mail = await mailWithPdf(request, email);
+  expect(mail.Subject).toBe("Your Certificate for Git fundamentals");
+  expect(mail.Text).toContain("Congratulations, Ana Souza!");
+  expect(mail.Text).toMatch(/\/c\/[0-9A-HJKMNP-TV-Z]{16}\b/);
+  const pdf = mail.Attachments[0];
+  expect(pdf.FileName).toMatch(/^Certificate \w{4}-\w{4}-\w{4}-\w{4}\.pdf$/);
+  const part = await request.get(`${MAILPIT}/api/v1/message/${mail.ID}/part/${pdf.PartID}`);
+  expect((await part.body()).subarray(0, 5).toString()).toBe("%PDF-");
 });
 
 test("a Learner resumes after a reload with the clock still running, then fails", async ({

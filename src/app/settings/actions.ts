@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { creator } from "@/db/schema";
+import { MAX_BRAND_TEXT } from "@/domain/publish";
 import { requireCreator } from "@/server/auth";
 import { putImage, type UploadResult } from "@/server/files";
 
@@ -18,7 +19,10 @@ export async function saveBranding(_: BrandingState, form: FormData): Promise<Br
 
   const name = text(form, "name");
   const accent = text(form, "accent");
+  const [signerName, signerTitle] = [text(form, "signerName"), text(form, "signerTitle")];
   if (!name || !/^#[0-9a-f]{6}$/i.test(accent)) return { status: "invalid" };
+  if ([name, signerName, signerTitle].some((t) => t.length > MAX_BRAND_TEXT))
+    return { status: "invalid" };
 
   const keys: { logoKey?: string; signatureKey?: string } = {};
   for (const [field, column] of [
@@ -38,8 +42,8 @@ export async function saveBranding(_: BrandingState, form: FormData): Promise<Br
     .set({
       name,
       accentColour: accent.toLowerCase(),
-      signerName: text(form, "signerName") || null,
-      signerTitle: text(form, "signerTitle") || null,
+      signerName: signerName || null,
+      signerTitle: signerTitle || null,
       ...keys,
     })
     .where(eq(creator.id, me.id));

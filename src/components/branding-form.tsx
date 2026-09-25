@@ -4,7 +4,7 @@ import { startTransition, useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
 import { saveBranding } from "@/app/settings/actions";
 import type { creator } from "@/db/schema";
-import { DEFAULT_ACCENT } from "@/domain/publish";
+import { DEFAULT_ACCENT, MAX_BRAND_TEXT } from "@/domain/publish";
 import { MAX_IMAGE_BYTES } from "@/server/image-type";
 
 export function BrandingForm({ creator: me }: { creator: typeof creator.$inferSelect }) {
@@ -28,7 +28,7 @@ export function BrandingForm({ creator: me }: { creator: typeof creator.$inferSe
     >
       <label className="stack">
         {t("name")}
-        <input name="name" required defaultValue={me.name} />
+        <input name="name" required maxLength={MAX_BRAND_TEXT} defaultValue={me.name} />
       </label>
       <label className="stack">
         {t("accent")}
@@ -36,11 +36,11 @@ export function BrandingForm({ creator: me }: { creator: typeof creator.$inferSe
       </label>
       <label className="stack">
         {t("signerName")}
-        <input name="signerName" defaultValue={me.signerName ?? ""} />
+        <input name="signerName" maxLength={MAX_BRAND_TEXT} defaultValue={me.signerName ?? ""} />
       </label>
       <label className="stack">
         {t("signerTitle")}
-        <input name="signerTitle" defaultValue={me.signerTitle ?? ""} />
+        <input name="signerTitle" maxLength={MAX_BRAND_TEXT} defaultValue={me.signerTitle ?? ""} />
       </label>
       <ImageField name="logo" label={t("logo")} imageKey={me.logoKey} />
       <ImageField name="signature" label={t("signature")} imageKey={me.signatureKey} />

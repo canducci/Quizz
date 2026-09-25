@@ -176,3 +176,33 @@ export const statsDay = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.versionId, t.day] })],
 );
+
+export const CERTIFICATE_STATUSES = ["valid", "revoked", "replaced"] as const;
+
+/** Immutable proof of a pass on one Version. Only its status changes (Revocation). Expiry is
+ * computed on read from `expires_at`. */
+export const certificate = sqliteTable(
+  "certificate",
+  {
+    id: text("id").primaryKey(),
+    // 16 Crockford base32 characters; the Verification Page URL is /c/<public_id>.
+    publicId: text("public_id").notNull().unique(),
+    versionId: text("version_id")
+      .notNull()
+      .references(() => assessmentVersion.id),
+    creatorId: text("creator_id")
+      .notNull()
+      .references(() => creator.id),
+    emailHash: text("email_hash").notNull(),
+    holderName: text("holder_name").notNull(),
+    score: integer("score").notNull(),
+    issuedAt: integer("issued_at", { mode: "timestamp_ms" }).notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }), // null = never
+    status: text("status", { enum: CERTIFICATE_STATUSES }).notNull().default("valid"),
+    statusAt: integer("status_at", { mode: "timestamp_ms" }),
+    revocationReason: text("revocation_reason"), // private to the Creator
+    replacedById: text("replaced_by_id"), // never shown
+    expiryCountedAt: integer("expiry_counted_at", { mode: "timestamp_ms" }),
+  },
+  (t) => [index("certificate_learner").on(t.emailHash)],
+);

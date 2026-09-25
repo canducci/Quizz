@@ -274,6 +274,7 @@
     "passed": "You passed.",
     "failed": "You didn't pass.",
     "score": "Score: {score}%",
+    "certificateSent": "Your Certificate is on its way to {email}.",
     "passingWas": "Passing Score: {passing}%.",
     "noReview": "Per-Question results aren't shown, so the Question Pool stays fair for everyone.",
     "timedOut": "Time's up.",
@@ -281,6 +282,20 @@
     "mail": {
       "subject": "Your code for {title}: {code}",
       "body": "Your verification code for {title} is:\n\n{code}\n\nIt works for {minutes} minutes. If you didn't ask for it, ignore this email."
+    }
+  },
+  "certificate": {
+    "title": "Certificate",
+    "lead": "This certifies that",
+    "passed": "has passed the <b>{assessment}</b> assessment with a score of {score}%.",
+    "issued": "Issued {date}",
+    "validUntil": "Valid until {date}",
+    "noExpiry": "Does not expire",
+    "id": "Certificate <mono>{id}</mono>",
+    "file": "Certificate {id}.pdf",
+    "mail": {
+      "subject": "Your Certificate for {title}",
+      "body": "Congratulations, {name}! You passed {title} with a score of {score}%.\n\nYour Certificate is attached. Anyone can check it at:\n{url}\n\nIssued by {creator} via Quizz."
     }
   }
 }

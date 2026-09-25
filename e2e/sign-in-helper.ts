@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
-const MAILPIT = process.env.MAILPIT_URL ?? "http://localhost:8025";
+export const MAILPIT = process.env.MAILPIT_URL ?? "http://localhost:8025";
 
 /** Waits for the newest email to `email` and returns the first match of `pattern` in it. */
 export async function fromMail(request: APIRequestContext, email: string, pattern: RegExp) {

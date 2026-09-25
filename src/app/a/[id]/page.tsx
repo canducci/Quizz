@@ -82,6 +82,7 @@ export default async function AssessmentLink(props: { params: Promise<{ id: stri
               <>
                 <h2>{t(last.attempt.passed ? "passed" : "failed")}</h2>
                 <p className="score">{t("score", { score: last.attempt.score! })}</p>
+                {last.attempt.passed && <p>{t("certificateSent", { email: verified })}</p>}
                 <p className="muted">
                   {t("passingWas", { passing: last.snapshot.settings.passingScore })}{" "}
                   {t("noReview")}

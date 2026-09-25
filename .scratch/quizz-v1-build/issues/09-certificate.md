@@ -1,6 +1,6 @@
 # Certificate issue and PDF
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 08
 
 ## What to build
@@ -9,13 +9,13 @@ A pass issues the Certificate, emailed as a PDF (Variant C).
 
 ## Acceptance criteria
 
-- [ ] On a pass, in the submit transaction: `certificate` row with 16-char Crockford base32 `public_id`, holder name, score, expiry from settings; counter `certificates_issued`. On a fail the name is discarded.
-- [ ] PDF with @react-pdf/renderer + `qrcode`, bundled Source Serif 4 and Source Sans 3 (static TTF, OFL), branding from the Version snapshot, all text in the Assessment Language, QR to `/c/<id>`.
-- [ ] Long names shrink to fit and wrap; nothing clipped.
-- [ ] Email with the PDF attached (always sent, even past the daily cap).
-- [ ] Acceptance by eye: side by side with the showcase Certificate tab, including its long-name samples, EN and PT.
-- [ ] Vitest: ID generation format and alphabet; name size calculation.
-- [ ] Playwright: pass an Attempt, find the email with a PDF attachment in Mailpit.
+- [x] On a pass, in the submit transaction: `certificate` row with 16-char Crockford base32 `public_id`, holder name, score, expiry from settings; counter `certificates_issued`. On a fail the name is discarded.
+- [x] PDF with @react-pdf/renderer + `qrcode`, bundled Source Serif 4 and Source Sans 3 (static TTF, OFL), branding from the Version snapshot, all text in the Assessment Language, QR to `/c/<id>`.
+- [x] Long names shrink to fit and wrap; nothing clipped.
+- [x] Email with the PDF attached (always sent, even past the daily cap).
+- [x] Acceptance by eye: side by side with the showcase Certificate tab, including its long-name samples, EN and PT.
+- [x] Vitest: ID generation format and alphabet; name size calculation.
+- [x] Playwright: pass an Attempt, find the email with a PDF attachment in Mailpit.
 
 ## Design reference
 

@@ -274,6 +274,7 @@
     "passed": "Você passou.",
     "failed": "Você não passou.",
     "score": "Nota: {score}%",
+    "certificateSent": "Seu Certificado está a caminho de {email}.",
     "passingWas": "Nota de Aprovação: {passing}%.",
     "noReview": "Os resultados por Questão não são mostrados, para que o Conjunto de Questões continue justo para todos.",
     "timedOut": "O tempo acabou.",
@@ -281,6 +282,20 @@
     "mail": {
       "subject": "Seu código para {title}: {code}",
       "body": "Seu código de verificação para {title} é:\n\n{code}\n\nEle vale por {minutes} minutos. Se você não pediu, ignore este e-mail."
+    }
+  },
+  "certificate": {
+    "title": "Certificado",
+    "lead": "Certificamos que",
+    "passed": "foi aprovado(a) na avaliação <b>{assessment}</b> com nota {score}%.",
+    "issued": "Emitido em {date}",
+    "validUntil": "Válido até {date}",
+    "noExpiry": "Sem data de validade",
+    "id": "Certificado <mono>{id}</mono>",
+    "file": "Certificado {id}.pdf",
+    "mail": {
+      "subject": "Seu Certificado de {title}",
+      "body": "Parabéns, {name}! Você foi aprovado(a) em {title} com nota {score}%.\n\nSeu Certificado está em anexo. Qualquer pessoa pode verificá-lo em:\n{url}\n\nEmitido por {creator} via Quizz."
     }
   }
 }

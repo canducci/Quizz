@@ -13,7 +13,7 @@ const MINUTE = 60_000;
 const at = (minutes: number) => new Date(Date.UTC(2026, 8, 25, 12) + minutes * MINUTE);
 
 /** A published Assessment "a1": 3 of 3 single-answer Questions, option 0 right, 10 minutes, 67% to pass. */
-async function published() {
+async function published(expiryDays: number | null = null) {
   const client = createClient({
     url: `file:${join(mkdtempSync(join(tmpdir(), "quizz-")), "t.db")}`,
   });
@@ -35,6 +35,7 @@ async function published() {
     drawn: 3,
     passingScore: 67,
     timeLimit: 10,
+    expiryDays,
   });
   await db.insert(schema.question).values(
     ["q1", "q2", "q3"].map((id, i) => ({
@@ -82,11 +83,20 @@ it("starts once, resumes the same Attempt, and passes on the right answers", asy
     ok: false,
     reason: "name",
   });
-  expect(await submitAttempt(db, { ...learner, name: "Ana Souza", now: at(3) })).toEqual({
-    ok: true,
+  const passed = await submitAttempt(db, { ...learner, name: " Ana Souza ", now: at(3) });
+  expect(passed).toMatchObject({ ok: true, score: 100, passed: true });
+  const [issued] = await db.select().from(schema.certificate);
+  expect(passed.ok && passed.certificate).toEqual(issued);
+  expect(issued).toMatchObject({
+    creatorId: "c1",
+    emailHash: "hash-ana",
+    holderName: "Ana Souza",
     score: 100,
-    passed: true,
+    issuedAt: at(3),
+    expiresAt: null,
+    status: "valid",
   });
+  expect(issued.publicId).toMatch(/^[0-9A-HJKMNP-TV-Z]{16}$/);
   expect(await submitAttempt(db, { ...learner, name: "Ana Souza", now: at(3) })).toEqual({
     ok: false,
     reason: "over",
@@ -105,6 +115,7 @@ it("starts once, resumes the same Attempt, and passes on the right answers", asy
     attempts: 1,
     submitted: 1,
     passed: 1,
+    certificatesIssued: 1,
     timedOut: 0,
     scoreHistogram: { "100": 1 },
     timeHistogram: { "3": 1 },
@@ -122,15 +133,19 @@ it("fails below the Passing Score, showing only score and pass/fail", async () =
   await saveAnswer(db, { ...learner, questionId: "q1", choice: [0], now: at(1) });
   await saveAnswer(db, { ...learner, questionId: "q2", choice: [0], now: at(1) });
   await saveAnswer(db, { ...learner, questionId: "q3", choice: [1], now: at(1) });
-  expect(await submitAttempt(db, { ...learner, name: "Ana", now: at(9) })).toEqual({
+  expect(await submitAttempt(db, { ...learner, name: "Ana", now: at(9) })).toMatchObject({
     ok: true,
     score: 66,
     passed: false,
+    certificate: null,
   });
+  // The name is discarded with the fail.
+  expect(await db.select().from(schema.certificate)).toEqual([]);
   expect(await stats()).toMatchObject({
     attempts: 1,
     submitted: 1,
     passed: 0,
+    certificatesIssued: 0,
     scoreHistogram: { "66": 1 },
     questions: { q3: { shown: 1, correct: 0 } },
   });
@@ -178,4 +193,15 @@ it("tells a late Learner time ran out, even without a name", async () => {
     ok: false,
     reason: "timedOut",
   });
+});
+
+it("sets a pass's Expiry from the Version's settings", async () => {
+  const { db } = await published(365);
+  await startAttempt(db, { ...learner, now: at(0) });
+  for (const id of ["q1", "q2", "q3"])
+    await saveAnswer(db, { ...learner, questionId: id, choice: [0], now: at(1) });
+  const done = await submitAttempt(db, { ...learner, name: "Ana", now: at(2) });
+  expect(done.ok && done.certificate?.expiresAt).toEqual(
+    new Date(at(2).getTime() + 365 * 86_400_000),
+  );
 });

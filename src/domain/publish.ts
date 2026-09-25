@@ -3,6 +3,8 @@ import { questionProblems, type QuestionContent } from "./question";
 import { RANGES, type AccessMode, type Rules } from "./settings";
 
 export const DEFAULT_ACCENT = "#1f6feb";
+/** The longest Creator name, signer name or signer title: the Certificate has room for these. */
+export const MAX_BRAND_TEXT = 100;
 
 type Assessment = Rules & { title: string; language: Locale; accessMode: AccessMode };
 type PoolQuestion = QuestionContent & { id: string };
