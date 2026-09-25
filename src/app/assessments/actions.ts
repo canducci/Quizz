@@ -35,6 +35,21 @@ async function ownQuestion(id: string) {
   return row ?? null;
 }
 
+/** Adds Questions after the last one in the pool. */
+async function appendQuestions(assessmentId: string, contents: QuestionContent[]) {
+  const stored = contents.map((q) => ({ id: uuidv7(), ...q }));
+  await db.transaction(async (tx) => {
+    const [{ last }] = await tx
+      .select({ last: max(question.position) })
+      .from(question)
+      .where(eq(question.assessmentId, assessmentId));
+    await tx
+      .insert(question)
+      .values(stored.map((q, i) => ({ ...q, assessmentId, position: (last ?? 0) + 1 + i })));
+  });
+  return stored;
+}
+
 export async function createAssessment(form: FormData) {
   const creator = await requireCreator();
   const title = String(form.get("title") ?? "").trim();
@@ -61,14 +76,7 @@ export async function addQuestion(
     keepOrder: false,
   });
   if (!added || !(await ownAssessment(assessmentId, (await requireCreator()).id))) return null;
-  const stored = { id: uuidv7(), ...added };
-  await db.transaction(async (tx) => {
-    const [{ last }] = await tx
-      .select({ last: max(question.position) })
-      .from(question)
-      .where(eq(question.assessmentId, assessmentId));
-    await tx.insert(question).values({ ...stored, assessmentId, position: (last ?? 0) + 1 });
-  });
+  const [stored] = await appendQuestions(assessmentId, [added]);
   return stored;
 }
 
@@ -88,25 +96,21 @@ export async function deleteQuestion(id: string): Promise<boolean> {
 export type ImportResult = { added: StoredQuestion[] } | { errors: ImportError[] };
 
 /** Appends every Question in the file to the pool, or none of them. */
-export async function importQuestions(assessmentId: string, form: FormData): Promise<ImportResult> {
+export async function importQuestions(
+  assessmentId: string,
+  form: FormData,
+): Promise<ImportResult | null> {
   const file = form.get("csv");
-  if (!(await ownAssessment(assessmentId, (await requireCreator()).id))) return { added: [] };
-  if (!(file instanceof File) || file.size > MAX_CSV_BYTES) {
-    return { errors: [{ row: 1, problem: "tooLarge" }] };
+  if (
+    !(file instanceof File) ||
+    !(await ownAssessment(assessmentId, (await requireCreator()).id))
+  ) {
+    return null;
   }
+  if (file.size > MAX_CSV_BYTES) return { errors: [{ row: 1, problem: "tooLarge" }] };
   const parsed = parseQuestionsCsv(await file.text());
   if ("errors" in parsed) return parsed;
-  const added = parsed.questions.map((q) => ({ id: uuidv7(), ...q }));
-  await db.transaction(async (tx) => {
-    const [{ last }] = await tx
-      .select({ last: max(question.position) })
-      .from(question)
-      .where(eq(question.assessmentId, assessmentId));
-    await tx
-      .insert(question)
-      .values(added.map((q, i) => ({ ...q, assessmentId, position: (last ?? 0) + 1 + i })));
-  });
-  return { added };
+  return { added: await appendQuestions(assessmentId, parsed.questions) };
 }
 
 export async function uploadQuestionImage(form: FormData): Promise<UploadResult> {

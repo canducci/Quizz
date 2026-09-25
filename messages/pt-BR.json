@@ -108,9 +108,9 @@
       "tooLarge": "O arquivo deve ter 1 MB ou menos.",
       "openQuote": "Uma célula entre aspas não foi fechada.",
       "badType": "type deve ser single, multi ou truefalse.",
-      "badCorrect": "correct deve indicar opções preenchidas, como 1;3, ou ser true ou false em verdadeiro/falso.",
+      "badCorrect": "correct deve indicar alternativas preenchidas, como 1;3, ou ser true ou false em verdadeiro/falso.",
       "badKeepOrder": "keep_order deve ser yes ou vazio.",
-      "tooManyOptions": "Mais valores que colunas: no máximo 8 opções.",
+      "tooManyOptions": "Mais valores que colunas: no máximo 8 alternativas.",
       "tooLong": "O texto é longo demais."
     }
   },
