@@ -22,10 +22,13 @@ services:
   # Not published: the app is the only way in. A standalone Silo may already hold host port 9000.
   silo:
     image: pgsty/silo
-    command: server /data
+    command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID}
       MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
     volumes:
       - silo-data:/data
     healthcheck:
