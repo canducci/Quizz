@@ -19,7 +19,8 @@ const HOUR = 60 * 60_000;
 const hashCode = (hash: string, code: string, secret = process.env.EMAIL_HMAC_SECRET!) =>
   createHmac("sha256", secret).update(`code:${hash}:${code}`).digest();
 
-const utcDay = (now: Date) => now.toISOString().slice(0, 10);
+/** A statistics or email-cap day: the UTC date, "2026-09-25". */
+export const utcDay = (now: Date) => now.toISOString().slice(0, 10);
 
 /** Counts one sent email towards today's cap. Certificate emails call this and are never refused. */
 export async function countEmail(db: Db | Tx, now = new Date()) {

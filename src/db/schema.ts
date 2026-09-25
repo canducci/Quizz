@@ -6,6 +6,8 @@ import {
   primaryKey,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
+import type { Answers, Drawn, Histogram, QuestionTally } from "../domain/attempt";
 import { user } from "./auth-schema";
 import type { Snapshot } from "../domain/publish";
 import { QUESTION_TYPES, type QuestionOption } from "../domain/question";
@@ -120,3 +122,57 @@ export const emailDay = sqliteTable("email_day", {
   day: text("day").primaryKey(),
   sent: integer("sent").notNull(),
 });
+
+export const ATTEMPT_OUTCOMES = ["in_progress", "submitted", "timed_out"] as const;
+
+/** One timed sitting. The server holds the clock; the Learner's name is never stored here. */
+export const attempt = sqliteTable(
+  "attempt",
+  {
+    id: text("id").primaryKey(),
+    assessmentId: text("assessment_id")
+      .notNull()
+      .references(() => assessment.id),
+    versionId: text("version_id")
+      .notNull()
+      .references(() => assessmentVersion.id),
+    emailHash: text("email_hash").notNull(),
+    startedAt: integer("started_at", { mode: "timestamp_ms" }).notNull(),
+    deadline: integer("deadline", { mode: "timestamp_ms" }).notNull(),
+    drawn: text("drawn", { mode: "json" }).$type<Drawn>().notNull(),
+    answers: text("answers", { mode: "json" }).$type<Answers>().notNull(),
+    submittedAt: integer("submitted_at", { mode: "timestamp_ms" }),
+    outcome: text("outcome", { enum: ATTEMPT_OUTCOMES }).notNull().default("in_progress"),
+    score: integer("score"),
+    passed: integer("passed", { mode: "boolean" }),
+  },
+  (t) => [
+    index("attempt_learner").on(t.assessmentId, t.emailHash, t.startedAt),
+    // At most one running Attempt per Learner and Assessment, even if Start is sent twice.
+    uniqueIndex("attempt_running")
+      .on(t.assessmentId, t.emailHash)
+      .where(sql`${t.outcome} = 'in_progress'`),
+  ],
+);
+
+/** Assessment Statistics as running counters per Version and UTC day. Never recomputed. */
+export const statsDay = sqliteTable(
+  "stats_day",
+  {
+    versionId: text("version_id")
+      .notNull()
+      .references(() => assessmentVersion.id),
+    day: text("day").notNull(),
+    attempts: integer("attempts").notNull().default(0),
+    timedOut: integer("timed_out").notNull().default(0),
+    submitted: integer("submitted").notNull().default(0),
+    passed: integer("passed").notNull().default(0),
+    certificatesIssued: integer("certificates_issued").notNull().default(0),
+    revoked: integer("revoked").notNull().default(0), // name corrections excluded
+    expired: integer("expired").notNull().default(0),
+    scoreHistogram: text("score_histogram", { mode: "json" }).$type<Histogram>(), // 1% buckets
+    timeHistogram: text("time_histogram", { mode: "json" }).$type<Histogram>(), // 1-minute buckets
+    questions: text("questions", { mode: "json" }).$type<QuestionTally>(),
+  },
+  (t) => [primaryKey({ columns: [t.versionId, t.day] })],
+);

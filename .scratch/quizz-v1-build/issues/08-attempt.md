@@ -1,6 +1,6 @@
 # Attempt flow
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 07
 
 ## What to build
@@ -9,14 +9,14 @@ A verified Learner takes an Attempt (Variant D).
 
 ## Acceptance criteria
 
-- [ ] Start draws N random Questions and shuffles options unless keep order; stored on the Attempt with its deadline (server clock).
-- [ ] Sidebar layout per design: clock marked "saved automatically", numbered squares, Previous / Next, Review & submit; mobile stacks the sidebar.
-- [ ] Answers save as they go; reopening resumes the same Attempt with the clock still running.
-- [ ] Review page lists answered/unanswered with change links, then the name field ("as it will appear on your Certificate if you pass") and Submit.
-- [ ] Scoring; result shows score and pass/fail only. After the deadline, submit is refused and the Attempt is Timed out when next read.
-- [ ] Counters: attempts, submitted, passed, score and time histograms, per-Question shown/correct.
-- [ ] Vitest: draw, shuffle, scoring for each type, deadline checks, counters.
-- [ ] Playwright: full Attempt pass and fail; resume after reload.
+- [x] Start draws N random Questions and shuffles options unless keep order; stored on the Attempt with its deadline (server clock).
+- [x] Sidebar layout per design: clock marked "saved automatically", numbered squares, Previous / Next, Review & submit; mobile stacks the sidebar.
+- [x] Answers save as they go; reopening resumes the same Attempt with the clock still running.
+- [x] Review page lists answered/unanswered with change links, then the name field ("as it will appear on your Certificate if you pass") and Submit.
+- [x] Scoring; result shows score and pass/fail only. After the deadline, submit is refused and the Attempt is Timed out when next read.
+- [x] Counters: attempts, submitted, passed, score and time histograms, per-Question shown/correct.
+- [x] Vitest: draw, shuffle, scoring for each type, deadline checks, counters.
+- [x] Playwright: full Attempt pass and fail; resume after reload.
 
 ## Design reference
 

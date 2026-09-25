@@ -2,7 +2,7 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:
 
 export const LEARNER_COOKIE = "quizz_learner";
 
-// ponytail: a day covers the longest time limit; ticket 08 may tie it to the Attempt's deadline.
+// A day covers the longest time limit; starting an Attempt issues a fresh token.
 const DAY = 24 * 60 * 60_000;
 
 const key = (secret: string) => createHash("sha256").update(`learner:${secret}`).digest();

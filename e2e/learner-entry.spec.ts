@@ -1,86 +1,22 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { brandCreator, freshNetwork, newLearner, publishNew, requestCode } from "./learner-helper";
 import { fromMail, signInAsNewCreator } from "./sign-in-helper";
 
-const PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-  "base64",
-);
-const png = (name: string) => ({ name, mimeType: "image/png", buffer: PNG });
-const learner = () => `learner-${Date.now()}-${Math.random().toString(36).slice(2)}@example.test`;
-
-// Each run looks like a new network, so the 10-codes-per-IP limit doesn't carry across runs.
-test.use({
-  extraHTTPHeaders: {
-    "x-forwarded-for": `10.${Date.now() % 250}.${Math.floor(Math.random() * 250)}.1`,
-  },
-});
+test.use(freshNetwork());
 test.describe.configure({ mode: "serial" });
 
 let publicLink = "";
 let inviteLink = "";
 let closedLink = "";
 let draftLink = "";
-const invited = learner();
-
-/** A published one-Question Assessment; returns its Learner link. */
-async function publishNew(
-  page: Page,
-  title: string,
-  kind: "public" | "inviteOnly" | "inPortuguese",
-) {
-  await page.goto("/dashboard");
-  await page.getByLabel("Assessment title").fill(title);
-  await page.getByRole("button", { name: "New Assessment" }).click();
-  await expect(page).toHaveURL(/\/assessments\//);
-  const editor = page.url();
-  await page.goto(`${editor}?tab=rules`);
-  await page.getByLabel(/Questions per Attempt/).fill("1");
-  await page.getByRole("button", { name: "Save" }).click();
-  await expect(page.getByRole("status")).toHaveText("Saved");
-  if (kind !== "public") {
-    await page.goto(`${editor}?tab=access`);
-    if (kind === "inPortuguese") await page.getByLabel(/Assessment Language/).selectOption("pt-BR");
-    else await page.getByLabel(/Access Mode/).selectOption("invite");
-    await page.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByRole("status")).toHaveText("Saved");
-  }
-  if (kind === "inviteOnly") {
-    await page.getByLabel("Emails").fill(invited);
-    await page.getByRole("button", { name: "Invite" }).click();
-    await expect(page.getByRole("heading", { name: "1 email invited" })).toBeVisible();
-  }
-  await page.goto(editor);
-  await page.getByRole("button", { name: "+ New question" }).click();
-  await page.getByLabel("Question (Markdown)").fill("Is this a test?");
-  await page.getByLabel("Option 1", { exact: true }).fill("Yes");
-  await page.getByLabel("Option 2", { exact: true }).fill("No");
-  await page.getByLabel("Option 1 is correct").check();
-  await expect(page.getByRole("status")).toHaveText("Saved");
-  await page.locator(".topbar").getByRole("button").click();
-  await expect(page.locator(".pill")).toHaveText("Published · Version 1");
-  await page.goto(`${editor}?tab=publish`);
-  return (await page.locator('a[href*="/a/"]').getAttribute("href"))!;
-}
-
-async function requestCode(page: Page, link: string, email: string) {
-  await page.goto(link);
-  await page.getByLabel("Email address").fill(email);
-  await page.getByRole("button", { name: "Send verification code" }).click();
-  await expect(page.getByText(`Sent to ${email}`)).toBeVisible();
-}
+const invited = newLearner();
 
 test("a Creator publishes a Public and an Invite-only Assessment", async ({ page, request }) => {
   await signInAsNewCreator(page, request);
-  await page.goto("/settings");
-  await page.getByLabel("Creator name").fill("Git Academy");
-  await page.getByLabel("Signer name").fill("Ana Souza");
-  await page.getByLabel("Logo").setInputFiles(png("logo.png"));
-  await page.getByLabel("Signature image").setInputFiles(png("signature.png"));
-  await page.getByRole("button", { name: "Save" }).click();
-  await expect(page.getByRole("status")).toHaveText("Saved.");
-  publicLink = await publishNew(page, "Git basics", "public");
-  inviteLink = await publishNew(page, "Git advanced", "inviteOnly");
-  closedLink = await publishNew(page, "Git antigo", "inPortuguese");
+  await brandCreator(page);
+  publicLink = await publishNew(page, "Git basics");
+  inviteLink = await publishNew(page, "Git advanced", { kind: "inviteOnly", invite: invited });
+  closedLink = await publishNew(page, "Git antigo", { kind: "inPortuguese" });
   await page.getByRole("button", { name: "Close" }).click();
   await expect(page.locator(".pill")).toHaveText("Closed · Version 1");
   await page.goto("/dashboard");
@@ -91,7 +27,7 @@ test("a Creator publishes a Public and an Invite-only Assessment", async ({ page
 });
 
 test("a Learner reads the rules, gets a code by email and verifies", async ({ page, request }) => {
-  const email = learner();
+  const email = newLearner();
   await page.goto(publicLink);
   await expect(page.getByRole("heading", { name: "Git basics" })).toBeVisible();
   await expect(page.getByText("Issued by Git Academy")).toBeVisible();
@@ -107,7 +43,7 @@ test("a Learner reads the rules, gets a code by email and verifies", async ({ pa
 });
 
 test("5 wrong codes lock the code, even against the right one", async ({ page, request }) => {
-  const email = learner();
+  const email = newLearner();
   await requestCode(page, publicLink, email);
   const code = await fromMail(request, email, /\b\d{6}\b/);
   const wrong = String((Number(code) + 1) % 1_000_000).padStart(6, "0");
@@ -132,7 +68,7 @@ test("5 wrong codes lock the code, even against the right one", async ({ page, r
 });
 
 test("an uninvited email is told so only after its code", async ({ page, request }) => {
-  const email = learner();
+  const email = newLearner();
   await page.goto(inviteLink);
   await expect(page.getByText("Only invited emails can take this Assessment.")).toBeVisible();
   await requestCode(page, inviteLink, email);

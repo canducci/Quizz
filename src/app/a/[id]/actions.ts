@@ -5,8 +5,10 @@ import { getTranslations } from "next-intl/server";
 import { db } from "@/db";
 import { learnerAssessment } from "@/server/assessments";
 import { isInvited } from "@/server/invites";
-import { normalizeEmail, parseEmailList } from "@/server/email-hash";
-import { LEARNER_COOKIE, learnerToken } from "@/server/learner-session";
+import { redirect } from "next/navigation";
+import { saveAnswer, startAttempt, submitAttempt } from "@/server/attempts";
+import { emailHash, normalizeEmail, parseEmailList } from "@/server/email-hash";
+import { LEARNER_COOKIE, learnerEmail, learnerToken } from "@/server/learner-session";
 import { sendMail } from "@/server/mail";
 import { requestCode, verifyCode } from "@/server/one-time-code";
 import { CODE_MINUTES } from "@/domain/one-time-code";
@@ -74,11 +76,46 @@ export async function verifyLearnerCode(
     if (!(await isInvited(db, assessmentId, email)))
       return { reason: "notInvited", creator: snapshot.branding.name };
   }
-  (await cookies()).set(LEARNER_COOKIE, learnerToken(assessmentId, normalizeEmail(email)), {
+  await remember(assessmentId, normalizeEmail(email));
+  return null;
+}
+
+async function remember(assessmentId: string, email: string) {
+  (await cookies()).set(LEARNER_COOKIE, learnerToken(assessmentId, email), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.APP_URL?.startsWith("https:"),
     maxAge: 24 * 60 * 60,
   });
+}
+
+/** The verified Learner's email hash; a missing or stale cookie sends them back to verify. */
+async function learner(assessmentId: string) {
+  const email = learnerEmail((await cookies()).get(LEARNER_COOKIE)?.value, assessmentId);
+  if (!email) redirect(`/a/${assessmentId}`);
+  return { email, hash: emailHash(email) };
+}
+
+/** Starts (or resumes) an Attempt; the page then shows it. Invites are checked again: they apply at once. */
+export async function startLearnerAttempt(assessmentId: string): Promise<EntryError | null> {
+  const { snapshot, error } = await openAssessment(assessmentId);
+  if (error) return error;
+  const { email, hash } = await learner(assessmentId);
+  if (snapshot.settings.accessMode === "invite" && !(await isInvited(db, assessmentId, email)))
+    return { reason: "notInvited", creator: snapshot.branding.name };
+  const started = await startAttempt(db, { assessmentId, learner: hash });
+  if (!started) return { reason: "closed", creator: snapshot.branding.name };
+  // A fresh cookie outlives the deadline (the longest time limit is a day), so the Learner can resume.
+  await remember(assessmentId, email);
   return null;
+}
+
+export async function saveLearnerAnswer(assessmentId: string, questionId: string, choice: unknown) {
+  const { hash } = await learner(assessmentId);
+  return saveAnswer(db, { assessmentId, learner: hash, questionId, choice });
+}
+
+export async function submitLearnerAttempt(assessmentId: string, name: string) {
+  const { hash } = await learner(assessmentId);
+  return submitAttempt(db, { assessmentId, learner: hash, name: String(name) });
 }

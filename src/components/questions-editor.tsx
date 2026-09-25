@@ -22,7 +22,7 @@ import {
 } from "@/domain/question";
 import { CSV_TEMPLATE, MAX_CSV_BYTES, type ImportError } from "@/domain/csv-import";
 import { MAX_IMAGE_BYTES } from "@/server/image-type";
-import { QuestionView } from "./question-view";
+import { QuestionView, questionLabels } from "./question-view";
 
 type SaveState = "idle" | "saving" | "saved" | "failed";
 
@@ -371,17 +371,11 @@ export function QuestionsEditor(props: { assessmentId: string; pool: StoredQuest
         {selected && (
           <>
             <QuestionView
-              question={selected}
-              labels={{
-                heading: tAttempt("heading", { n: index + 1 }),
-                hint: {
-                  single: tAttempt("hint.single"),
-                  multi: tAttempt("hint.multi"),
-                  truefalse: tAttempt("hint.truefalse"),
-                },
-                true: tAttempt("true"),
-                false: tAttempt("false"),
+              question={{
+                ...selected,
+                options: selected.options.map((o, i) => ({ ...o, index: i })),
               }}
+              labels={questionLabels(tAttempt, tAttempt("heading", { n: index + 1 }))}
             />
             <p>
               <small>{t(selected.keepOrder ? "keptOrder" : "shuffled")}</small>
