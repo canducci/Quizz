@@ -1,6 +1,6 @@
 # Walking skeleton
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 
 
 ## What to build
