@@ -3,6 +3,7 @@ import { and, count, desc, eq, gt, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { v7 as uuidv7 } from "uuid";
 import * as schema from "../db/schema";
+import { CODE_MINUTES } from "../domain/one-time-code";
 import { emailHash } from "./email-hash";
 
 type Db = LibSQLDatabase<typeof schema>;
@@ -10,7 +11,6 @@ type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 type Purpose = (typeof schema.oneTimeCode.$inferSelect)["purpose"];
 const { oneTimeCode, emailDay } = schema;
 
-export const CODE_MINUTES = 10;
 const MAX_WRONG = 5;
 const PER_EMAIL = 3;
 const PER_IP = 10;

@@ -1,15 +1,15 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
 import { cookies, headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { db } from "@/db";
-import { invite } from "@/db/schema";
 import { learnerAssessment } from "@/server/assessments";
-import { emailHash, normalizeEmail, parseEmailList } from "@/server/email-hash";
+import { isInvited } from "@/server/invites";
+import { normalizeEmail, parseEmailList } from "@/server/email-hash";
 import { LEARNER_COOKIE, learnerToken } from "@/server/learner-session";
 import { sendMail } from "@/server/mail";
 import { requestCode, verifyCode } from "@/server/one-time-code";
+import { CODE_MINUTES } from "@/domain/one-time-code";
 
 export type EntryError =
   | { reason: "badEmail" | "sendFailed" | "dailyCap" | "email" | "ip" | "locked" | "expired" }
@@ -51,7 +51,7 @@ export async function requestLearnerCode(
     locale: snapshot.settings.language,
     namespace: "learner.mail",
   });
-  const values = { title: snapshot.title, code: sent.code };
+  const values = { title: snapshot.title, code: sent.code, minutes: CODE_MINUTES };
   try {
     await sendMail(email, t("subject", values), t("body", values));
   } catch {
@@ -71,11 +71,8 @@ export async function verifyLearnerCode(
   const checked = await verifyCode(db, { email, code, purpose: "attempt" });
   if (!checked.ok) return checked;
   if (snapshot.settings.accessMode === "invite") {
-    const [invited] = await db
-      .select()
-      .from(invite)
-      .where(and(eq(invite.assessmentId, assessmentId), eq(invite.emailHash, emailHash(email))));
-    if (!invited) return { reason: "notInvited", creator: snapshot.branding.name };
+    if (!(await isInvited(db, assessmentId, email)))
+      return { reason: "notInvited", creator: snapshot.branding.name };
   }
   (await cookies()).set(LEARNER_COOKIE, learnerToken(assessmentId, normalizeEmail(email)), {
     httpOnly: true,

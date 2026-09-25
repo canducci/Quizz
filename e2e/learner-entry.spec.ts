@@ -23,7 +23,11 @@ let draftLink = "";
 const invited = learner();
 
 /** A published one-Question Assessment; returns its Learner link. */
-async function publishNew(page: Page, title: string, access: "public" | "invite" | "pt-BR") {
+async function publishNew(
+  page: Page,
+  title: string,
+  kind: "public" | "inviteOnly" | "inPortuguese",
+) {
   await page.goto("/dashboard");
   await page.getByLabel("Assessment title").fill(title);
   await page.getByRole("button", { name: "New Assessment" }).click();
@@ -33,14 +37,14 @@ async function publishNew(page: Page, title: string, access: "public" | "invite"
   await page.getByLabel(/Questions per Attempt/).fill("1");
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page.getByRole("status")).toHaveText("Saved");
-  if (access !== "public") {
+  if (kind !== "public") {
     await page.goto(`${editor}?tab=access`);
-    if (access === "pt-BR") await page.getByLabel(/Assessment Language/).selectOption("pt-BR");
+    if (kind === "inPortuguese") await page.getByLabel(/Assessment Language/).selectOption("pt-BR");
     else await page.getByLabel(/Access Mode/).selectOption("invite");
     await page.getByRole("button", { name: "Save" }).click();
     await expect(page.getByRole("status")).toHaveText("Saved");
   }
-  if (access === "invite") {
+  if (kind === "inviteOnly") {
     await page.getByLabel("Emails").fill(invited);
     await page.getByRole("button", { name: "Invite" }).click();
     await expect(page.getByRole("heading", { name: "1 email invited" })).toBeVisible();
@@ -75,8 +79,8 @@ test("a Creator publishes a Public and an Invite-only Assessment", async ({ page
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page.getByRole("status")).toHaveText("Saved.");
   publicLink = await publishNew(page, "Git basics", "public");
-  inviteLink = await publishNew(page, "Git advanced", "invite");
-  closedLink = await publishNew(page, "Git antigo", "pt-BR");
+  inviteLink = await publishNew(page, "Git advanced", "inviteOnly");
+  closedLink = await publishNew(page, "Git antigo", "inPortuguese");
   await page.getByRole("button", { name: "Close" }).click();
   await expect(page.locator(".pill")).toHaveText("Closed · Version 1");
   await page.goto("/dashboard");

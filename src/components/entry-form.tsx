@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { CODE_MINUTES } from "@/domain/one-time-code";
 import { requestLearnerCode, verifyLearnerCode, type EntryError } from "@/app/a/[id]/actions";
 
 /** Email, then the one-time code. A verified Learner reloads into the page's verified view. */
@@ -67,7 +68,7 @@ export function EntryForm({ assessmentId }: { assessmentId: string }) {
       }}
     >
       <h2>{t("codeTitle")}</h2>
-      <p className="muted">{t("sentTo", { email })}</p>
+      <p className="muted">{t("sentTo", { email, minutes: CODE_MINUTES })}</p>
       <label className="stack">
         {t("code")}
         <input

@@ -223,7 +223,7 @@
     "emailHint": "Usado só para enviar seu código e seu Certificado. O Criador nunca o vê.",
     "sendCode": "Enviar código de verificação",
     "codeTitle": "Digite seu código de verificação",
-    "sentTo": "Enviado para {email}. Vale por 10 minutos.",
+    "sentTo": "Enviado para {email}. Vale por {minutes} minutos.",
     "code": "Código de verificação",
     "verify": "Verificar",
     "resend": "Reenviar código",
@@ -244,7 +244,7 @@
     },
     "mail": {
       "subject": "Seu código para {title}: {code}",
-      "body": "Seu código de verificação para {title} é:\n\n{code}\n\nEle vale por 10 minutos. Se você não pediu, ignore este e-mail."
+      "body": "Seu código de verificação para {title} é:\n\n{code}\n\nEle vale por {minutes} minutos. Se você não pediu, ignore este e-mail."
     }
   }
 }

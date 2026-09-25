@@ -57,3 +57,16 @@ export async function inviteCount(db: Db, assessmentId: string) {
     .where(eq(schema.invite.assessmentId, assessmentId));
   return row.n;
 }
+
+export async function isInvited(db: Db, assessmentId: string, email: string) {
+  const [row] = await db
+    .select()
+    .from(schema.invite)
+    .where(
+      and(
+        eq(schema.invite.assessmentId, assessmentId),
+        eq(schema.invite.emailHash, emailHash(email)),
+      ),
+    );
+  return !!row;
+}

@@ -8,10 +8,10 @@ it("proves a verified email for one Assessment for a day", () => {
   expect(learnerEmail(token, "a2", now, "s")).toBeNull();
   expect(learnerEmail(token, "a1", new Date(now.getTime() + 25 * 3600_000), "s")).toBeNull();
   expect(learnerEmail(token, "a1", now, "other secret")).toBeNull();
-  const forged = Buffer.from(
-    JSON.stringify({ a: "a1", e: "eve@example.com", x: now.getTime() + 1000 }),
-  ).toString("base64url");
-  expect(learnerEmail(`${forged}.${token.split(".")[1]}`, "a1", now, "s")).toBeNull();
+  expect(Buffer.from(token, "base64url").toString()).not.toContain("ana@");
+  const flipped = Buffer.from(token, "base64url");
+  flipped[flipped.length - 1] ^= 1;
+  expect(learnerEmail(flipped.toString("base64url"), "a1", now, "s")).toBeNull();
   expect(learnerEmail(undefined, "a1", now, "s")).toBeNull();
   expect(learnerEmail("junk", "a1", now, "s")).toBeNull();
 });

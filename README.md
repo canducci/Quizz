@@ -12,6 +12,8 @@ docker compose up -d --build --wait
 
 The app is on http://localhost:3000 and sign-in emails land in Mailpit at http://localhost:8025.
 
+Exposing it beyond localhost? Put it behind a reverse proxy that overwrites `X-Forwarded-For`. Learner one-time codes are limited per IP from that header, and Next passes a client-sent one through, so without the proxy that limit (and the daily email cap it protects) can be dodged.
+
 ## Develop
 
 ```sh

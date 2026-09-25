@@ -223,7 +223,7 @@
     "emailHint": "Used only to send your code and Certificate. The Creator never sees it.",
     "sendCode": "Send verification code",
     "codeTitle": "Enter your verification code",
-    "sentTo": "Sent to {email}. It works for 10 minutes.",
+    "sentTo": "Sent to {email}. It works for {minutes} minutes.",
     "code": "Verification code",
     "verify": "Verify",
     "resend": "Resend code",
@@ -244,7 +244,7 @@
     },
     "mail": {
       "subject": "Your code for {title}: {code}",
-      "body": "Your verification code for {title} is:\n\n{code}\n\nIt works for 10 minutes. If you didn't ask for it, ignore this email."
+      "body": "Your verification code for {title} is:\n\n{code}\n\nIt works for {minutes} minutes. If you didn't ask for it, ignore this email."
     }
   }
 }
