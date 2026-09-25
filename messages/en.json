@@ -95,7 +95,24 @@
     },
     "preview": "Learner preview",
     "keptOrder": "Options are shown in this order.",
-    "shuffled": "Options are shuffled for each Learner."
+    "shuffled": "Options are shuffled for each Learner.",
+    "importCsv": "Import from CSV",
+    "csvTemplate": "Download the CSV template",
+    "imported": "Imported {n, plural, one {# Question} other {# Questions}}.",
+    "importRejected": "Nothing was imported. Fix these rows and import the file again:",
+    "importRow": "Row {row}:",
+    "importErrors": {
+      "badHeader": "The header must name the columns type, question, option_1…option_8, correct and keep_order.",
+      "noRows": "The file has no Questions.",
+      "tooManyRows": "At most 1000 Questions per file.",
+      "tooLarge": "The file must be 1 MB or smaller.",
+      "openQuote": "A quoted cell never closes.",
+      "badType": "type must be single, multi or truefalse.",
+      "badCorrect": "correct must name filled options, like 1;3, or be true or false for true/false.",
+      "badKeepOrder": "keep_order must be yes or blank.",
+      "tooManyOptions": "More values than columns: at most 8 options.",
+      "tooLong": "The text is too long."
+    }
   },
   "attempt": {
     "heading": "Question {n}",

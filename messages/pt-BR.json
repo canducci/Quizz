@@ -95,7 +95,24 @@
     },
     "preview": "Prévia do Participante",
     "keptOrder": "As alternativas aparecem nesta ordem.",
-    "shuffled": "As alternativas são embaralhadas para cada Participante."
+    "shuffled": "As alternativas são embaralhadas para cada Participante.",
+    "importCsv": "Importar de CSV",
+    "csvTemplate": "Baixar o modelo CSV",
+    "imported": "{n, plural, one {# Questão importada} other {# Questões importadas}}.",
+    "importRejected": "Nada foi importado. Corrija estas linhas e importe o arquivo de novo:",
+    "importRow": "Linha {row}:",
+    "importErrors": {
+      "badHeader": "O cabeçalho deve nomear as colunas type, question, option_1…option_8, correct e keep_order.",
+      "noRows": "O arquivo não tem Questões.",
+      "tooManyRows": "No máximo 1000 Questões por arquivo.",
+      "tooLarge": "O arquivo deve ter 1 MB ou menos.",
+      "openQuote": "Uma célula entre aspas não foi fechada.",
+      "badType": "type deve ser single, multi ou truefalse.",
+      "badCorrect": "correct deve indicar opções preenchidas, como 1;3, ou ser true ou false em verdadeiro/falso.",
+      "badKeepOrder": "keep_order deve ser yes ou vazio.",
+      "tooManyOptions": "Mais valores que colunas: no máximo 8 opções.",
+      "tooLong": "O texto é longo demais."
+    }
   },
   "attempt": {
     "heading": "Questão {n}",

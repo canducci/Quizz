@@ -8,6 +8,7 @@ import { v7 as uuidv7 } from "uuid";
 import { db } from "@/db";
 import { assessment, question, type AssessmentStatus } from "@/db/schema";
 import { parseAccess, parseRules } from "@/domain/settings";
+import { MAX_CSV_BYTES, parseQuestionsCsv, type ImportError } from "@/domain/csv-import";
 import { normalizeQuestion, type QuestionContent, type QuestionType } from "@/domain/question";
 import { requireCreator } from "@/server/auth";
 import { ownAssessment } from "@/server/assessments";
@@ -82,6 +83,30 @@ export async function deleteQuestion(id: string): Promise<boolean> {
   if (!(await ownQuestion(id))) return false;
   await db.update(question).set({ deletedAt: new Date() }).where(eq(question.id, id));
   return true;
+}
+
+export type ImportResult = { added: StoredQuestion[] } | { errors: ImportError[] };
+
+/** Appends every Question in the file to the pool, or none of them. */
+export async function importQuestions(assessmentId: string, form: FormData): Promise<ImportResult> {
+  const file = form.get("csv");
+  if (!(await ownAssessment(assessmentId, (await requireCreator()).id))) return { added: [] };
+  if (!(file instanceof File) || file.size > MAX_CSV_BYTES) {
+    return { errors: [{ row: 1, problem: "tooLarge" }] };
+  }
+  const parsed = parseQuestionsCsv(await file.text());
+  if ("errors" in parsed) return parsed;
+  const added = parsed.questions.map((q) => ({ id: uuidv7(), ...q }));
+  await db.transaction(async (tx) => {
+    const [{ last }] = await tx
+      .select({ last: max(question.position) })
+      .from(question)
+      .where(eq(question.assessmentId, assessmentId));
+    await tx
+      .insert(question)
+      .values(added.map((q, i) => ({ ...q, assessmentId, position: (last ?? 0) + 1 + i })));
+  });
+  return { added };
 }
 
 export async function uploadQuestionImage(form: FormData): Promise<UploadResult> {

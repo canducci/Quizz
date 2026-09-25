@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import {
   addQuestion,
   deleteQuestion,
+  importQuestions,
   saveQuestion,
   uploadQuestionImage,
   type StoredQuestion,
@@ -19,6 +20,7 @@ import {
   type QuestionContent,
   type QuestionType,
 } from "@/domain/question";
+import { CSV_TEMPLATE, MAX_CSV_BYTES, type ImportError } from "@/domain/csv-import";
 import { MAX_IMAGE_BYTES } from "@/server/image-type";
 import { QuestionView } from "./question-view";
 
@@ -32,6 +34,9 @@ export function QuestionsEditor(props: { assessmentId: string; pool: StoredQuest
   const [selectedId, setSelectedId] = useState(props.pool[0]?.id);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [imageError, setImageError] = useState<"badImage" | "tooLarge" | null>(null);
+  const [imported, setImported] = useState<{ added: number } | { errors: ImportError[] } | null>(
+    null,
+  );
   const textRef = useRef<HTMLTextAreaElement>(null);
   // Refreshes the server-rendered top bar (its Question count); local state survives.
   const router = useRouter();
@@ -134,6 +139,22 @@ export function QuestionsEditor(props: { assessmentId: string; pool: StoredQuest
     router.refresh();
   }
 
+  async function importCsv(file: File) {
+    if (file.size > MAX_CSV_BYTES)
+      return setImported({ errors: [{ row: 1, problem: "tooLarge" }] });
+    await flush();
+    const form = new FormData();
+    form.set("csv", file);
+    const result = await importQuestions(props.assessmentId, form).catch(() => null);
+    if (!result) return setSaveState("failed");
+    if ("errors" in result) return setImported(result);
+    setImported({ added: result.added.length });
+    if (!result.added.length) return;
+    setPool([...latest.current, ...result.added]);
+    setSelectedId(result.added[0].id);
+    router.refresh();
+  }
+
   async function insertImage(file: File) {
     if (file.size > MAX_IMAGE_BYTES) return setImageError("tooLarge");
     const id = selected.id;
@@ -184,6 +205,44 @@ export function QuestionsEditor(props: { assessmentId: string; pool: StoredQuest
         <button type="button" onClick={add}>
           {t("newQuestion")}
         </button>
+        <label className="stack">
+          {t("importCsv")}
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) importCsv(file);
+            }}
+          />
+        </label>
+        <a
+          href={`data:text/csv;charset=utf-8,${encodeURIComponent(CSV_TEMPLATE)}`}
+          download="quizz-questions.csv"
+        >
+          {t("csvTemplate")}
+        </a>
+        {imported &&
+          ("added" in imported ? (
+            <p role="status">{t("imported", { n: imported.added })}</p>
+          ) : (
+            <div role="alert">
+              <p className="danger">{t("importRejected")}</p>
+              <ul>
+                {imported.errors.map(({ row, problem }, i) => (
+                  <li key={i}>
+                    {t("importRow", { row })}{" "}
+                    {t(
+                      t.has(`problems.${problem}`)
+                        ? `problems.${problem}`
+                        : `importErrors.${problem}`,
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
       </div>
 
       <div className="edit stack">

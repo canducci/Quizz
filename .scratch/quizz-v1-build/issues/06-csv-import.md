@@ -1,6 +1,6 @@
 # CSV import
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 05
 
 ## What to build
@@ -9,11 +9,11 @@ Creators import Questions from CSV.
 
 ## Acceptance criteria
 
-- [ ] Columns per spec: `type`, `question`, `option_1`…`option_8`, `correct`, `keep_order`; quoted newlines allowed.
-- [ ] All-or-nothing: any invalid row rejects the file and lists every error with its row number; valid files append to the pool.
-- [ ] Template download from the editor.
-- [ ] Vitest: parser covers each type, bad `correct` values, too many options, Markdown with commas and newlines.
-- [ ] Playwright: import the template, see the Questions; import a bad file, see row errors and no change.
+- [x] Columns per spec: `type`, `question`, `option_1`…`option_8`, `correct`, `keep_order`; quoted newlines allowed.
+- [x] All-or-nothing: any invalid row rejects the file and lists every error with its row number; valid files append to the pool.
+- [x] Template download from the editor.
+- [x] Vitest: parser covers each type, bad `correct` values, too many options, Markdown with commas and newlines.
+- [x] Playwright: import the template, see the Questions; import a bad file, see row errors and no change.
 
 ## Design reference
 
