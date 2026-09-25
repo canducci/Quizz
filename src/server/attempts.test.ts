@@ -170,3 +170,12 @@ it("starts nothing on a Closed Assessment, but lets a running Attempt finish", a
     ok: true,
   });
 });
+
+it("tells a late Learner time ran out, even without a name", async () => {
+  const { db } = await published();
+  await startAttempt(db, { ...learner, now: at(0) });
+  expect(await submitAttempt(db, { ...learner, name: "", now: at(11) })).toEqual({
+    ok: false,
+    reason: "timedOut",
+  });
+});

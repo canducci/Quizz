@@ -46,7 +46,7 @@ async function bump(
   await tx.update(statsDay).set(tallies(row)).where(where);
 }
 
-/** Marks a running Attempt Timed out, counted once on its deadline's day. The hourly sweep uses it too. */
+/** Marks a running Attempt Timed out, counted once on its deadline's day. The hourly sweep (ticket 12) must reuse it. */
 export async function timeOut(tx: Tx, row: Attempt) {
   const done = await tx
     .update(attempt)
@@ -86,15 +86,19 @@ export async function latestAttempt(
 ) {
   return db.transaction(async (tx) => {
     await running(tx, assessmentId, learner, now);
-    const [row] = await tx
-      .select({ attempt, snapshot: assessmentVersion.snapshot })
-      .from(attempt)
-      .innerJoin(assessmentVersion, eq(attempt.versionId, assessmentVersion.id))
-      .where(and(eq(attempt.assessmentId, assessmentId), eq(attempt.emailHash, learner)))
-      .orderBy(desc(attempt.startedAt), desc(attempt.id))
-      .limit(1);
-    return row ?? null;
+    return latest(tx, assessmentId, learner);
   });
+}
+
+async function latest(tx: Tx, assessmentId: string, learner: string) {
+  const [row] = await tx
+    .select({ attempt, snapshot: assessmentVersion.snapshot })
+    .from(attempt)
+    .innerJoin(assessmentVersion, eq(attempt.versionId, assessmentVersion.id))
+    .where(and(eq(attempt.assessmentId, assessmentId), eq(attempt.emailHash, learner)))
+    .orderBy(desc(attempt.startedAt), desc(attempt.id))
+    .limit(1);
+  return row ?? null;
 }
 
 /** Resumes the Learner's running Attempt or starts one on the current Version. Null when the
@@ -153,7 +157,10 @@ export async function saveAnswer(
     const choice = cleanChoice(question, opts.choice);
     if (!choice) return false;
     const answers = { ...row.attempt.answers, [opts.questionId]: choice };
-    await tx.update(attempt).set({ answers }).where(eq(attempt.id, row.attempt.id));
+    await tx
+      .update(attempt)
+      .set({ answers })
+      .where(and(eq(attempt.id, row.attempt.id), eq(attempt.outcome, "in_progress")));
     return true;
   });
 }
@@ -170,20 +177,14 @@ export async function submitAttempt(
 ): Promise<SubmitResult> {
   const now = opts.now ?? new Date();
   const name = opts.name.trim();
-  if (!name || name.length > MAX_NAME) return { ok: false, reason: "name" };
   return db.transaction(async (tx) => {
     const row = await running(tx, opts.assessmentId, opts.learner, now);
     if (!row) {
-      const [last] = await tx
-        .select({ outcome: attempt.outcome })
-        .from(attempt)
-        .where(
-          and(eq(attempt.assessmentId, opts.assessmentId), eq(attempt.emailHash, opts.learner)),
-        )
-        .orderBy(desc(attempt.startedAt), desc(attempt.id))
-        .limit(1);
-      return { ok: false, reason: last?.outcome === "timed_out" ? "timedOut" : "over" };
+      const last = await latest(tx, opts.assessmentId, opts.learner);
+      return { ok: false, reason: last?.attempt.outcome === "timed_out" ? "timedOut" : "over" };
     }
+    // After the deadline check, so a late Learner hears that time ran out.
+    if (!name || name.length > MAX_NAME) return { ok: false, reason: "name" };
     const { drawn, answers, versionId, startedAt } = row.attempt;
     const { settings, questions } = row.snapshot;
     const { score, passed, correct } = scoreAttempt(

@@ -275,7 +275,7 @@
     "failed": "Você não passou.",
     "score": "Nota: {score}%",
     "passingWas": "Nota de Aprovação: {passing}%.",
-    "noReview": "Os resultados por questão não são mostrados, para que o Conjunto de Questões continue justo para todos.",
+    "noReview": "Os resultados por Questão não são mostrados, para que o Conjunto de Questões continue justo para todos.",
     "timedOut": "O tempo acabou.",
     "timedOutBody": "Esta Tentativa não foi enviada antes de o tempo acabar, então fica sem nota.",
     "mail": {

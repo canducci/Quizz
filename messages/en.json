@@ -275,7 +275,7 @@
     "failed": "You didn't pass.",
     "score": "Score: {score}%",
     "passingWas": "Passing Score: {passing}%.",
-    "noReview": "Per-question results aren't shown, so the Question Pool stays fair for everyone.",
+    "noReview": "Per-Question results aren't shown, so the Question Pool stays fair for everyone.",
     "timedOut": "Time's up.",
     "timedOutBody": "This Attempt wasn't submitted before the clock ran out, so it has no score.",
     "mail": {
