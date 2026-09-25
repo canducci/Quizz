@@ -18,7 +18,7 @@ it("reads the range's days and one Version's counters, never another Assessment'
       versionId: v1.id,
       day: "2026-09-24",
       attempts: 2,
-      questions: { q1: { shown: 2, correct: 0 } },
+      questions: { q2: { shown: 2, correct: 0 } },
     },
     { versionId: "v2", day: "2026-09-25", attempts: 1 },
   ]);
@@ -27,7 +27,8 @@ it("reads the range's days and one Version's counters, never another Assessment'
   const week = await assessmentStatistics(db, "a1", { range: "7" }, now);
   expect(week.attempts).toBe(3);
   expect(week.perDay).toHaveLength(7);
-  expect(week.questions).toEqual([{ n: 1, text: "q1", shown: 2, correct: 0 }]);
+  // q1 was never shown, so q2 is numbered 1: no gaps.
+  expect(week.questions).toEqual([{ n: 1, text: "q2", shown: 2, correct: 0 }]);
   expect(week.passingScore).toBeNull();
 
   const all = await assessmentStatistics(db, "a1", { range: "all" }, now);
