@@ -8,6 +8,7 @@ Vocabulary follows `CONTEXT.md`. Decisions recorded in `docs/adr/`.
 
 - Attempt and Certificate domain logic: branch `prototype/domain-logic`, file `prototypes/domain-logic.prototype.html`. It settled: no auto-submit (Timed out), name entered at submit, no retake while holding a Valid Certificate, statistics as running counters, name corrections not counted as revoked.
 - Learner Attempt flow UI: branch `prototype/attempt-ui`, file `prototypes/attempt-flow.prototype.html`. Four variants compared; the chosen one is **Variant D** (open with `?variant=D`).
+- Creator Assessment editor UI: branch `prototype/editor-ui`, file `prototypes/assessment-editor.prototype.html`. Three variants compared; the chosen one is **Variant B** (open with `?variant=B`).
 
 ## Scope
 
@@ -69,6 +70,7 @@ Vocabulary follows `CONTEXT.md`. Decisions recorded in `docs/adr/`.
 
 - Attempt flow layout (Variant D of the UI prototype): a sidebar holds the Creator and Assessment name, a large clock marked "saved automatically", numbered question squares (answered ones filled, current one highlighted) for jumping between questions, and a "Review & submit" button. The main area shows one question at a time with Previous / Next. Before submitting, a review page lists every question as answered or not, with "change" links, followed by the name field and Submit.
 - Mobile: the sidebar stacks above the question.
+- Assessment editor layout (Variant B of the editor prototype): a top bar with the title, Assessment Status and version, tabs (Questions, Rules, Access & language, Publish) and the Publish button. The Questions tab has three panes: the Question Pool as a list (incomplete Questions flagged, correct-answer rate once published), the editor for the selected Question (type, Markdown text, answer options with correct ones marked, keep order), and a live Learner preview in the Attempt-flow style. Publish stays disabled while problems remain, and the Publish tab lists them. Editing a published Assessment shows that publishing creates a new Assessment Version and that existing Certificates stay on theirs.
 
 - The whole app can be switched between English and pt-BR. Each Assessment's content is in its single Assessment Language.
 
