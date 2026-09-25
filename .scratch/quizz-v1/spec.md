@@ -4,6 +4,10 @@ Status: needs-triage
 
 Vocabulary follows `CONTEXT.md`. Decisions recorded in `docs/adr/`.
 
+## Prototypes
+
+- Attempt and Certificate domain logic: branch `prototype/domain-logic`, file `prototypes/domain-logic.prototype.html`. It settled: no auto-submit (Timed out), name entered at submit, no retake while holding a Valid Certificate, statistics as running counters, name corrections not counted as revoked.
+
 ## Scope
 
 - Assessment and certification only; no course hosting (ADR 0001).
@@ -17,7 +21,8 @@ Vocabulary follows `CONTEXT.md`. Decisions recorded in `docs/adr/`.
 - Sign in with a magic link or Google.
 - Certificate branding: one fixed layout. The Creator sets the logo, accent colour, signer name and signature image.
 - Creators never see an individual Learner. They see Assessment Statistics only, from the first Attempt, with no minimum group size (ADR 0002).
-- Assessment Statistics: Attempt count, pass rate, score distribution, correct-answer rate per Question, median time taken, Certificates issued, revoked and expired; date filter. No per-Attempt rows and no export of individuals.
+- Assessment Statistics: Attempt count (including Timed out), pass rate, score distribution, correct-answer rate per Question, median time taken, Certificates issued, revoked and expired; date filter. No per-Attempt rows and no export of individuals.
+- Assessment Statistics are running counters: Learner Erasure never lowers them. Revocations for a name correction aren't counted as revoked.
 - Deleting a Creator account keeps their Certificates valid. A Creator Ban revokes every Certificate that Creator issued.
 
 ## Assessments
@@ -35,15 +40,16 @@ Vocabulary follows `CONTEXT.md`. Decisions recorded in `docs/adr/`.
 
 - Before every Attempt, the Learner verifies their email with a one-time code.
 - Each Attempt draws a random N Questions from the pool. Answer options are shuffled unless the Question is marked "keep order".
-- The server holds the clock: each Attempt stores its deadline, and an overdue Attempt is finalized the next time anything reads it. A daily cleanup job finalizes abandoned ones.
-- Answers save as they go. A Learner who disconnects can resume the same Attempt, and the clock keeps running. When time runs out, the Attempt is submitted automatically with the answers given so far.
+- The server holds the clock: each Attempt stores its deadline. Answers save as they go. A Learner who disconnects can resume the same Attempt, and the clock keeps running.
+- There is no auto-submit. An Attempt not submitted by its deadline is Timed out: no score, can't pass, and it counts against the Retake Policy, with the cooldown running from the deadline. An overdue Attempt becomes Timed out the next time anything reads it, and a daily cleanup job times out abandoned ones.
+- A Learner holding a Valid Certificate for the Assessment can't start another Attempt. Once it has expired or been revoked, they can (subject to the Retake Policy).
 - The Retake Policy is enforced on the keyed email hash.
 - Afterwards the Learner sees only their score and pass/fail. There's no per-question review.
 - Cheating deterrents: time limit, random draw, retake limit and cooldown. No proctoring.
 
 ## Certificates
 
-- On passing, the Learner confirms their full name ("this is how it will appear"). The Certificate is then issued and can't be changed. Corrections are made by revoking and reissuing, which gives a new URL.
+- The Learner enters their full name when submitting ("as it will appear on your Certificate if you pass"). A pass issues the Certificate in the same step; on a fail the name is thrown away. A Certificate can't be changed. The Learner can correct their name, which revokes the Certificate ("Name correction") and issues a new one at a new URL.
 - The Certificate attests to the Learner's name, the Assessment (and version), the score, the date, and the Creator.
 - Delivered by email as a PDF in the Assessment Language, with a QR code linking to the Verification Page.
 - Verification Page: public, at an unguessable unique URL. It shows validity, revoked (with date) or expired. It always shows "Issued by <Creator> via Quizz", when the Creator joined, and a report-abuse link. Labels follow the viewer's interface language; content stays in the Assessment Language.
@@ -52,7 +58,7 @@ Vocabulary follows `CONTEXT.md`. Decisions recorded in `docs/adr/`.
 ## Learner privacy (ADR 0002)
 
 - Emails are never stored in plain text. We keep only a keyed hash (HMAC with a server secret). The plain email is used only to send the one-time code and the Certificate.
-- The name is collected only on passing, and stored only on the Certificate.
+- The name is entered at submit and stored only on a pass, on the Certificate.
 - My Certificates: the Learner verifies their email with a one-time code, then sees all their Certificates across Creators and can request Learner Erasure.
 - Learner Erasure deletes all of that Learner's data, including Certificates (their Verification Pages then show not found), and resets their retake counts.
 - Confirm the Learner Erasure and data-transfer approach with someone who knows LGPD before launch.

@@ -49,7 +49,7 @@ The set of Questions belonging to an Assessment, from which each Attempt draws a
 _Avoid_: Question bank
 
 **Attempt**:
-One timed sitting of an Assessment by a Learner, producing a score.
+One timed sitting of an Assessment by a Learner. It ends either Submitted (scored, passed or failed) or Timed out (not submitted by its deadline; no score, can't pass).
 _Avoid_: Submission, session, try
 
 **Passing Score**:
@@ -60,13 +60,13 @@ _Avoid_: Cutoff, threshold
 The maximum number of Attempts a Learner may make on an Assessment and the cooldown between them.
 
 **Assessment Statistics**:
-Aggregate figures for an Assessment (Attempts, pass rate, score distribution, correct-answer rate per Question, time taken, Certificates issued, revoked and expired). The only view a Creator has of Learner activity.
+Aggregate figures for an Assessment (Attempts, pass rate, score distribution, correct-answer rate per Question, time taken, Certificates issued, revoked and expired). Running counters that Learner Erasure never lowers. The only view a Creator has of Learner activity.
 _Avoid_: Results, report, analytics
 
 ## Certification
 
 **Certificate**:
-An immutable record that a Learner passed a specific Assessment Version, with the Learner's confirmed name, score and date, issued under the Creator's brand. Corrections are made by revoking and reissuing.
+An immutable record that a Learner passed a specific Assessment Version, with the name the Learner entered at submit, score and date, issued under the Creator's brand. Corrections are made by revoking and reissuing.
 _Avoid_: Badge, diploma, credential
 
 **Verification Page**:
@@ -78,7 +78,7 @@ The page where a Learner proves their email with a one-time code and sees every 
 _Avoid_: Wallet, profile, dashboard
 
 **Revocation**:
-A Creator's withdrawal of a Certificate, with a reason; the Verification Page stays up and shows it as revoked.
+A Creator's withdrawal of a Certificate, with a reason; the Verification Page stays up and shows it as revoked. Also used when a Learner corrects their name (reason "Name correction"), which isn't counted as revoked in Assessment Statistics.
 _Avoid_: Deletion, cancellation
 
 **Expiry**:

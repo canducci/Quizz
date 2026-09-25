@@ -5,5 +5,5 @@ Quizz is a TypeScript Next.js app using Better Auth (magic link + Google), Postg
 ## Consequences
 
 - App code must not use Vercel-only features (Cron, Blob, KV, Edge Config), or the Docker image stops being a real deployment path.
-- Attempt timers need no scheduler. Each Attempt stores its deadline; answers are checked against it, and an overdue Attempt is finalized the next time anything reads it. A daily cleanup job only finalizes abandoned Attempts so Assessment Statistics are correct.
+- Attempt timers need no scheduler. Each Attempt stores its deadline; answers are checked against it, and an overdue Attempt becomes Timed out the next time anything reads it. A daily cleanup job only times out abandoned Attempts so Assessment Statistics are correct.
 - If the official hosted Quizz starts charging, Vercel Hobby no longer qualifies: move to Vercel Pro or to Cloud Run.
