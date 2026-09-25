@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { db } from "@/db";
 import { AttemptView, CantStart, ResendButton, StartButton } from "@/components/attempt-view";
 import { EntryForm } from "@/components/entry-form";
+import { requestLearnerCode, verifyLearnerCode } from "./actions";
 import { learnerQuestions } from "@/domain/attempt";
 import { messagesFor } from "@/i18n/locales";
 import { shownBlock } from "@/domain/retake";
@@ -151,7 +152,12 @@ export default async function AssessmentLink(props: {
                 )}
               </>
             ) : (
-              provide(<EntryForm assessmentId={id} />)
+              provide(
+                <EntryForm
+                  request={requestLearnerCode.bind(null, id)}
+                  verify={verifyLearnerCode.bind(null, id)}
+                />,
+              )
             )}
           </>
         )}

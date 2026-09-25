@@ -229,6 +229,7 @@
     "sentTo": "Sent to {email}. It works for {minutes} minutes.",
     "code": "Verification code",
     "verify": "Verify",
+    "resendCode": "Resend code",
     "resend": "Email my Certificate again",
     "otherEmail": "Use another email",
     "verified": "Email verified: {email}.",

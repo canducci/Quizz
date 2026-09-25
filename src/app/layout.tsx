@@ -28,6 +28,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   <Link href="/settings">{t("settings")}</Link>
                 </>
               )}
+              <Link href="/me">{t("myCertificates")}</Link>
             </nav>
             <form action={setLocale} className="language" aria-label={t("language")}>
               <button name="locale" value="en" aria-pressed={locale === "en"}>

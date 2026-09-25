@@ -1,6 +1,10 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 
 export const LEARNER_COOKIE = "quizz_learner";
+/** My Certificates' own verification, so it never replaces an Assessment's. Its token's scope is
+ * MINE instead of an Assessment id. */
+export const MINE_COOKIE = "quizz_mine";
+export const MINE = "my-certificates";
 
 // A day covers the longest time limit; starting an Attempt issues a fresh token.
 const DAY = 24 * 60 * 60_000;

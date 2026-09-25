@@ -4,10 +4,17 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { CODE_MINUTES } from "@/domain/one-time-code";
-import { requestLearnerCode, verifyLearnerCode, type EntryError } from "@/app/a/[id]/actions";
+import type { EntryError } from "@/app/a/[id]/actions";
 
-/** Email, then the one-time code. A verified Learner reloads into the page's verified view. */
-export function EntryForm({ assessmentId }: { assessmentId: string }) {
+/** Email, then the one-time code. A verified Learner reloads into the page's verified view.
+ * `request` and `verify` are the page's server actions. */
+export function EntryForm({
+  request,
+  verify,
+}: {
+  request: (email: string) => Promise<EntryError | null>;
+  verify: (email: string, code: string) => Promise<EntryError | null>;
+}) {
   const t = useTranslations("learner");
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -18,7 +25,7 @@ export function EntryForm({ assessmentId }: { assessmentId: string }) {
 
   const send = () =>
     startTransition(async () => {
-      const failed = await requestLearnerCode(assessmentId, email);
+      const failed = await request(email);
       setError(failed);
       if (!failed) {
         setSent(true);
@@ -61,7 +68,7 @@ export function EntryForm({ assessmentId }: { assessmentId: string }) {
       onSubmit={(e) => {
         e.preventDefault();
         startTransition(async () => {
-          const failed = await verifyLearnerCode(assessmentId, email, code);
+          const failed = await verify(email, code);
           setError(failed);
           if (!failed) router.refresh();
         });
@@ -85,7 +92,7 @@ export function EntryForm({ assessmentId }: { assessmentId: string }) {
       <div className="row">
         <button disabled={pending}>{t("verify")}</button>
         <button type="button" disabled={pending} onClick={send}>
-          {t("resend")}
+          {t("resendCode")}
         </button>
         <button
           type="button"

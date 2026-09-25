@@ -1,6 +1,6 @@
 # My Certificates, name correction and Learner Erasure
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 09
 
 ## What to build
@@ -9,11 +9,11 @@ The Learner's own page.
 
 ## Acceptance criteria
 
-- [ ] Verify email with a one-time code; list every Certificate for that email hash across Creators.
-- [ ] Name correction: revokes with reason "Name correction" (status replaced, not counted as revoked) and issues a new Certificate at a new ID, emailed.
-- [ ] Learner Erasure: confirm, then delete attempt, certificate, invite and one_time_code rows by email hash; statistics unchanged; old Verification Pages show not found.
-- [ ] Vitest: erasure leaves `stats_day` untouched; replacement counters.
-- [ ] Playwright: correct a name, see Replaced on the old page; erase, see not found.
+- [x] Verify email with a one-time code; list every Certificate for that email hash across Creators.
+- [x] Name correction: revokes with reason "Name correction" (status replaced, not counted as revoked) and issues a new Certificate at a new ID, emailed.
+- [x] Learner Erasure: confirm, then delete attempt, certificate, invite and one_time_code rows by email hash; statistics unchanged; old Verification Pages show not found.
+- [x] Vitest: erasure leaves `stats_day` untouched; replacement counters.
+- [x] Playwright: correct a name, see Replaced on the old page; erase, see not found.
 
 ## Design reference
 
