@@ -92,7 +92,10 @@ export async function uploadQuestionImage(form: FormData): Promise<UploadResult>
 
 export type SettingsState = { status: "idle" | "saved" | "invalid" };
 
-async function saveSettings(assessmentId: string, settings: object | null): Promise<SettingsState> {
+async function saveSettings(
+  assessmentId: string,
+  settings: Partial<typeof assessment.$inferInsert> | null,
+): Promise<SettingsState> {
   if (!settings || !(await ownAssessment(assessmentId, (await requireCreator()).id))) {
     return { status: "invalid" };
   }

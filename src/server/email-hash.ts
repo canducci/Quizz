@@ -11,6 +11,9 @@ export function emailHash(email: string, secret = process.env.EMAIL_HMAC_SECRET!
 /** Pasted emails, normalised and deduped; `invalid` counts tokens that aren't emails. */
 export function parseEmailList(text: string) {
   const tokens = text.split(/[\s,;]+/).filter(Boolean);
-  const emails = tokens.map(normalizeEmail).filter((t) => /^[^@]+@[^@]+$/.test(t));
+  // Mail clients paste `Ana <ana@x.test>`; prose leaves a trailing full stop.
+  const emails = tokens
+    .map((t) => normalizeEmail(t.replace(/^[<("']+|[>)"'.:]+$/g, "")))
+    .filter((t) => /^[^@<>()"']+@[^@<>()"']+\.[^@<>()"'.]+$/.test(t));
   return { emails: [...new Set(emails)], invalid: tokens.length - emails.length };
 }

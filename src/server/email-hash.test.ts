@@ -21,8 +21,16 @@ describe("email hash", () => {
 describe("parseEmailList", () => {
   it("splits on whitespace, commas and semicolons, dedupes and counts what isn't an email", () => {
     expect(parseEmailList("a@x.test, B@x.test;\n\nb@x.test  nope\tc@x")).toEqual({
-      emails: ["a@x.test", "b@x.test", "c@x"],
-      invalid: 1,
+      emails: ["a@x.test", "b@x.test"],
+      invalid: 2,
     });
+  });
+
+  it("unwraps emails pasted from a mail client or a sentence", () => {
+    expect(parseEmailList('Ana <ana@x.test>, "bo@x.test". (cy@x.test)').emails).toEqual([
+      "ana@x.test",
+      "bo@x.test",
+      "cy@x.test",
+    ]);
   });
 });

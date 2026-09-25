@@ -4,7 +4,7 @@ export const ACCESS_MODES = ["public", "invite"] as const;
 export type AccessMode = (typeof ACCESS_MODES)[number];
 
 /** Each rule's allowed whole-number range; Expiry (days) may also be off (null). */
-const RANGES = {
+export const RANGES = {
   passingScore: [1, 100],
   timeLimit: [1, 24 * 60], // minutes
   drawn: [1, 1000],

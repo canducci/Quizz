@@ -10,6 +10,7 @@ import {
   type SettingsState,
 } from "@/app/assessments/actions";
 import type { assessment } from "@/db/schema";
+import { RANGES } from "@/domain/settings";
 import { locales } from "@/i18n/locales";
 
 type Assessment = typeof assessment.$inferSelect;
@@ -63,13 +64,13 @@ export function RulesForm({
   poolSize: number;
 }) {
   const t = useTranslations("settingsTabs.rules");
-  const num = (name: keyof Assessment, min: number, max: number) => (
+  const num = (name: Exclude<keyof typeof RANGES, "expiryDays">) => (
     <input
       name={name}
       type="number"
       required
-      min={min}
-      max={max}
+      min={RANGES[name][0]}
+      max={RANGES[name][1]}
       step={1}
       defaultValue={a[name] as number}
     />
@@ -77,19 +78,19 @@ export function RulesForm({
   return (
     <SettingsForm save={saveRules.bind(null, a.id)}>
       <Field label={t("drawn")} hint={t("drawnHint", { n: poolSize })}>
-        {num("drawn", 1, 1000)} {t("questions")}
+        {num("drawn")} {t("questions")}
       </Field>
       <Field label={t("timeLimit")} hint={t("timeLimitHint")}>
-        {num("timeLimit", 1, 1440)} {t("minutes")}
+        {num("timeLimit")} {t("minutes")}
       </Field>
       <Field label={t("passingScore")} hint={t("passingScoreHint")}>
-        {num("passingScore", 1, 100)} %
+        {num("passingScore")} %
       </Field>
       <Field label={t("maxAttempts")} hint={t("maxAttemptsHint")}>
-        {num("maxAttempts", 1, 100)} {t("perLearner")}
+        {num("maxAttempts")} {t("perLearner")}
       </Field>
       <Field label={t("cooldown")} hint={t("cooldownHint")}>
-        {num("cooldown", 0, 525600)} {t("minutes")}
+        {num("cooldown")} {t("minutes")}
       </Field>
       <Field label={t("expiry")} hint={t("expiryHint")}>
         <select name="expiryDays" defaultValue={a.expiryDays ?? ""}>
