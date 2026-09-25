@@ -12,6 +12,7 @@ COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/drizzle ./drizzle
 COPY --from=build /app/fonts ./fonts
+COPY --from=build /app/operator.mjs ./
 RUN mkdir /data && chown node:node /data
 USER node
 EXPOSE 3000

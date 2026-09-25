@@ -1,6 +1,8 @@
 import { getTranslations } from "next-intl/server";
 import { BrandingForm } from "@/components/branding-form";
+import { ConfirmButton } from "@/components/confirm-button";
 import { requireCreator } from "@/server/auth";
+import { deleteAccount } from "./actions";
 
 export default async function Settings() {
   const me = await requireCreator();
@@ -11,6 +13,14 @@ export default async function Settings() {
       <h1>{t("title")}</h1>
       <p>{t("intro")}</p>
       <BrandingForm creator={me} />
+      <h2>{t("deleteTitle")}</h2>
+      <ConfirmButton
+        label={t("delete")}
+        hint={t("deleteHint")}
+        confirm={t("deleteConfirm")}
+        cancel={t("cancel")}
+        action={deleteAccount}
+      />
     </section>
   );
 }

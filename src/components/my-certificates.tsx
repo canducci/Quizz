@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { correctMyName, eraseMe } from "@/app/me/actions";
+import { correctMyName } from "@/app/me/actions";
 import { MAX_NAME } from "@/domain/attempt";
 
 /** Name correction for one Valid Certificate: the new name, then a replacement at a new id. */
@@ -41,29 +41,5 @@ export function CorrectName({ publicId, name }: { publicId: string; name: string
         </button>
       </div>
     </form>
-  );
-}
-
-/** Learner Erasure, behind a confirm step. */
-export function EraseButton() {
-  const t = useTranslations("mine");
-  const [confirming, setConfirming] = useState(false);
-  const [pending, startTransition] = useTransition();
-
-  if (!confirming) return <button onClick={() => setConfirming(true)}>{t("erase")}</button>;
-  return (
-    <div className="stack" role="group" aria-label={t("erase")}>
-      <p>{t("eraseHint")}</p>
-      <div className="row">
-        <button
-          className="danger"
-          disabled={pending}
-          onClick={() => startTransition(() => eraseMe())}
-        >
-          {t("eraseConfirm")}
-        </button>
-        <button onClick={() => setConfirming(false)}>{t("cancel")}</button>
-      </div>
-    </div>
   );
 }

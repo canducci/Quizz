@@ -29,7 +29,7 @@ type Tallies = Pick<
   typeof schema.statsDay.$inferSelect,
   "scoreHistogram" | "timeHistogram" | "questions"
 >;
-const { assessment, assessmentVersion, attempt, certificate, statsDay } = schema;
+const { assessment, assessmentVersion, attempt, certificate, creator, statsDay } = schema;
 
 /** Adds one to each counter for the Version's day. The counter write comes first, so it holds the
  * row (and SQLite's write lock) before `tallies` reads and rewrites the JSON columns. */
@@ -240,6 +240,13 @@ export async function submitAttempt(
     }
     // After the deadline check, so a late Learner hears that time ran out.
     if (!name || name.length > MAX_NAME) return { ok: false, reason: "name" };
+    const [owner] = await tx
+      .select({ id: creator.id, bannedAt: creator.bannedAt })
+      .from(assessment)
+      .innerJoin(creator, eq(assessment.creatorId, creator.id))
+      .where(eq(assessment.id, opts.assessmentId));
+    // A Creator Ban revokes every Certificate, so one running Attempt can't earn a new one.
+    if (owner.bannedAt) return { ok: false, reason: "over" };
     const { drawn, answers, versionId, startedAt } = row.attempt;
     const { settings, questions } = row.snapshot;
     const { score, passed, correct } = scoreAttempt(
@@ -268,17 +275,13 @@ export async function submitAttempt(
     );
     const version = { number: row.number, snapshot: row.snapshot };
     if (!passed) return { ok: true, score, passed, certificate: null, version };
-    const [{ creatorId }] = await tx
-      .select({ creatorId: assessment.creatorId })
-      .from(assessment)
-      .where(eq(assessment.id, opts.assessmentId));
     const [issued] = await tx
       .insert(certificate)
       .values({
         id: uuidv7(),
         publicId: newPublicId(),
         versionId,
-        creatorId,
+        creatorId: owner.id,
         emailHash: opts.learner,
         holderName: name,
         score,

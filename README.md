@@ -14,6 +14,16 @@ The app is on http://localhost:3000 and sign-in emails land in Mailpit at http:/
 
 Exposing it beyond localhost? Put it behind a reverse proxy that overwrites `X-Forwarded-For`. Learner one-time codes are limited per IP from that header, and Next passes a client-sent one through, so without the proxy that limit (and the daily email cap it protects) can be dodged.
 
+## Operate
+
+A Creator Ban revokes every Certificate the Creator issued, closes their Assessments and blocks their sign-in:
+
+```sh
+docker compose exec app npm run operator -- ban <creator email>
+```
+
+Running it twice changes nothing more. A Creator who already deleted their account can't be banned: their email is gone.
+
 ## Develop
 
 ```sh

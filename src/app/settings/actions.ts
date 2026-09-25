@@ -2,10 +2,12 @@
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { creator } from "@/db/schema";
 import { MAX_BRAND_TEXT } from "@/domain/publish";
 import { requireCreator } from "@/server/auth";
+import { deleteCreatorAccount } from "@/server/creators";
 import { putImage, type UploadResult } from "@/server/files";
 
 export type BrandingState = {
@@ -49,4 +51,10 @@ export async function saveBranding(_: BrandingState, form: FormData): Promise<Br
     .where(eq(creator.id, me.id));
   revalidatePath("/settings");
   return { status: "saved" };
+}
+
+export async function deleteAccount() {
+  const me = await requireCreator();
+  await deleteCreatorAccount(db, me.authUserId!);
+  redirect("/?deleted=1");
 }

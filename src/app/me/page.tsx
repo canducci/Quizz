@@ -2,12 +2,13 @@ import { cookies } from "next/headers";
 import { getLocale, getTranslations } from "next-intl/server";
 import { db } from "@/db";
 import { EntryForm } from "@/components/entry-form";
-import { CorrectName, EraseButton } from "@/components/my-certificates";
+import { ConfirmButton } from "@/components/confirm-button";
+import { CorrectName } from "@/components/my-certificates";
 import { formatId, longDate, shownStatus } from "@/domain/certificate";
 import { learnerCertificates } from "@/server/certificates";
 import { emailHash } from "@/server/email-hash";
 import { MY_CERTIFICATES_SCOPE, MINE_COOKIE, learnerEmail } from "@/server/learner-session";
-import { forgetMe, requestMyCode, verifyMyCode } from "./actions";
+import { eraseMe, forgetMe, requestMyCode, verifyMyCode } from "./actions";
 
 const DONE = ["corrected", "unsent", "erased"] as const;
 
@@ -68,7 +69,13 @@ export default async function MyCertificates(props: { searchParams: Promise<{ do
           </article>
         );
       })}
-      <EraseButton />
+      <ConfirmButton
+        label={t("erase")}
+        hint={t("eraseHint")}
+        confirm={t("eraseConfirm")}
+        cancel={t("cancel")}
+        action={eraseMe}
+      />
     </section>
   );
 }

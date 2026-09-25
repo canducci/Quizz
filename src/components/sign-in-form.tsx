@@ -18,7 +18,11 @@ export function SignInForm({ google }: { google: boolean }) {
         onSubmit={async (e) => {
           e.preventDefault();
           setStatus("sending");
-          const { error } = await authClient.signIn.magicLink({ email, callbackURL: "/dashboard" });
+          const { error } = await authClient.signIn.magicLink({
+            email,
+            callbackURL: "/dashboard",
+            errorCallbackURL: "/?error=signIn",
+          });
           setStatus(error ? "failed" : "sent");
         }}
       >
@@ -40,7 +44,11 @@ export function SignInForm({ google }: { google: boolean }) {
           <p>{t("or")}</p>
           <button
             onClick={() =>
-              authClient.signIn.social({ provider: "google", callbackURL: "/dashboard" })
+              authClient.signIn.social({
+                provider: "google",
+                callbackURL: "/dashboard",
+                errorCallbackURL: "/?error=signIn",
+              })
             }
           >
             {t("google")}

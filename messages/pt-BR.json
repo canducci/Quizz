@@ -15,7 +15,9 @@
     "sent": "Confira sua caixa de entrada: enviamos um link de acesso para {email}.",
     "failed": "Não conseguimos enviar o link. Tente de novo em um minuto.",
     "or": "ou",
-    "google": "Continuar com o Google"
+    "google": "Continuar com o Google",
+    "deleted": "Sua conta foi excluída. Os Certificados que você emitiu continuam válidos.",
+    "refused": "Não foi possível entrar. Peça um novo link ou fale com o Operador se sua conta foi banida."
   },
   "dashboard": {
     "title": "Suas Avaliações",
@@ -39,7 +41,12 @@
       "invalid": "Informe o nome do Criador e escolha uma cor de destaque.",
       "badImage": "As imagens devem ser PNG ou JPEG.",
       "tooLarge": "As imagens devem ter no máximo 2 MB."
-    }
+    },
+    "deleteTitle": "Excluir conta",
+    "delete": "Excluir minha conta",
+    "deleteHint": "Suas Avaliações ficam para trás: entrar de novo com este e-mail cria uma conta nova e vazia. Seu nome de Criador continua nos Certificados que você emitiu, e eles continuam válidos.",
+    "deleteConfirm": "Sim, excluir minha conta",
+    "cancel": "Cancelar"
   },
   "email": {
     "magicLink": {

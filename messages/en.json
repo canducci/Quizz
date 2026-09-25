@@ -15,7 +15,9 @@
     "sent": "Check your inbox: we sent a sign-in link to {email}.",
     "failed": "We couldn't send the link. Try again in a minute.",
     "or": "or",
-    "google": "Continue with Google"
+    "google": "Continue with Google",
+    "deleted": "Your account was deleted. The Certificates you issued stay valid.",
+    "refused": "That sign-in didn't work. Ask for a new link, or contact the Operator if your account was banned."
   },
   "dashboard": {
     "title": "Your Assessments",
@@ -39,7 +41,12 @@
       "invalid": "Enter a Creator name and pick an accent colour.",
       "badImage": "Images must be PNG or JPEG.",
       "tooLarge": "Images must be 2 MB or smaller."
-    }
+    },
+    "deleteTitle": "Delete account",
+    "delete": "Delete my account",
+    "deleteHint": "Your Assessments stay behind: signing in again with this email starts a new, empty account. Your Creator name stays on the Certificates you issued, and they stay valid.",
+    "deleteConfirm": "Yes, delete my account",
+    "cancel": "Cancel"
   },
   "email": {
     "magicLink": {

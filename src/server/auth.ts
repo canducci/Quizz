@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { magicLink } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
-import { eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
@@ -28,7 +28,22 @@ export const auth = betterAuth({
     : {},
   databaseHooks: {
     session: {
-      create: { after: (session) => ensureCreator(db, session.userId) },
+      create: {
+        // A Creator Ban blocks sign-in; Better Auth then redirects with an error.
+        before: async (session) => {
+          const [banned] = await db
+            .select({ id: schema.creator.id })
+            .from(schema.creator)
+            .where(
+              and(
+                eq(schema.creator.authUserId, session.userId),
+                isNotNull(schema.creator.bannedAt),
+              ),
+            );
+          return !banned;
+        },
+        after: (session) => ensureCreator(db, session.userId),
+      },
     },
   },
   plugins: [
@@ -50,7 +65,8 @@ export const currentCreator = cache(async () => {
     .select()
     .from(schema.creator)
     .where(eq(schema.creator.authUserId, session.user.id));
-  return creator ?? null;
+  // A session made before a Creator Ban counts as signed out.
+  return creator && !creator.bannedAt ? creator : null;
 });
 
 /** The signed-in Creator; anyone else goes to the sign-in page. */

@@ -1,6 +1,6 @@
 # Creator account deletion and Operator ban
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 14
 
 ## What to build
@@ -9,10 +9,10 @@ Creators can leave; the Operator can ban.
 
 ## Acceptance criteria
 
-- [ ] Creator deletes their account: login removed (`auth_user_id` cleared), profile stays, Certificates stay valid and keep showing "Issued by <Creator>".
-- [ ] `npm run operator -- ban <creator email>` (run via `docker compose exec app`): sets `banned_at`, revokes every Certificate of that Creator, blocks sign-in.
-- [ ] Vitest: ban revokes all and is idempotent; deleted Creator's Certificates stay valid.
-- [ ] Playwright: delete an account, its Certificate still verifies.
+- [x] Creator deletes their account: login removed (`auth_user_id` cleared), profile stays, Certificates stay valid and keep showing "Issued by <Creator>".
+- [x] `npm run operator -- ban <creator email>` (run via `docker compose exec app`): sets `banned_at`, revokes every Certificate of that Creator, blocks sign-in.
+- [x] Vitest: ban revokes all and is idempotent; deleted Creator's Certificates stay valid.
+- [x] Playwright: delete an account, its Certificate still verifies.
 
 ## Conventions (every ticket)
 

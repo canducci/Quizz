@@ -38,7 +38,7 @@ export async function magicLinkFor(request: APIRequestContext, email: string) {
   return link;
 }
 
-/** Signs a fresh Creator in through the magic link and lands on the dashboard.
+/** Signs a fresh Creator in through the magic link, lands on the dashboard and returns their email.
  * Better Auth allows 5 magic links per IP a minute; past that, this waits the limit out. */
 export async function signInAsNewCreator(page: Page, request: APIRequestContext) {
   const email = `creator-${Date.now()}-${Math.random().toString(36).slice(2)}@example.test`;
@@ -51,6 +51,7 @@ export async function signInAsNewCreator(page: Page, request: APIRequestContext)
   }).toPass({ intervals: [15_000], timeout: 90_000 });
   await page.goto(await magicLinkFor(request, email));
   await expect(page).toHaveURL(/\/dashboard$/);
+  return email;
 }
 
 /** The emails with a PDF attached to `email`, newest first, once there are at least `count`.
