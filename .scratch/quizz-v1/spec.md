@@ -36,15 +36,18 @@ Vocabulary follows `CONTEXT.md`. Decisions recorded in `docs/adr/`.
 - Assessment Status: Draft → Published ⇄ Closed. An Assessment with any Certificates can't be deleted.
 - Publishing creates an immutable Assessment Version. Editing a published Assessment creates a new version, and each Certificate stays tied to the version it was earned on.
 - Settings: Assessment Language (English or pt-BR), Access Mode (Public or Invite-only; default Public), Passing Score, time limit, number of Questions drawn (N), Retake Policy (max Attempts and cooldown), optional Expiry (off by default).
-- Invite-only: the Creator supplies emails. We store only their keyed hashes and match them when a Learner verifies.
+- Invite-only: the Creator pastes the emails. We store only their keyed hashes and match them when a Learner verifies. Quizz sends no invitations; the Creator shares the link.
 - Questions: single-answer multiple choice, multi-select multiple choice, and true/false. All auto-graded.
 - Question content is Markdown (code blocks and images), in both the question and its answer options.
 - Questions are written in the editor or imported from CSV. AI generation is out of v1.
+- A Question has at most 8 answer options.
+- CSV import: one row per Question; columns `type` (`single`|`multi`|`truefalse`), `question` (Markdown), `option_1`…`option_8`, `correct` (option numbers like `1;3`, or `true`/`false`), `keep_order` (`yes`/blank). Rows are added to the Question Pool; any invalid row rejects the whole file, with every error listed by row. The editor offers a template.
 - The Question Pool must hold at least N Questions.
 
 ## Attempts
 
-- Before every Attempt, the Learner verifies their email with a one-time code.
+- Before every Attempt, the Learner verifies their email with a one-time code: 6 digits, valid 10 minutes, 5 wrong tries; at most 3 codes per email and 10 per IP per hour. A daily email cap per instance (default 300) stops new codes once reached ("try again tomorrow") but never Certificate emails.
+- A Learner who can't start sees why: Draft is not found; Closed says so with the Creator's name; Invite-only checks the list only after the code ("This email isn't invited, ask <Creator>"); the Retake Policy shows when the next Attempt is allowed; a Valid Certificate is linked.
 - Each Attempt draws a random N Questions from the pool. Answer options are shuffled unless the Question is marked "keep order".
 - The server holds the clock: each Attempt stores its deadline. Answers save as they go. A Learner who disconnects can resume the same Attempt, and the clock keeps running.
 - There is no auto-submit. An Attempt not submitted by its deadline is Timed out: no score, can't pass, and it counts against the Retake Policy, with the cooldown running from the deadline. An overdue Attempt becomes Timed out the next time anything reads it, and a daily cleanup job times out abandoned ones.
@@ -59,7 +62,7 @@ Vocabulary follows `CONTEXT.md`. Decisions recorded in `docs/adr/`.
 - The Learner enters their full name when submitting ("as it will appear on your Certificate if you pass"). A pass issues the Certificate in the same step; on a fail the name is thrown away. A Certificate can't be changed. The Learner can correct their name, which revokes the Certificate ("Name correction") and issues a new one at a new URL.
 - The Certificate attests to the Learner's name, the Assessment (and version), the score, the date, and the Creator.
 - Delivered by email as a PDF in the Assessment Language, with a QR code linking to the Verification Page.
-- Verification Page: public, at an unguessable unique URL. It shows validity, revoked (with date) or expired. It always shows "Issued by <Creator> via Quizz", when the Creator joined, and a report-abuse link. Labels follow the viewer's interface language; content stays in the Assessment Language.
+- Verification Page: public, at an unguessable unique URL. It shows validity, revoked (with date) or expired. It always shows "Issued by <Creator> via Quizz", when the Creator joined, and a report-abuse link: a `mailto:` to the Operator with the Certificate ID in the subject. Labels follow the viewer's interface language; content stays in the Assessment Language.
 - Revocation: the Creator gives a reason and finds the Certificate by its ID or URL, or by the Learner's email (hashed for the lookup).
 
 ## Learner privacy (ADR 0002)

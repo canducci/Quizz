@@ -1,7 +1,7 @@
 # Stack choices inside Next.js
 
 Type: research
-Status: open
+Status: claimed
 Blocked by:
 
 ## Question

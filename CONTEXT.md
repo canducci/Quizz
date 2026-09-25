@@ -4,6 +4,10 @@ A multi-tenant service where Creators test Learners' knowledge of a topic and is
 
 ## Actors
 
+**Operator**:
+The person who runs a Quizz instance. Receives abuse reports from Verification Pages and can apply a Creator Ban.
+_Avoid_: Admin, host, owner
+
 **Creator**:
 A person or organization (the tenant) that builds Assessments and issues Certificates under its own name and brand.
 _Avoid_: User, instructor, author, tenant (in user-facing language)
