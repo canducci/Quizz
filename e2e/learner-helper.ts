@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { expect, type APIRequestContext, type Page } from "@playwright/test";
 import { fromMail } from "./sign-in-helper";
 
@@ -99,4 +100,23 @@ export async function verifyLearner(
   await page.getByRole("button", { name: "Verify" }).click();
   await expect(page.getByRole("status")).toHaveText(`Email verified: ${email}.`);
   return email;
+}
+
+/** Runs SQL in the app container: the one way to seed states nothing in the UI reaches yet. */
+export function sql(query: string, ...args: (string | number | null)[]) {
+  // The app writes too, from parallel tests: wait for its lock instead of failing SQLITE_BUSY.
+  const run = `const db = require("@libsql/client").createClient({ url: process.env.DATABASE_URL });
+    db.execute("pragma busy_timeout = 5000")
+      .then(() => db.execute({ sql: process.argv[1], args: JSON.parse(process.argv[2]) }))`;
+  execFileSync("docker", [
+    "compose",
+    "exec",
+    "-T",
+    "app",
+    "node",
+    "-e",
+    run,
+    query,
+    JSON.stringify(args),
+  ]);
 }

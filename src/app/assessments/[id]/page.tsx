@@ -4,22 +4,24 @@ import { getTranslations } from "next-intl/server";
 import { QuestionsEditor } from "@/components/questions-editor";
 import { PublishButton, PublishTab } from "@/components/publish-tab";
 import { AccessForm, RulesForm } from "@/components/settings-forms";
+import { StatisticsTab } from "@/components/statistics-tab";
 import { db } from "@/db";
 import { ownAssessment, questionPool } from "@/server/assessments";
 import { requireCreator } from "@/server/auth";
 import { inviteCount } from "@/server/invites";
 import { publishState } from "@/server/publish";
+import { RANGES, assessmentStatistics } from "@/server/statistics";
 
-const TABS = ["questions", "rules", "access", "publish"] as const;
+const TABS = ["questions", "rules", "access", "statistics", "publish"] as const;
 
 export default async function Editor(props: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; range?: string; version?: string }>;
 }) {
   const me = await requireCreator();
   const assessment = await ownAssessment((await props.params).id, me.id);
   if (!assessment) notFound();
-  const { tab: asked } = await props.searchParams;
+  const { tab: asked, ...filter } = await props.searchParams;
   const tab = TABS.find((name) => name === asked) ?? "questions";
   const pool = await questionPool(assessment.id);
   const t = await getTranslations("editor");
@@ -58,6 +60,15 @@ export default async function Editor(props: {
       {tab === "rules" && <RulesForm assessment={assessment} poolSize={pool.length} />}
       {tab === "access" && (
         <AccessForm assessment={assessment} invited={await inviteCount(db, assessment.id)} />
+      )}
+      {tab === "statistics" && (
+        <StatisticsTab
+          range={RANGES.find((r) => r === filter.range) ?? "30"}
+          stats={await assessmentStatistics(db, assessment.id, {
+            range: RANGES.find((r) => r === filter.range) ?? "30",
+            version: Number(filter.version),
+          })}
+        />
       )}
       {tab === "publish" && (
         <PublishTab

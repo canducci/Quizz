@@ -645,3 +645,146 @@ button.link {
     grid-template-columns: 1fr;
   }
 }
+
+/* Statistics tab (Variant A of the dashboard): filters, tiles, then a grid of charts. */
+.stats {
+  --series: #2563eb;
+  --deemph: #bfd3f2;
+  padding: 1rem 2rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.stats .filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.stats .note {
+  margin-left: auto;
+}
+
+.seg {
+  display: inline-flex;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.seg a {
+  padding: 0.35rem 0.75rem;
+  color: #374151;
+  text-decoration: none;
+}
+
+.seg a[aria-current] {
+  background: #1e293b;
+  color: #fff;
+}
+
+.card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  background: #fff;
+}
+
+.card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.stats .tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+}
+
+.tile .value {
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+.stats .charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(22rem, 40%), 1fr));
+  gap: 0.75rem;
+}
+
+.stats .wide {
+  grid-column: 1 / -1;
+}
+
+.stats svg {
+  width: 100%;
+  height: auto;
+  font-size: 12px;
+}
+
+.stats svg text {
+  fill: #6b7280;
+}
+
+.stats svg .grid {
+  stroke: #eef0f3;
+}
+
+.stats svg .axis,
+.stats svg .passing line {
+  stroke: #1f2328;
+}
+
+.stats svg .passing text,
+.stats svg text.value {
+  fill: #1f2328;
+}
+
+.stats svg .wash {
+  fill: #dbeafe;
+}
+
+.stats svg .line {
+  fill: none;
+  stroke: var(--series);
+  stroke-width: 2;
+}
+
+.stats svg .hover {
+  fill: transparent;
+}
+
+.stats svg .hover:hover {
+  fill: rgb(0 0 0 / 0.05);
+}
+
+.stats svg .series {
+  fill: var(--series);
+}
+
+.stats svg .deemph {
+  fill: var(--deemph);
+}
+
+.flag {
+  color: #b42318;
+}
+
+.stats details {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.stats table.data {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.stats table.data td,
+.stats table.data th {
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid #eef0f3;
+  text-align: left;
+}

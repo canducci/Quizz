@@ -1,6 +1,6 @@
 # Statistics dashboard
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 09
 
 ## What to build
@@ -9,12 +9,12 @@ The Statistics tab (Variant A), reading `stats_day` only.
 
 ## Acceptance criteria
 
-- [ ] Filters: last 7 / 30 / 90 days / all time; Version (all or one, drawing its Passing Score on the score chart).
-- [ ] Tiles: Attempts with Timed out, pass rate, median time (from the time histogram), Certificates issued with revoked and expired, Questions to review.
-- [ ] Charts: Attempts per day, score distribution, correct-answer rate per Question (under 50% highlighted); each with tooltips and a table view; empty state.
-- [ ] No per-Learner data anywhere (ADR 0002).
-- [ ] Vitest: aggregation across days and versions, median from histogram.
-- [ ] Playwright: seeded counters render tiles and table views.
+- [x] Filters: last 7 / 30 / 90 days / all time; Version (all or one, drawing its Passing Score on the score chart).
+- [x] Tiles: Attempts with Timed out, pass rate, median time (from the time histogram), Certificates issued with revoked and expired, Questions to review.
+- [x] Charts: Attempts per day, score distribution, correct-answer rate per Question (under 50% highlighted); each with tooltips and a table view; empty state.
+- [x] No per-Learner data anywhere (ADR 0002).
+- [x] Vitest: aggregation across days and versions, median from histogram.
+- [x] Playwright: seeded counters render tiles and table views.
 
 ## Design reference
 

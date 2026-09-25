@@ -1,29 +1,9 @@
-import { execFileSync } from "node:child_process";
 import { expect, test, type APIRequestContext } from "@playwright/test";
-import { brandCreator, freshNetwork, publishNew, verifyLearner } from "./learner-helper";
+import { brandCreator, freshNetwork, publishNew, sql, verifyLearner } from "./learner-helper";
 import { fromMail, signInAsNewCreator } from "./sign-in-helper";
 
 test.use(freshNetwork());
 test.describe.configure({ mode: "serial" });
-
-/** Runs SQL in the app container: the one way to seed states nothing in the UI reaches yet. */
-function sql(query: string, ...args: (string | number | null)[]) {
-  // The app writes too, from parallel tests: wait for its lock instead of failing SQLITE_BUSY.
-  const run = `const db = require("@libsql/client").createClient({ url: process.env.DATABASE_URL });
-    db.execute("pragma busy_timeout = 5000")
-      .then(() => db.execute({ sql: process.argv[1], args: JSON.parse(process.argv[2]) }))`;
-  execFileSync("docker", [
-    "compose",
-    "exec",
-    "-T",
-    "app",
-    "node",
-    "-e",
-    run,
-    query,
-    JSON.stringify(args),
-  ]);
-}
 
 const DAY = 24 * 60 * 60_000;
 let id = "";
