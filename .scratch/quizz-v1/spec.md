@@ -7,6 +7,7 @@ Vocabulary follows `CONTEXT.md`. Decisions recorded in `docs/adr/`.
 ## Prototypes
 
 - Attempt and Certificate domain logic: branch `prototype/domain-logic`, file `prototypes/domain-logic.prototype.html`. It settled: no auto-submit (Timed out), name entered at submit, no retake while holding a Valid Certificate, statistics as running counters, name corrections not counted as revoked.
+- Learner Attempt flow UI: branch `prototype/attempt-ui`, file `prototypes/attempt-flow.prototype.html`. Four variants compared; the chosen one is **Variant D** (open with `?variant=D`).
 
 ## Scope
 
@@ -65,6 +66,9 @@ Vocabulary follows `CONTEXT.md`. Decisions recorded in `docs/adr/`.
 - Confirm the Learner Erasure and data-transfer approach with someone who knows LGPD before launch.
 
 ## Interface
+
+- Attempt flow layout (Variant D of the UI prototype): a sidebar holds the Creator and Assessment name, a large clock marked "saved automatically", numbered question squares (answered ones filled, current one highlighted) for jumping between questions, and a "Review & submit" button. The main area shows one question at a time with Previous / Next. Before submitting, a review page lists every question as answered or not, with "change" links, followed by the name field and Submit.
+- Mobile: the sidebar stacks above the question.
 
 - The whole app can be switched between English and pt-BR. Each Assessment's content is in its single Assessment Language.
 
