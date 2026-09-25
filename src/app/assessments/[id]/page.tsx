@@ -66,6 +66,7 @@ export default async function Editor(props: {
           version={version}
           changed={changed}
           problems={problems}
+          learnerUrl={`${process.env.APP_URL}/a/${assessment.id}`}
         />
       )}
     </div>

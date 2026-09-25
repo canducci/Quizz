@@ -202,6 +202,49 @@
     "delete": "Delete Assessment",
     "confirmDelete": "Delete this Draft and its Questions?",
     "noDelete": "A published Assessment can't be deleted, only Closed.",
-    "version": "Version {n}"
+    "version": "Version {n}",
+    "learnerLink": "Learner link: share it with your Learners."
+  },
+  "learner": {
+    "by": "Issued by {creator}",
+    "powered": "Powered by Quizz",
+    "facts": "{drawn} questions · {minutes} min · {passing}% to pass · {attempts, plural, one {# Attempt} other {# Attempts}}",
+    "questions": "Questions",
+    "questionsValue": "{n}, drawn at random",
+    "timeLimit": "Time limit",
+    "timeLimitValue": "{n, plural, one {# minute} other {# minutes}}",
+    "passingScore": "Passing Score",
+    "attempts": "Attempts allowed",
+    "attemptsValue": "{n}, {cooldown, plural, =0 {no wait between them} one {# minute apart} other {# minutes apart}}",
+    "timeout": "If time runs out",
+    "timeoutValue": "The Attempt is not scored",
+    "inviteOnly": "Only invited emails can take this Assessment.",
+    "email": "Email address",
+    "emailHint": "Used only to send your code and Certificate. The Creator never sees it.",
+    "sendCode": "Send verification code",
+    "codeTitle": "Enter your verification code",
+    "sentTo": "Sent to {email}. It works for 10 minutes.",
+    "code": "Verification code",
+    "verify": "Verify",
+    "resend": "Resend code",
+    "otherEmail": "Use another email",
+    "verified": "Email verified: {email}.",
+    "verifiedHint": "Starting an Attempt begins the {minutes}-minute clock. It keeps running if you close the page.",
+    "errors": {
+      "badEmail": "Enter a valid email address.",
+      "email": "Too many codes for this email. Try again in an hour.",
+      "ip": "Too many codes from this network. Try again in an hour.",
+      "dailyCap": "We've sent all the emails we can today. Try again tomorrow.",
+      "sendFailed": "We couldn't send the code. Try again in a minute.",
+      "wrong": "That code isn't right. {left, plural, one {# try left} other {# tries left}}.",
+      "locked": "Too many wrong tries. Request a new code.",
+      "expired": "This code has expired or was already used. Request a new code.",
+      "notInvited": "This email isn't invited. Ask {creator}.",
+      "closed": "This Assessment is closed. {creator} isn't accepting new Attempts."
+    },
+    "mail": {
+      "subject": "Your code for {title}: {code}",
+      "body": "Your verification code for {title} is:\n\n{code}\n\nIt works for 10 minutes. If you didn't ask for it, ignore this email."
+    }
   }
 }

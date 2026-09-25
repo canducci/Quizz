@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { assessment, question } from "@/db/schema";
+import { assessment, assessmentVersion, question } from "@/db/schema";
 
 /** The Creator's own Assessment, or null. Ids from the browser are never trusted. */
 export async function ownAssessment(id: string, creatorId: string) {
@@ -33,4 +33,14 @@ export function creatorAssessments(creatorId: string) {
     .from(assessment)
     .where(eq(assessment.creatorId, creatorId))
     .orderBy(desc(assessment.createdAt));
+}
+
+/** What a Learner sees: the status and the current Version, or null for a Draft or unknown id. */
+export async function learnerAssessment(id: string) {
+  const [row] = await db
+    .select({ status: assessment.status, snapshot: assessmentVersion.snapshot })
+    .from(assessment)
+    .innerJoin(assessmentVersion, eq(assessment.currentVersionId, assessmentVersion.id))
+    .where(eq(assessment.id, id));
+  return row && row.status !== "draft" ? row : null;
 }

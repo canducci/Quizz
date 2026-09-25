@@ -37,6 +37,7 @@ export function PublishTab(props: {
   version: number;
   changed: boolean;
   problems: PublishProblem[];
+  learnerUrl: string;
 }) {
   const t = useTranslations("publishTab");
   const format = useFormatter();
@@ -82,6 +83,9 @@ export function PublishTab(props: {
       ) : (
         <>
           <p>{t(props.status === "closed" ? "closedHint" : "publishedHint")}</p>
+          <p>
+            {t("learnerLink")} <a href={props.learnerUrl}>{props.learnerUrl}</a>
+          </p>
           <form
             action={(props.status === "closed" ? reopenAssessment : closeAssessment).bind(null, id)}
           >

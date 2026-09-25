@@ -202,6 +202,49 @@
     "delete": "Excluir Avaliação",
     "confirmDelete": "Excluir este Rascunho e suas Questões?",
     "noDelete": "Uma Avaliação publicada não pode ser excluída, só Encerrada.",
-    "version": "Versão {n}"
+    "version": "Versão {n}",
+    "learnerLink": "Link para Participantes: compartilhe com quem vai fazer a Avaliação."
+  },
+  "learner": {
+    "by": "Emitido por {creator}",
+    "powered": "Feito com Quizz",
+    "facts": "{drawn} questões · {minutes} min · {passing}% para aprovação · {attempts, plural, one {# Tentativa} other {# Tentativas}}",
+    "questions": "Questões",
+    "questionsValue": "{n}, sorteadas",
+    "timeLimit": "Tempo limite",
+    "timeLimitValue": "{n, plural, one {# minuto} other {# minutos}}",
+    "passingScore": "Nota de Aprovação",
+    "attempts": "Tentativas permitidas",
+    "attemptsValue": "{n}, {cooldown, plural, =0 {sem espera entre elas} one {com # minuto de intervalo} other {com # minutos de intervalo}}",
+    "timeout": "Se o tempo acabar",
+    "timeoutValue": "A Tentativa fica sem nota",
+    "inviteOnly": "Só e-mails convidados podem fazer esta Avaliação.",
+    "email": "Endereço de e-mail",
+    "emailHint": "Usado só para enviar seu código e seu Certificado. O Criador nunca o vê.",
+    "sendCode": "Enviar código de verificação",
+    "codeTitle": "Digite seu código de verificação",
+    "sentTo": "Enviado para {email}. Vale por 10 minutos.",
+    "code": "Código de verificação",
+    "verify": "Verificar",
+    "resend": "Reenviar código",
+    "otherEmail": "Usar outro e-mail",
+    "verified": "E-mail verificado: {email}.",
+    "verifiedHint": "Começar uma Tentativa inicia o relógio de {minutes} minutos. Ele continua correndo se você fechar a página.",
+    "errors": {
+      "badEmail": "Informe um endereço de e-mail válido.",
+      "email": "Muitos códigos para este e-mail. Tente de novo em uma hora.",
+      "ip": "Muitos códigos a partir desta rede. Tente de novo em uma hora.",
+      "dailyCap": "Já enviamos todos os e-mails possíveis hoje. Tente de novo amanhã.",
+      "sendFailed": "Não conseguimos enviar o código. Tente de novo em um minuto.",
+      "wrong": "Código incorreto. {left, plural, one {Resta # tentativa} other {Restam # tentativas}}.",
+      "locked": "Tentativas erradas demais. Peça um novo código.",
+      "expired": "Este código expirou ou já foi usado. Peça um novo código.",
+      "notInvited": "Este e-mail não foi convidado. Fale com {creator}.",
+      "closed": "Esta Avaliação está encerrada. {creator} não está aceitando novas Tentativas."
+    },
+    "mail": {
+      "subject": "Seu código para {title}: {code}",
+      "body": "Seu código de verificação para {title} é:\n\n{code}\n\nEle vale por 10 minutos. Se você não pediu, ignore este e-mail."
+    }
   }
 }

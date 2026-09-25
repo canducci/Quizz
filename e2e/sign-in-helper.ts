@@ -2,8 +2,9 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 
 const MAILPIT = process.env.MAILPIT_URL ?? "http://localhost:8025";
 
-export async function magicLinkFor(request: APIRequestContext, email: string) {
-  let link = "";
+/** Waits for the newest email to `email` and returns the first match of `pattern` in it. */
+export async function fromMail(request: APIRequestContext, email: string, pattern: RegExp) {
+  let found = "";
   await expect
     .poll(async () => {
       const search = await request.get(`${MAILPIT}/api/v1/search`, {
@@ -12,10 +13,16 @@ export async function magicLinkFor(request: APIRequestContext, email: string) {
       const [message] = (await search.json()).messages;
       if (!message) return "";
       const body = await (await request.get(`${MAILPIT}/api/v1/message/${message.ID}`)).json();
-      link = body.Text.match(/https?:\/\/\S+/)?.[0] ?? "";
-      return link;
+      found = body.Text.match(pattern)?.[0] ?? "";
+      return found;
     })
-    .toContain("/api/auth/magic-link/verify");
+    .not.toBe("");
+  return found;
+}
+
+export async function magicLinkFor(request: APIRequestContext, email: string) {
+  const link = await fromMail(request, email, /https?:\/\/\S+/);
+  expect(link).toContain("/api/auth/magic-link/verify");
   return link;
 }
 

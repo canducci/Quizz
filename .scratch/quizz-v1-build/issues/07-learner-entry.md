@@ -1,6 +1,6 @@
 # Learner entry and one-time codes
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 05
 
 ## What to build
@@ -9,11 +9,11 @@ A Learner opens an Assessment link and proves their email before starting.
 
 ## Acceptance criteria
 
-- [ ] Assessment link page shows Creator and Assessment name, rules summary, email field.
-- [ ] One-time code: 6 digits, 10 minutes, 5 wrong tries, stored hashed; 3 per email and 10 per IP per hour; instance daily email cap from `DAILY_EMAIL_CAP` (`email_day`), refusing codes with "try again tomorrow" but never Certificate emails.
-- [ ] Can't-start messages: Draft → not found; Closed → closed with Creator name; Invite-only checks the list only after the code; (Retake and Valid-Certificate messages come in "Retake Policy").
-- [ ] Vitest: code expiry, tries, rate limits, cap.
-- [ ] Playwright: request a code, read it in Mailpit, verify; wrong-code lockout; not-invited message.
+- [x] Assessment link page shows Creator and Assessment name, rules summary, email field.
+- [x] One-time code: 6 digits, 10 minutes, 5 wrong tries, stored hashed; 3 per email and 10 per IP per hour; instance daily email cap from `DAILY_EMAIL_CAP` (`email_day`), refusing codes with "try again tomorrow" but never Certificate emails.
+- [x] Can't-start messages: Draft → not found; Closed → closed with Creator name; Invite-only checks the list only after the code; (Retake and Valid-Certificate messages come in "Retake Policy").
+- [x] Vitest: code expiry, tries, rate limits, cap.
+- [x] Playwright: request a code, read it in Mailpit, verify; wrong-code lockout; not-invited message.
 
 ## Design reference
 

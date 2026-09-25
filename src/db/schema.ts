@@ -1,4 +1,11 @@
-import { sqliteTable, text, integer, primaryKey, uniqueIndex } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text,
+  integer,
+  index,
+  primaryKey,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 import { user } from "./auth-schema";
 import type { Snapshot } from "../domain/publish";
 import { QUESTION_TYPES, type QuestionOption } from "../domain/question";
@@ -87,4 +94,29 @@ export const question = sqliteTable("question", {
   options: text("options", { mode: "json" }).$type<QuestionOption[]>().notNull(),
   keepOrder: integer("keep_order", { mode: "boolean" }).notNull(),
   deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
+});
+
+/** A one-time code emailed to prove a Learner's email. Kept once used: the rate limits count these rows. */
+export const oneTimeCode = sqliteTable(
+  "one_time_code",
+  {
+    id: text("id").primaryKey(),
+    emailHash: text("email_hash").notNull(),
+    codeHash: text("code_hash").notNull(),
+    purpose: text("purpose", { enum: ["attempt", "my-certificates"] }).notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    wrongTries: integer("wrong_tries").notNull().default(0),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    ip: text("ip").notNull(),
+  },
+  (t) => [
+    index("one_time_code_email").on(t.emailHash, t.createdAt),
+    index("one_time_code_ip").on(t.ip, t.createdAt),
+  ],
+);
+
+/** Emails sent per UTC day ("2026-09-25"), for the instance-wide daily cap. */
+export const emailDay = sqliteTable("email_day", {
+  day: text("day").primaryKey(),
+  sent: integer("sent").notNull(),
 });
