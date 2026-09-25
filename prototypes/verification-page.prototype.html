@@ -42,14 +42,17 @@
   /* B: certificate replica */
   .vB { max-width: 900px; margin: 0 auto; padding: 24px 20px 120px; }
   .vB .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-  .vB .cert { position: relative; background: #fff; aspect-ratio: 1.414; border: 1px solid #d1d5db; box-shadow: 0 8px 30px rgba(0,0,0,.08); padding: 6%; display: flex; flex-direction: column; overflow: hidden; }
-  .vB .cert::before { content: ""; position: absolute; inset: 14px; border: 2px solid var(--accent); opacity: .5; pointer-events: none; }
+  .vB .cert { position: relative; aspect-ratio: 1.414; border: 1px solid #d1d5db; box-shadow: 0 8px 30px rgba(0,0,0,.08); padding: 5% 8%; display: flex; flex-direction: column; align-items: center; text-align: center; overflow: hidden;
+    background: radial-gradient(circle at 50% 120%, color-mix(in srgb, var(--accent) 10%, transparent) 0 40%, transparent 41%), #fff; }
+  .vB .cert .org { margin-top: 8px; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #374151; }
+  .vB .cert h2 { font: 400 clamp(24px, 4vw, 38px)/1.1 Georgia, serif; margin: 18px 0 0; }
+  .vB .cert .orn { width: 110px; height: 2px; background: var(--accent); margin: 10px auto 14px; }
   .vB .cert .brand { display: flex; align-items: center; gap: 12px; }
   .vB .cert .kicker { margin-top: 5%; text-transform: uppercase; letter-spacing: .2em; color: var(--muted); font-size: 13px; }
-  .vB .cert .holder { font-size: clamp(28px, 5vw, 48px); font-weight: 700; margin: 8px 0; letter-spacing: -.01em; }
-  .vB .cert .what { font-size: 18px; color: var(--ink2); max-width: 70%; }
-  .vB .cert .bottom { margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end; }
-  .vB .cert .sig { border-top: 1px solid var(--ink); padding-top: 4px; min-width: 200px; font-size: 14px; }
+  .vB .cert .holder { font: 400 clamp(26px, 4.6vw, 46px)/1.1 Georgia, serif; margin: 8px 0 12px; border-bottom: 1px solid #d1d5db; padding: 0 24px 8px; }
+  .vB .cert .what { font-size: 16px; color: var(--ink2); max-width: 80%; }
+  .vB .cert .bottom { margin-top: auto; width: 100%; display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 16px; font-size: 12px; color: var(--muted); }
+  .vB .cert .sig { border-top: 1px solid var(--ink); padding-top: 4px; font-size: 13px; color: var(--ink2); }
   .vB .cert .sig .scrawl { font: italic 28px/1 "Brush Script MT", cursive; color: var(--navy); margin-bottom: 4px; }
   .vB .qr { width: 84px; height: 84px; background: repeating-conic-gradient(#111 0 25%, #fff 0 50%) 0 0/12px 12px; border: 6px solid #fff; outline: 1px solid #d1d5db; }
   .vB .stamp { position: absolute; top: 34%; left: 50%; transform: translate(-50%, -50%) rotate(-12deg); border: 5px solid; border-radius: 12px; padding: 8px 26px; font-size: clamp(28px, 6vw, 56px); font-weight: 900; letter-spacing: .08em; text-transform: uppercase; background: rgba(255,255,255,.85); }
@@ -183,13 +186,14 @@ function VariantB() {
   return `<div class="vB">
     <div class="top"><span class="quizz">quizz.app/c/${CERT.id}</span>${langs()}</div>
     <div class="cert ${st.ok ? '' : 'void'}">
-      <div class="brand"><div class="logo">${c.initials}</div><b>${c.name}</b></div>
-      <div class="kicker">Certificado de aprovação</div>
-      <div style="color:var(--ink2)">Certificamos que</div>
+      <div class="logo">${c.initials}</div><div class="org">${c.name}</div>
+      <h2>Certificado</h2><div class="orn"></div>
+      <div style="color:var(--ink2);font-size:14px">Certificamos que</div>
       <div class="holder">${CERT.holder}</div>
-      <div class="what">foi aprovado(a) na avaliação <b>${CERT.assessment}</b> com nota ${CERT.score}%, em ${CERT.issued.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}.</div>
-      <div class="bottom"><div class="sig"><div class="scrawl">${c.signer}</div>${c.signer} · ${c.signerTitle}</div>
-        <div style="text-align:right"><div class="qr"></div><div class="mono" style="font-size:11px;margin-top:4px">quizz.app/c/${CERT.id}</div></div></div>
+      <div class="what">foi aprovado(a) na avaliação <b>${CERT.assessment}</b> com nota ${CERT.score}%.</div>
+      <div class="bottom"><div style="text-align:left">Emitido em ${CERT.issued.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}<br>Válido até ${st.exp.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}<br>Certificado ${CERT.id}</div>
+        <div><div class="qr" style="margin:0 auto"></div><div class="mono" style="font-size:11px;margin-top:4px">quizz.app/c/${CERT.id}</div></div>
+        <div class="sig"><div class="scrawl">${c.signer}</div>${c.signer} · ${c.signerTitle}</div></div>
       ${st.ok ? '' : `<div class="stamp" style="color:var(--${st.tone});border-color:var(--${st.tone})">${st.title}</div>`}
     </div>
     <div class="status" style="${toneStyle(st.tone)}"><span class="icon">${st.icon}</span><div><b>${st.title}</b> · ${st.sub}</div></div>
