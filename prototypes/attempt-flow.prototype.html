@@ -56,6 +56,17 @@
   .vA .cert small { color: #6b7280; text-transform: uppercase; letter-spacing: .08em; font-size: 12px; }
   .vA .big { font-size: 72px; font-weight: 700; letter-spacing: -.03em; line-height: 1; margin: 0 0 8px; }
 
+  /* ---------- Variant D: A's look + B's navigator and review ---------- */
+  .vA .dots { display: flex; gap: 6px; }
+  .vA .dots button { width: 30px; height: 30px; border-radius: 8px; border: 1.5px solid #d1d5db; background: #fff; color: #6b7280; font-size: 13px; font-weight: 600; }
+  .vA .dots button.done { background: #e5e7eb; border-color: #e5e7eb; color: #111827; }
+  .vA .dots button.here { border-color: #111827; color: #111827; }
+  .vA .review { width: 100%; border-collapse: collapse; margin: 0 0 28px; font-size: 16px; }
+  .vA .review td { padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
+  .vA .review td:last-child { text-align: right; }
+  .vA .review button { background: none; border: 0; color: #111827; text-decoration: underline; padding: 0 0 0 8px; }
+  .vA .missing { color: #b42318; }
+
   /* ---------- Variant B: Exam paper with navigator sidebar ---------- */
   .vB { min-height: 100vh; background: #f3f4f6; display: grid; grid-template-columns: 280px 1fr; }
   .vB aside { background: #0f2a4a; color: #dbe7f5; padding: 24px 20px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 20px; }
@@ -236,6 +247,32 @@ function VariantA() {
   }
 }
 
+// ======================= Variant D: A's look + B's navigator and review =======================
+function VariantD() {
+  if (!['questions', 'submit'].includes(S.step)) return VariantA();
+  const q = QUESTIONS[S.current];
+  const dots = QUESTIONS.map((x, i) => `<button class="${(S.answers[x.id] || []).length ? 'done' : ''} ${S.step === 'questions' && i === S.current ? 'here' : ''}" data-act="jump" data-a="${i}" title="Question ${i + 1}">${i + 1}</button>`).join('');
+  const top = `<div class="top"><span><span class="brand">${ASSESSMENT.creator}</span> · ${ASSESSMENT.title}</span>
+    <span class="dots">${dots}</span>
+    <span><span class="timer ${low() ? 'low' : ''}" data-clock>${mmss(S.secondsLeft)}</span> left · saved automatically</span></div>`;
+  const wrap = inner => `<div class="vA">${top}<div class="stage"><div class="inner">${inner}</div></div></div>`;
+  if (S.step === 'submit') return wrap(`
+    <h2>Review your answers</h2>
+    <table class="review">${QUESTIONS.map((x, i) => `<tr><td>${i + 1}. ${esc(x.text.length > 60 ? x.text.slice(0, 57) + '…' : x.text)}</td><td>${(S.answers[x.id] || []).length ? 'Answered' : '<span class="missing">Not answered</span>'}<button data-act="jump" data-a="${i}">change</button></td></tr>`).join('')}</table>
+    <h2 style="font-size:22px;margin-bottom:8px">What name should go on your Certificate?</h2>
+    <input class="field" placeholder="Your full name" value="${esc(S.name)}" data-input="name">
+    <p class="hint">Exactly as it should appear if you pass. If you don't pass, we don't keep it.</p>
+    <button class="go" data-act="submit">Submit my answers</button>`);
+  return wrap(`
+    <p class="hint" style="margin-bottom:8px">Question ${S.current + 1} of ${QUESTIONS.length} · ${kindHint(q)}</p>
+    <h2>${esc(q.text)}</h2>${q.code ? `<pre>${esc(q.code)}</pre>` : ''}
+    ${q.options.map((o, i) => `<button class="opt ${(S.answers[q.id] || []).includes(i) ? 'on' : ''}" data-act="pick" data-a="${q.id}" data-b="${i}"><kbd>${i + 1}</kbd>${esc(o)}</button>`).join('')}
+    <div class="row">${S.current > 0 ? '<button class="ghost" data-act="prev">← Previous</button>' : ''}
+      <span style="flex:1"></span>
+      ${S.current < QUESTIONS.length - 1 ? '<button class="ghost" data-act="review">Review & submit</button>' : ''}
+      <button class="go" data-act="next">${S.current < QUESTIONS.length - 1 ? 'Next →' : 'Review →'}</button></div>`);
+}
+
 // ======================= Variant B: Exam paper =======================
 function VariantB() {
   const attempt = ['questions', 'submit', 'resumed'].includes(S.step);
@@ -322,7 +359,7 @@ function VariantC() {
 }
 
 // ======================= Switcher + wiring =======================
-const VARIANTS = { A: ['Focused, one question per screen', VariantA], B: ['Exam paper with navigator', VariantB], C: ['Conversation', VariantC] };
+const VARIANTS = { A: ['Focused, one question per screen', VariantA], B: ['Exam paper with navigator', VariantB], C: ['Conversation', VariantC], D: ['A + B navigator & review', VariantD] };
 const params = new URLSearchParams(location.search);
 let variant = VARIANTS[params.get('variant')] ? params.get('variant') : 'A';
 
@@ -356,7 +393,7 @@ document.addEventListener('keydown', e => {
   const typing = e.target.closest('input, textarea, select, [contenteditable]');
   if (!typing && e.key === 'ArrowLeft') return cycle(-1);
   if (!typing && e.key === 'ArrowRight') return cycle(1);
-  if (variant === 'A' && S.step === 'questions' && !typing) {
+  if ((variant === 'A' || variant === 'D') && S.step === 'questions' && !typing) {
     const q = QUESTIONS[S.current], n = +e.key;
     if (n >= 1 && n <= q.options.length) { ACT.pick(q.id, n - 1); render(); }
     if (e.key === 'Enter') { ACT.next(); render(); }
