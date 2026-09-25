@@ -28,7 +28,7 @@ export function StartButton({ assessmentId, again }: { assessmentId: string; aga
   const [pending, startTransition] = useTransition();
   return (
     <div className="stack">
-      {error && <p role="alert">{t(`errors.${error.reason}`, error)}</p>}
+      {error && <CantStart error={error} />}
       <div className="row">
         <button
           disabled={pending}
@@ -44,6 +44,23 @@ export function StartButton({ assessmentId, again }: { assessmentId: string; aga
         </button>
       </div>
     </div>
+  );
+}
+
+/** Why the Learner can't start; a held Certificate is linked, with when it can be renewed. */
+export function CantStart({ error }: { error: EntryError }) {
+  const t = useTranslations("learner");
+  return (
+    <p role="alert">
+      {t(`errors.${error.reason}`, error)}
+      {error.reason === "certificateHeld" && (
+        <>
+          {" "}
+          <a href={`/c/${error.publicId}`}>{t("viewCertificate")}</a>
+          {error.renewFrom && <> {t("renewFrom", { until: error.renewFrom })}</>}
+        </>
+      )}
+    </p>
   );
 }
 

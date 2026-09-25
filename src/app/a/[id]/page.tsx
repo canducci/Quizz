@@ -3,11 +3,11 @@ import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { db } from "@/db";
-import { AttemptView, ResendButton, StartButton } from "@/components/attempt-view";
+import { AttemptView, CantStart, ResendButton, StartButton } from "@/components/attempt-view";
 import { EntryForm } from "@/components/entry-form";
 import { learnerQuestions } from "@/domain/attempt";
 import { messagesFor } from "@/i18n/locales";
-import { dateTime } from "@/domain/retake";
+import { shownBlock } from "@/domain/retake";
 import { latestAttempt, retakeCheck } from "@/server/attempts";
 import { learnerAssessment } from "@/server/assessments";
 import { emailHash } from "@/server/email-hash";
@@ -146,20 +146,8 @@ export default async function AssessmentLink(props: {
                     <p className="muted">{t("verifiedHint", { minutes: settings.timeLimit })}</p>
                     {provide(<StartButton assessmentId={id} again={!!last} />)}
                   </>
-                ) : block.reason === "certificate" ? (
-                  <p role="alert">
-                    {t("errors.certificate")}{" "}
-                    <a href={`/c/${block.publicId}`}>{t("viewCertificate")}</a>
-                    {block.expiresAt && (
-                      <> {t("renewFrom", { until: dateTime(block.expiresAt, locale) })}</>
-                    )}
-                  </p>
                 ) : (
-                  <p role="alert">
-                    {block.reason === "used"
-                      ? t("errors.used")
-                      : t("errors.cooldown", { until: dateTime(block.until, locale) })}
-                  </p>
+                  provide(<CantStart error={shownBlock(block, locale)} />)
                 )}
               </>
             ) : (

@@ -243,10 +243,19 @@ it("enforces the Retake Policy on start, and counts no refused start", async () 
   const expiresAt = new Date(at(70).getTime() + 86_400_000);
   expect(await startAttempt(db, { ...learner, now: at(200) })).toEqual({
     ok: false,
-    block: { reason: "certificate", publicId, expiresAt },
+    block: { reason: "certificateHeld", publicId, expiresAt },
   });
   // Expired: the count starts again.
   expect((await startAttempt(db, { ...learner, now: expiresAt })).ok).toBe(true);
   const days = await db.select().from(schema.statsDay);
   expect(days.reduce((n, d) => n + d.attempts, 0)).toBe(3);
+});
+
+it("resumes, not fails, when two Starts race", async () => {
+  const { db } = await published();
+  const all = await Promise.all(
+    [0, 1, 2, 3].map(() => startAttempt(db, { ...learner, now: at(0) })),
+  );
+  expect(new Set(all.map((s) => s.ok && s.attempt.id)).size).toBe(1);
+  expect(all.every((s) => s.ok)).toBe(true);
 });

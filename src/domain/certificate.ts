@@ -37,6 +37,19 @@ export function shownStatus(
 export const longDate = (d: Date, locale: string) =>
   d.toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 
+/** A date and time as a Learner reads it: "September 25, 2026 at 03:05 PM UTC". In UTC, and says
+ * so, so the server's own zone never leaks in. */
+export const longDateTime = (d: Date, locale: string) =>
+  d.toLocaleString(locale, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "UTC",
+    timeZoneName: "short",
+  });
+
 export const expiryOf = (issuedAt: Date, expiryDays: number | null) =>
   expiryDays === null ? null : new Date(issuedAt.getTime() + expiryDays * 24 * 60 * 60_000);
 

@@ -246,9 +246,9 @@
       "over": "Esta Tentativa já terminou.",
       "unsaved": "Algumas respostas ainda não foram salvas. Verifique sua conexão e tente de novo.",
       "certificateSendFailed": "Não conseguimos enviar seu Certificado. Tente de novo em um minuto.",
-      "used": "Você já usou todas as Tentativas que esta Avaliação permite.",
-      "certificate": "Você já tem um Certificado válido para esta Avaliação.",
-      "cooldown": "Sua próxima Tentativa é permitida a partir de {until}."
+      "cooldown": "Sua próxima Tentativa é permitida a partir de {until}.",
+      "attemptsUsed": "Você já usou todas as Tentativas que esta Avaliação permite.",
+      "certificateHeld": "Você já tem um Certificado válido para esta Avaliação."
     },
     "start": "Começar Tentativa",
     "startAgain": "Começar nova Tentativa",

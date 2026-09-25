@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { retakeBlock, type PastAttempt, type HeldCertificate } from "./retake";
+import { retakeBlock, shownBlock, type PastAttempt, type HeldCertificate } from "./retake";
 
 const MINUTE = 60_000;
 const at = (minutes: number) => new Date(Date.UTC(2026, 8, 25, 12) + minutes * MINUTE);
@@ -49,14 +49,14 @@ describe("retakeBlock", () => {
 
   it("refuses once every Attempt is used, Timed out ones included", () => {
     expect(retakeBlock([submitted(0, 5), timedOut(100)], [], rules, at(10_000))).toEqual({
-      reason: "used",
+      reason: "attemptsUsed",
     });
   });
 
   it("refuses a Learner holding a Valid Certificate, even with Attempts left", () => {
     const held = cert({ expiresAt: at(1000) });
     expect(retakeBlock([submitted(0, 5)], [held], { ...rules, maxAttempts: 5 }, at(500))).toEqual({
-      reason: "certificate",
+      reason: "certificateHeld",
       publicId: "P",
       expiresAt: at(1000),
     });
@@ -65,22 +65,46 @@ describe("retakeBlock", () => {
   it("starts the count again once the Certificate expires, from Attempts started at or after it", () => {
     const past = [submitted(0, 5), submitted(100, 105)];
     const expired = cert({ expiresAt: at(1000) });
-    expect(retakeBlock(past, [expired], rules, at(999))).toMatchObject({ reason: "certificate" });
+    expect(retakeBlock(past, [expired], rules, at(999))).toMatchObject({
+      reason: "certificateHeld",
+    });
     expect(retakeBlock(past, [expired], rules, at(1000))).toBeNull();
     // Attempts at or after the Expiry count.
     const renewing = [...past, submitted(1000, 1005), timedOut(1100)];
-    expect(retakeBlock(renewing, [expired], rules, at(2000))).toEqual({ reason: "used" });
+    expect(retakeBlock(renewing, [expired], rules, at(2000))).toEqual({ reason: "attemptsUsed" });
   });
 
-  it("doesn't reset the count on Revocation, even past the revoked Certificate's Expiry", () => {
+  it("doesn't reset the count on Revocation, but a revoked Certificate's Expiry still does", () => {
     const past = [submitted(0, 5), submitted(100, 105)];
     const revoked = cert({ status: "revoked", statusAt: at(200), expiresAt: at(1000) });
-    expect(retakeBlock(past, [revoked], rules, at(300))).toEqual({ reason: "used" });
-    expect(retakeBlock(past, [revoked], rules, at(2000))).toEqual({ reason: "used" });
+    expect(retakeBlock(past, [revoked], rules, at(300))).toEqual({ reason: "attemptsUsed" });
+    expect(retakeBlock(past, [revoked], rules, at(1000))).toBeNull();
+  });
+
+  it("keeps a reset when the expired Certificate is revoked later, as a Creator Ban does", () => {
+    const past = [submitted(0, 5), submitted(100, 105)];
+    const bannedLater = cert({ status: "revoked", statusAt: at(5000), expiresAt: at(1000) });
+    expect(retakeBlock(past, [bannedLater], rules, at(6000))).toBeNull();
   });
 
   it("lets a Learner whose Certificate was revoked retake if Attempts remain", () => {
     const revoked = cert({ status: "revoked", statusAt: at(200) });
     expect(retakeBlock([submitted(0, 5)], [revoked], rules, at(300))).toBeNull();
+  });
+});
+
+describe("shownBlock", () => {
+  it("writes the dates out in the Assessment Language, in UTC", () => {
+    expect(shownBlock({ reason: "cooldown", until: at(5) }, "pt-BR")).toEqual({
+      reason: "cooldown",
+      until: "25 de setembro de 2026 às 12:05 UTC",
+    });
+    expect(shownBlock({ reason: "certificateHeld", publicId: "P", expiresAt: null }, "en")).toEqual(
+      {
+        reason: "certificateHeld",
+        publicId: "P",
+        renewFrom: undefined,
+      },
+    );
   });
 });

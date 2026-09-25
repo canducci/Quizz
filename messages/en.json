@@ -246,9 +246,9 @@
       "over": "This Attempt is already over.",
       "unsaved": "Some answers aren't saved yet. Check your connection and try again.",
       "certificateSendFailed": "We couldn't send your Certificate. Try again in a minute.",
-      "used": "You've used every Attempt this Assessment allows.",
-      "certificate": "You already hold a Valid Certificate for this Assessment.",
-      "cooldown": "Your next Attempt is allowed from {until}."
+      "cooldown": "Your next Attempt is allowed from {until}.",
+      "attemptsUsed": "You've used every Attempt this Assessment allows.",
+      "certificateHeld": "You already hold a Valid Certificate for this Assessment."
     },
     "start": "Start Attempt",
     "startAgain": "Start a new Attempt",
