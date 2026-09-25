@@ -4,9 +4,8 @@ import { startTransition, useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
 import { saveBranding } from "@/app/settings/actions";
 import type { creator } from "@/db/schema";
+import { DEFAULT_ACCENT } from "@/domain/publish";
 import { MAX_IMAGE_BYTES } from "@/server/image-type";
-
-const DEFAULT_ACCENT = "#1f6feb";
 
 export function BrandingForm({ creator: me }: { creator: typeof creator.$inferSelect }) {
   const t = useTranslations("settings");

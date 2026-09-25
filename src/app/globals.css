@@ -113,8 +113,22 @@ body {
   border-bottom-color: #f5b400;
 }
 
-.tabs [aria-disabled] {
-  opacity: 0.5;
+.topbar form:has(.publish) {
+  margin-left: auto;
+}
+
+.versionwarn,
+.problems {
+  margin: 0;
+  padding: 0.6rem 1.25rem;
+  background: #eef3f9;
+  border-bottom: 1px solid #0f2a4a;
+}
+
+.problems {
+  background: #fff7e0;
+  border: 1px solid #f5b400;
+  border-radius: 6px;
 }
 
 .panes {

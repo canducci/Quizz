@@ -155,5 +155,35 @@
       "removed": "{n, plural, =0 {None of these were invited.} one {# email removed.} other {# emails removed.}}",
       "skipped": "{n, plural, one {# entry isn't an email and was skipped.} other {# entries aren't emails and were skipped.}}"
     }
+  },
+  "publishTab": {
+    "publish": "Publish",
+    "asVersion": "Publish as Version {n}",
+    "upToDate": "Published · Version {n}",
+    "newVersion": "You're editing a published Assessment. Publishing creates Version {next}; Certificates already issued stay on Version {current}.",
+    "blocked": "Before you can publish:",
+    "ready": "Ready to publish.",
+    "draftHint": "Publishing freezes Version 1 and opens the Assessment to Learners.",
+    "noChanges": "No unpublished changes.",
+    "problems": {
+      "poolTooSmall": "The Question Pool has {pool, plural, one {# Question} other {# Questions}} but each Attempt draws {drawn}. Add more or draw fewer on the Rules tab.",
+      "incompleteQuestion": "Question {n} is incomplete.",
+      "noPassingScore": "Set a Passing Score on the Rules tab.",
+      "noTimeLimit": "Set a time limit on the Rules tab.",
+      "noBranding": "Finish your Certificate branding in Settings: {missing}."
+    },
+    "brandingFields": {
+      "logo": "logo",
+      "signerName": "signer name",
+      "signature": "signature image"
+    },
+    "status": "Status",
+    "closedHint": "Closed: no new Attempts. Certificates stay valid.",
+    "publishedHint": "Published: open for Attempts.",
+    "close": "Close",
+    "reopen": "Reopen",
+    "delete": "Delete Assessment",
+    "confirmDelete": "Delete this Draft and its Questions?",
+    "noDelete": "A published Assessment can't be deleted, only Closed."
   }
 }

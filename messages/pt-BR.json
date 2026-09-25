@@ -155,5 +155,35 @@
       "removed": "{n, plural, =0 {Nenhum destes estava convidado.} one {# e-mail removido.} other {# e-mails removidos.}}",
       "skipped": "{n, plural, one {# item não é um e-mail e foi ignorado.} other {# itens não são e-mails e foram ignorados.}}"
     }
+  },
+  "publishTab": {
+    "publish": "Publicar",
+    "asVersion": "Publicar como Versão {n}",
+    "upToDate": "Publicada · Versão {n}",
+    "newVersion": "Você está editando uma Avaliação publicada. Publicar cria a Versão {next}; os Certificados já emitidos continuam na Versão {current}.",
+    "blocked": "Antes de publicar:",
+    "ready": "Pronta para publicar.",
+    "draftHint": "Publicar congela a Versão 1 e abre a Avaliação aos Participantes.",
+    "noChanges": "Nenhuma alteração não publicada.",
+    "problems": {
+      "poolTooSmall": "O Conjunto de Questões tem {pool, plural, one {# Questão} other {# Questões}}, mas cada Tentativa sorteia {drawn}. Adicione mais ou sorteie menos na aba Regras.",
+      "incompleteQuestion": "A Questão {n} está incompleta.",
+      "noPassingScore": "Defina uma Nota de Aprovação na aba Regras.",
+      "noTimeLimit": "Defina um tempo limite na aba Regras.",
+      "noBranding": "Complete a identidade visual dos Certificados em Configurações: {missing}."
+    },
+    "brandingFields": {
+      "logo": "logotipo",
+      "signerName": "nome de quem assina",
+      "signature": "imagem da assinatura"
+    },
+    "status": "Situação",
+    "closedHint": "Encerrada: sem novas Tentativas. Os Certificados continuam válidos.",
+    "publishedHint": "Publicada: aberta a Tentativas.",
+    "close": "Encerrar",
+    "reopen": "Reabrir",
+    "delete": "Excluir Avaliação",
+    "confirmDelete": "Excluir este Rascunho e suas Questões?",
+    "noDelete": "Uma Avaliação publicada não pode ser excluída, só Encerrada."
   }
 }

@@ -1,5 +1,6 @@
-import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, primaryKey, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { user } from "./auth-schema";
+import type { Snapshot } from "../domain/publish";
 import { QUESTION_TYPES, type QuestionOption } from "../domain/question";
 import { ACCESS_MODES, DEFAULT_RULES } from "../domain/settings";
 import { locales } from "../i18n/locales";
@@ -40,7 +41,24 @@ export const assessment = sqliteTable("assessment", {
   maxAttempts: integer("max_attempts").notNull().default(DEFAULT_RULES.maxAttempts),
   cooldown: integer("cooldown").notNull().default(DEFAULT_RULES.cooldown), // minutes
   expiryDays: integer("expiry_days"), // null = Certificates never expire
+  // ponytail: no foreign key, it would be circular; publish() is the only writer.
+  currentVersionId: text("current_version_id"),
 });
+
+/** Immutable: written once on publish, never updated. Certificates stay on theirs. */
+export const assessmentVersion = sqliteTable(
+  "assessment_version",
+  {
+    id: text("id").primaryKey(),
+    assessmentId: text("assessment_id")
+      .notNull()
+      .references(() => assessment.id),
+    number: integer("number").notNull(),
+    publishedAt: integer("published_at", { mode: "timestamp_ms" }).notNull(),
+    snapshot: text("snapshot", { mode: "json" }).$type<Snapshot>().notNull(),
+  },
+  (t) => [uniqueIndex("assessment_version_number").on(t.assessmentId, t.number)],
+);
 
 /** Invite-only access list. On the Assessment, not the Version, so changes apply at once. */
 export const invite = sqliteTable(

@@ -13,6 +13,7 @@ import { requireCreator } from "@/server/auth";
 import { ownAssessment } from "@/server/assessments";
 import { parseEmailList } from "@/server/email-hash";
 import { addInvites, removeInvites } from "@/server/invites";
+import { publish } from "@/server/publish";
 import { toLocale } from "@/i18n/locales";
 import { putImage, type UploadResult } from "@/server/files";
 
@@ -127,4 +128,51 @@ export async function changeInvites(
   const changed = await (remove ? removeInvites : addInvites)(db, assessmentId, emails);
   revalidatePath(`/assessments/${assessmentId}`);
   return { status: remove ? "removed" : "added", changed, invalid };
+}
+
+/** Publishes, then shows the Publish tab: it lists whatever still stops publishing. */
+export async function publishAssessment(assessmentId: string) {
+  await publish(db, assessmentId, (await requireCreator()).id);
+  revalidatePath(`/assessments/${assessmentId}`);
+  redirect(`/assessments/${assessmentId}?tab=publish`);
+}
+
+type Status = (typeof assessment.$inferSelect)["status"];
+
+async function moveStatus(assessmentId: string, from: Status, to: Status) {
+  const creator = await requireCreator();
+  await db
+    .update(assessment)
+    .set({ status: to })
+    .where(
+      and(
+        eq(assessment.id, assessmentId),
+        eq(assessment.creatorId, creator.id),
+        eq(assessment.status, from),
+      ),
+    );
+  revalidatePath(`/assessments/${assessmentId}`);
+}
+
+export async function closeAssessment(assessmentId: string) {
+  await moveStatus(assessmentId, "published", "closed");
+}
+
+export async function reopenAssessment(assessmentId: string) {
+  await moveStatus(assessmentId, "closed", "published");
+}
+
+/** Only a Draft: once published it may have Certificates, which must keep their Assessment. */
+export async function deleteAssessment(assessmentId: string) {
+  const creator = await requireCreator();
+  await db
+    .delete(assessment)
+    .where(
+      and(
+        eq(assessment.id, assessmentId),
+        eq(assessment.creatorId, creator.id),
+        eq(assessment.status, "draft"),
+      ),
+    );
+  redirect("/dashboard");
 }

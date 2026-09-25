@@ -54,11 +54,14 @@ export function QuestionsEditor(props: { assessmentId: string; pool: StoredQuest
           // Keep it for the next flush unless a newer edit replaced it.
           pending.current ??= q;
           setSaveState("failed");
-        } else if (!pending.current) setSaveState("saved");
+        } else if (!pending.current) {
+          setSaveState("saved");
+          router.refresh(); // The top bar's Publish button and problems follow the pool.
+        }
       });
     }
     return saveQueue.current;
-  }, []);
+  }, [router]);
 
   // Leaving the page or the editor sends the last edit instead of dropping it.
   useEffect(() => {
