@@ -1,6 +1,6 @@
 # Publish, close and reopen
 
-Status: done
+Status: resolved
 Blocked by: 04
 
 ## What to build
