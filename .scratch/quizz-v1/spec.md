@@ -43,6 +43,7 @@ Vocabulary follows `CONTEXT.md`. Decisions recorded in `docs/adr/`.
 - The server holds the clock: each Attempt stores its deadline. Answers save as they go. A Learner who disconnects can resume the same Attempt, and the clock keeps running.
 - There is no auto-submit. An Attempt not submitted by its deadline is Timed out: no score, can't pass, and it counts against the Retake Policy, with the cooldown running from the deadline. An overdue Attempt becomes Timed out the next time anything reads it, and a daily cleanup job times out abandoned ones.
 - A Learner holding a Valid Certificate for the Assessment can't start another Attempt. Once it has expired or been revoked, they can (subject to the Retake Policy).
+- When a Learner's Certificate expires, their Attempt count for that Assessment starts again from zero, so they can always renew. Revocation doesn't reset the count.
 - The Retake Policy is enforced on the keyed email hash.
 - Afterwards the Learner sees only their score and pass/fail. There's no per-question review.
 - Cheating deterrents: time limit, random draw, retake limit and cooldown. No proctoring.

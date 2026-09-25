@@ -57,7 +57,7 @@ The minimum score an Attempt needs for the Learner to earn a Certificate. After 
 _Avoid_: Cutoff, threshold
 
 **Retake Policy**:
-The maximum number of Attempts a Learner may make on an Assessment and the cooldown between them.
+The maximum number of Attempts a Learner may make on an Assessment and the cooldown between them. The count starts again when the Learner's Certificate for that Assessment reaches Expiry.
 
 **Assessment Statistics**:
 Aggregate figures for an Assessment (Attempts, pass rate, score distribution, correct-answer rate per Question, time taken, Certificates issued, revoked and expired). Running counters that Learner Erasure never lowers. The only view a Creator has of Learner activity.
