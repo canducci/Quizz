@@ -6,7 +6,7 @@ import { drizzle } from "drizzle-orm/libsql";
 import { expect, it } from "vitest";
 import { migrateDatabase } from "../db/migrate";
 import * as schema from "../db/schema";
-import { latestAttempt, saveAnswer, startAttempt, submitAttempt } from "./attempts";
+import { latestAttempt, retakeCheck, saveAnswer, startAttempt, submitAttempt } from "./attempts";
 import { learnerCertificate } from "./certificates";
 import { publish } from "./publish";
 
@@ -61,10 +61,14 @@ const learner = { assessmentId: "a1", learner: "hash-ana" };
 
 it("starts once, resumes the same Attempt, and passes on the right answers", async () => {
   const { db, stats } = await published();
-  const started = await startAttempt(db, { ...learner, now: at(0) });
+  const first = await startAttempt(db, { ...learner, now: at(0) });
+  const started = first.ok ? first.attempt : null;
   expect(started?.drawn.map((d) => d.id).sort()).toEqual(["q1", "q2", "q3"]);
   expect(started?.deadline).toEqual(at(10));
-  expect((await startAttempt(db, { ...learner, now: at(5) }))?.id).toBe(started?.id);
+  expect(await startAttempt(db, { ...learner, now: at(5) })).toEqual({
+    ok: true,
+    attempt: started,
+  });
 
   for (const id of ["q1", "q2", "q3"])
     expect(await saveAnswer(db, { ...learner, questionId: id, choice: [0], now: at(1) })).toBe(
@@ -177,9 +181,9 @@ it("refuses a submit after the deadline and counts the Timed out Attempt once, o
     ["2026-09-25", 1, 0],
     ["2026-09-26", 0, 1],
   ]);
-  // A new Attempt can start once the old one is over (the Retake Policy comes later).
+  // A new Attempt can start once the old one is over and its cooldown has run.
   const next = await startAttempt(db, { ...learner, now: late });
-  expect(next?.outcome).toBe("in_progress");
+  expect(next.ok && next.attempt.outcome).toBe("in_progress");
   expect((await stats()).attempts).toBe(1);
 });
 
@@ -187,7 +191,10 @@ it("starts nothing on a Closed Assessment, but lets a running Attempt finish", a
   const { db } = await published();
   await startAttempt(db, { ...learner, now: at(0) });
   await db.update(schema.assessment).set({ status: "closed" });
-  expect(await startAttempt(db, { ...learner, learner: "hash-bob", now: at(1) })).toBeNull();
+  expect(await startAttempt(db, { ...learner, learner: "hash-bob", now: at(1) })).toEqual({
+    ok: false,
+    block: { reason: "closed" },
+  });
   expect(await submitAttempt(db, { ...learner, name: "Ana", now: at(2) })).toMatchObject({
     ok: true,
   });
@@ -211,4 +218,35 @@ it("sets a pass's Expiry from the Version's settings", async () => {
   expect(done.ok && done.certificate?.expiresAt).toEqual(
     new Date(at(2).getTime() + 365 * 86_400_000),
   );
+});
+
+it("enforces the Retake Policy on start, and counts no refused start", async () => {
+  const { db } = await published(1);
+  const pass = async (right: boolean, now: Date) => {
+    for (const id of ["q1", "q2", "q3"])
+      await saveAnswer(db, { ...learner, questionId: id, choice: [right ? 0 : 1], now });
+    return submitAttempt(db, { ...learner, name: "Ana", now });
+  };
+  await startAttempt(db, { ...learner, now: at(0) });
+  await pass(false, at(5));
+  // Default rules: 2 Attempts, 60 minutes apart.
+  expect(await startAttempt(db, { ...learner, now: at(30) })).toEqual({
+    ok: false,
+    block: { reason: "cooldown", until: at(65) },
+  });
+  expect(await retakeCheck(db, "a1", "hash-ana", { maxAttempts: 2, cooldown: 60 }, at(30))).toEqual(
+    { reason: "cooldown", until: at(65) },
+  );
+  expect((await startAttempt(db, { ...learner, now: at(65) })).ok).toBe(true);
+  const done = await pass(true, at(70));
+  const publicId = done.ok && done.certificate!.publicId;
+  const expiresAt = new Date(at(70).getTime() + 86_400_000);
+  expect(await startAttempt(db, { ...learner, now: at(200) })).toEqual({
+    ok: false,
+    block: { reason: "certificate", publicId, expiresAt },
+  });
+  // Expired: the count starts again.
+  expect((await startAttempt(db, { ...learner, now: expiresAt })).ok).toBe(true);
+  const days = await db.select().from(schema.statsDay);
+  expect(days.reduce((n, d) => n + d.attempts, 0)).toBe(3);
 });

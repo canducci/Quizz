@@ -7,7 +7,8 @@ import { AttemptView, ResendButton, StartButton } from "@/components/attempt-vie
 import { EntryForm } from "@/components/entry-form";
 import { learnerQuestions } from "@/domain/attempt";
 import { messagesFor } from "@/i18n/locales";
-import { latestAttempt } from "@/server/attempts";
+import { dateTime } from "@/domain/retake";
+import { latestAttempt, retakeCheck } from "@/server/attempts";
 import { learnerAssessment } from "@/server/assessments";
 import { emailHash } from "@/server/email-hash";
 import { LEARNER_COOKIE, learnerEmail } from "@/server/learner-session";
@@ -26,7 +27,8 @@ export default async function AssessmentLink(props: {
   const t = await getTranslations({ locale, namespace: "learner" });
   const verified = learnerEmail((await cookies()).get(LEARNER_COOKIE)?.value, id);
   const now = new Date();
-  const last = verified && (await latestAttempt(db, id, emailHash(verified), now));
+  const hash = verified && emailHash(verified);
+  const last = hash && (await latestAttempt(db, id, hash, now));
   const messages = await messagesFor(locale);
   const provide = (children: React.ReactNode) => (
     <NextIntlClientProvider
@@ -54,6 +56,9 @@ export default async function AssessmentLink(props: {
         )}
       </div>
     );
+
+  // After latestAttempt, which has timed out an overdue Attempt.
+  const block = hash && (await retakeCheck(db, id, hash, settings, now));
 
   return (
     <div className="learn" lang={locale}>
@@ -136,8 +141,26 @@ export default async function AssessmentLink(props: {
             {verified ? (
               <>
                 <p role="status">{t("verified", { email: verified })}</p>
-                <p className="muted">{t("verifiedHint", { minutes: settings.timeLimit })}</p>
-                {provide(<StartButton assessmentId={id} again={!!last} />)}
+                {!block ? (
+                  <>
+                    <p className="muted">{t("verifiedHint", { minutes: settings.timeLimit })}</p>
+                    {provide(<StartButton assessmentId={id} again={!!last} />)}
+                  </>
+                ) : block.reason === "certificate" ? (
+                  <p role="alert">
+                    {t("errors.certificate")}{" "}
+                    <a href={`/c/${block.publicId}`}>{t("viewCertificate")}</a>
+                    {block.expiresAt && (
+                      <> {t("renewFrom", { until: dateTime(block.expiresAt, locale) })}</>
+                    )}
+                  </p>
+                ) : (
+                  <p role="alert">
+                    {block.reason === "used"
+                      ? t("errors.used")
+                      : t("errors.cooldown", { until: dateTime(block.until, locale) })}
+                  </p>
+                )}
               </>
             ) : (
               provide(<EntryForm assessmentId={id} />)

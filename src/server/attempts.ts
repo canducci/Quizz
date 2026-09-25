@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { v7 as uuidv7 } from "uuid";
 import * as schema from "../db/schema";
@@ -15,6 +15,8 @@ import {
 } from "../domain/attempt";
 import { expiryOf, newPublicId } from "../domain/certificate";
 import type { CertificateVersion } from "../domain/certificate";
+import { retakeBlock, type RetakeBlock } from "../domain/retake";
+import type { Rules } from "../domain/settings";
 import { utcDay } from "./one-time-code";
 
 type Db = LibSQLDatabase<typeof schema>;
@@ -104,16 +106,57 @@ async function latest(tx: Tx, assessmentId: string, learner: string) {
   return row ?? null;
 }
 
-/** Resumes the Learner's running Attempt or starts one on the current Version. Null when the
- * Assessment isn't open. The caller has already checked the Invite-only list. */
+/** Why the Retake Policy refuses the Learner a new Attempt, or null. `rules` are the current
+ * Version's. Call it after `running` or `latestAttempt`, so an overdue Attempt counts as Timed out. */
+export async function retakeCheck(
+  tx: Tx | Db,
+  assessmentId: string,
+  learner: string,
+  rules: Pick<Rules, "maxAttempts" | "cooldown">,
+  now: Date,
+) {
+  const attempts = await tx
+    .select({
+      startedAt: attempt.startedAt,
+      deadline: attempt.deadline,
+      submittedAt: attempt.submittedAt,
+    })
+    .from(attempt)
+    .where(
+      and(
+        eq(attempt.assessmentId, assessmentId),
+        eq(attempt.emailHash, learner),
+        ne(attempt.outcome, "in_progress"),
+      ),
+    );
+  const certificates = await tx
+    .select({
+      publicId: certificate.publicId,
+      status: certificate.status,
+      statusAt: certificate.statusAt,
+      expiresAt: certificate.expiresAt,
+    })
+    .from(certificate)
+    .innerJoin(assessmentVersion, eq(certificate.versionId, assessmentVersion.id))
+    .where(
+      and(eq(assessmentVersion.assessmentId, assessmentId), eq(certificate.emailHash, learner)),
+    );
+  return retakeBlock(attempts, certificates, rules, now);
+}
+
+export type StartResult =
+  { ok: true; attempt: Attempt } | { ok: false; block: RetakeBlock | { reason: "closed" } };
+
+/** Resumes the Learner's running Attempt or starts one on the current Version, if the Assessment
+ * is open and the Retake Policy allows. The caller has already checked the Invite-only list. */
 export async function startAttempt(
   db: Db,
   opts: { assessmentId: string; learner: string; now?: Date; random?: () => number },
-) {
+): Promise<StartResult> {
   const now = opts.now ?? new Date();
   return db.transaction(async (tx) => {
     const resumed = await running(tx, opts.assessmentId, opts.learner, now);
-    if (resumed) return resumed.attempt;
+    if (resumed) return { ok: true, attempt: resumed.attempt };
     const [open] = await tx
       .select({
         status: assessment.status,
@@ -123,8 +166,10 @@ export async function startAttempt(
       .from(assessment)
       .innerJoin(assessmentVersion, eq(assessment.currentVersionId, assessmentVersion.id))
       .where(eq(assessment.id, opts.assessmentId));
-    if (open?.status !== "published") return null;
+    if (open?.status !== "published") return { ok: false, block: { reason: "closed" } };
     const { settings, questions } = open.snapshot;
+    const block = await retakeCheck(tx, opts.assessmentId, opts.learner, settings, now);
+    if (block) return { ok: false, block };
     const row: Attempt = {
       id: uuidv7(),
       assessmentId: opts.assessmentId,
@@ -141,7 +186,7 @@ export async function startAttempt(
     };
     await tx.insert(attempt).values(row);
     await bump(tx, open.versionId, now, ["attempts"]);
-    return row;
+    return { ok: true, attempt: row };
   });
 }
 

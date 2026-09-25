@@ -20,12 +20,15 @@ import {
 import { verificationUrl, type CertificateVersion } from "@/domain/certificate";
 import { learnerCertificate } from "@/server/certificates";
 import { CODE_MINUTES } from "@/domain/one-time-code";
+import { dateTime } from "@/domain/retake";
 
 const DAILY_CAP = Number(process.env.DAILY_EMAIL_CAP) || 300;
 
 export type EntryError =
   | { reason: "badEmail" | "sendFailed" | "dailyCap" | "email" | "ip" | "locked" | "expired" }
   | { reason: "wrong"; left: number }
+  | { reason: "used" | "certificate" }
+  | { reason: "cooldown"; until: string }
   | { reason: "notInvited" | "closed"; creator: string };
 
 /** An open Assessment, or the error a Learner sees. Ids from the browser are never trusted. */
@@ -114,7 +117,13 @@ export async function startLearnerAttempt(assessmentId: string): Promise<EntryEr
   if (snapshot.settings.accessMode === "invite" && !(await isInvited(db, assessmentId, email)))
     return { reason: "notInvited", creator: snapshot.branding.name };
   const started = await startAttempt(db, { assessmentId, learner: hash });
-  if (!started) return { reason: "closed", creator: snapshot.branding.name };
+  if (!started.ok) {
+    const { block } = started;
+    if (block.reason === "closed") return { reason: "closed", creator: snapshot.branding.name };
+    if (block.reason === "cooldown")
+      return { reason: "cooldown", until: dateTime(block.until, snapshot.settings.language) };
+    return { reason: block.reason };
+  }
   // A fresh cookie outlives the deadline (the longest time limit is a day), so the Learner can resume.
   await remember(assessmentId, email);
   return null;

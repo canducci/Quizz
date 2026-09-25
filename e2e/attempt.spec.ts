@@ -76,6 +76,15 @@ test("a Learner answers every Question right, passes and gets the Certificate PD
   // Only the score and pass/fail: nothing names a Question.
   await expect(page.getByText("Which command stages files?")).toHaveCount(0);
   await expect(page.getByText(`Your Certificate is on its way to ${email}.`)).toBeVisible();
+  // Holding a Valid Certificate, the Learner can't start again; they get a link to it instead.
+  await expect(
+    page.getByText("You already hold a Valid Certificate for this Assessment."),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "View your Certificate" })).toHaveAttribute(
+    "href",
+    /^\/c\/[0-9A-HJKMNP-TV-Z]{16}$/,
+  );
+  await expect(page.getByRole("button", { name: "Start a new Attempt" })).toHaveCount(0);
 
   const [mail] = await mailsWithPdf(request, email);
   expect(mail.Subject).toBe("Your Certificate for Git fundamentals");
@@ -121,5 +130,9 @@ test("a Learner resumes after a reload with the clock still running, then fails"
   await page.getByRole("button", { name: "Submit final answers" }).click();
   await expect(page.getByRole("heading", { name: "You didn't pass." })).toBeVisible();
   await expect(page.getByText("Score: 0%")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Start a new Attempt" })).toBeVisible();
+  // The default Retake Policy: 60 minutes from the submit before the next Attempt.
+  await expect(
+    page.getByText(/^Your next Attempt is allowed from \w+ \d+, \d{4} at \d\d:\d\d [AP]M UTC\.$/),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start a new Attempt" })).toHaveCount(0);
 });

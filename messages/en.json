@@ -245,7 +245,10 @@
       "timedOut": "Time ran out. This Attempt can no longer be submitted.",
       "over": "This Attempt is already over.",
       "unsaved": "Some answers aren't saved yet. Check your connection and try again.",
-      "certificateSendFailed": "We couldn't send your Certificate. Try again in a minute."
+      "certificateSendFailed": "We couldn't send your Certificate. Try again in a minute.",
+      "used": "You've used every Attempt this Assessment allows.",
+      "certificate": "You already hold a Valid Certificate for this Assessment.",
+      "cooldown": "Your next Attempt is allowed from {until}."
     },
     "start": "Start Attempt",
     "startAgain": "Start a new Attempt",
@@ -285,7 +288,9 @@
     "mail": {
       "subject": "Your code for {title}: {code}",
       "body": "Your verification code for {title} is:\n\n{code}\n\nIt works for {minutes} minutes. If you didn't ask for it, ignore this email."
-    }
+    },
+    "viewCertificate": "View your Certificate",
+    "renewFrom": "You can take it again to renew it from {until}."
   },
   "certificate": {
     "title": "Certificate",

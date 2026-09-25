@@ -1,6 +1,6 @@
 # Retake Policy
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 09
 
 ## What to build
@@ -9,11 +9,11 @@ Enforce retakes on the email hash.
 
 ## Acceptance criteria
 
-- [ ] Max Attempts and cooldown per spec; cooldown from submit, or from the deadline for Timed out.
-- [ ] A Learner holding a Valid Certificate can't start; they see a link to it.
-- [ ] The count covers only Attempts started after the Learner's last Certificate for the Assessment expired; Revocation doesn't reset it.
-- [ ] Can't-start messages show the next allowed date and time.
-- [ ] Vitest: every rule above with a fake clock.
+- [x] Max Attempts and cooldown per spec; cooldown from submit, or from the deadline for Timed out.
+- [x] A Learner holding a Valid Certificate can't start; they see a link to it.
+- [x] The count covers only Attempts started after the Learner's last Certificate for the Assessment expired; Revocation doesn't reset it.
+- [x] Can't-start messages show the next allowed date and time.
+- [x] Vitest: every rule above with a fake clock.
 
 ## Design reference
 
