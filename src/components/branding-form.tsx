@@ -1,18 +1,32 @@
 "use client";
 
-import { useActionState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
 import { saveBranding } from "@/app/settings/actions";
 import type { creator } from "@/db/schema";
+import { MAX_IMAGE_BYTES } from "@/server/image-type";
 
 const DEFAULT_ACCENT = "#1f6feb";
 
 export function BrandingForm({ creator: me }: { creator: typeof creator.$inferSelect }) {
   const t = useTranslations("settings");
   const [state, action, pending] = useActionState(saveBranding, { status: "idle" as const });
+  const [tooLarge, setTooLarge] = useState(false);
+  const status = tooLarge ? "tooLarge" : state.status;
 
   return (
-    <form action={action} className="stack">
+    <form
+      className="stack"
+      // Submitting by hand, not via `action`, so React doesn't wipe the fields when saving fails.
+      onSubmit={(e) => {
+        e.preventDefault();
+        const form = new FormData(e.currentTarget);
+        // Past Next's body limit the action never runs, so catch big files before sending.
+        const big = [...form.values()].some((v) => v instanceof File && v.size > MAX_IMAGE_BYTES);
+        setTooLarge(big);
+        if (!big) startTransition(() => action(form));
+      }}
+    >
       <label className="stack">
         {t("name")}
         <input name="name" required defaultValue={me.name} />
@@ -33,10 +47,8 @@ export function BrandingForm({ creator: me }: { creator: typeof creator.$inferSe
       <ImageField name="signature" label={t("signature")} imageKey={me.signatureKey} />
       <p>{t("imageHint")}</p>
       <button disabled={pending}>{t("save")}</button>
-      {state.status === "saved" && <p role="status">{t("saved")}</p>}
-      {state.status !== "idle" && state.status !== "saved" && (
-        <p role="alert">{t(`errors.${state.status}`)}</p>
-      )}
+      {status === "saved" && <p role="status">{t("saved")}</p>}
+      {status !== "idle" && status !== "saved" && <p role="alert">{t(`errors.${status}`)}</p>}
     </form>
   );
 }

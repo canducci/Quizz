@@ -1,6 +1,6 @@
 # Creator branding
 
-Status: claimed
+Status: resolved
 Blocked by: 01
 
 ## What to build

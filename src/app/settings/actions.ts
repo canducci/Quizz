@@ -6,9 +6,11 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { creator } from "@/db/schema";
 import { currentCreator } from "@/server/auth";
-import { putImage } from "@/server/files";
+import { putImage, type UploadResult } from "@/server/files";
 
-export type BrandingState = { status: "idle" | "saved" | "invalid" | "badImage" | "tooLarge" };
+export type BrandingState = {
+  status: "idle" | "saved" | "invalid" | Extract<UploadResult, { error: unknown }>["error"];
+};
 
 const text = (form: FormData, field: string) => String(form.get(field) ?? "").trim();
 

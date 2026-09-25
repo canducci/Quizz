@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { signInAsNewCreator } from "./sign-in-helper";
 
 // A 1×1 PNG.
@@ -7,16 +7,29 @@ const PNG = Buffer.from(
   "base64",
 );
 
+async function saveLogo(page: Page, buffer: Buffer) {
+  await page.getByLabel("Logo").setInputFiles({ name: "logo.png", mimeType: "image/png", buffer });
+  await page.getByRole("button", { name: "Save" }).click();
+}
+
+const alert = (page: Page, text: string) => page.getByRole("alert").filter({ hasText: text });
+
 test("a Creator uploads a logo and sees it served from /files", async ({ page, request }) => {
   await signInAsNewCreator(page, request);
   await page.getByRole("link", { name: "Settings" }).click();
-
   await page.getByLabel("Creator name").fill("Acme Academy");
   await page.getByLabel("Signer name").fill("Ana Souza");
-  await page
-    .getByLabel("Logo")
-    .setInputFiles({ name: "logo.png", mimeType: "image/png", buffer: PNG });
-  await page.getByRole("button", { name: "Save" }).click();
+
+  // An SVG dressed up as a PNG is refused by its content.
+  await saveLogo(page, Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>'));
+  await expect(alert(page, "Images must be PNG or JPEG.")).toBeVisible();
+  // Too big for the server to even receive: refused before sending.
+  await saveLogo(page, Buffer.concat([PNG, Buffer.alloc(6 * 1024 * 1024)]));
+  await expect(alert(page, "Images must be 2 MB or smaller.")).toBeVisible();
+  // Refusals keep what the Creator typed.
+  await expect(page.getByLabel("Creator name")).toHaveValue("Acme Academy");
+
+  await saveLogo(page, PNG);
   await expect(page.getByRole("status")).toHaveText("Saved.");
 
   const logo = page.getByRole("img", { name: "Logo" });

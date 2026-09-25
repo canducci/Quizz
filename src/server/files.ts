@@ -7,9 +7,7 @@ import {
   S3ServiceException,
 } from "@aws-sdk/client-s3";
 import { v7 as uuidv7, validate } from "uuid";
-import { imageType } from "./image-type";
-
-export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+import { imageType, MAX_IMAGE_BYTES } from "./image-type";
 
 const bucket = process.env.S3_BUCKET;
 const s3 = new S3Client({
@@ -49,7 +47,10 @@ export async function getFile(key: string) {
   if (!validate(key)) return null;
   try {
     const object = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
-    return { body: object.Body!.transformToWebStream(), type: object.ContentType ?? "" };
+    return {
+      body: object.Body!.transformToWebStream(),
+      type: object.ContentType ?? "application/octet-stream",
+    };
   } catch (e) {
     if (e instanceof NoSuchKey) return null;
     throw e;

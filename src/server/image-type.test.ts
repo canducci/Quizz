@@ -5,7 +5,7 @@ const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0x0d];
 const JPEG = [0xff, 0xd8, 0xff, 0xe0, 0, 0x10];
 const bytes = async (file: File) => new Uint8Array(await file.arrayBuffer());
 
-it("accepts PNG and JPEG by content", async () => {
+it("accepts PNG and JPEG by content", () => {
   expect(imageType(new Uint8Array(PNG))).toBe("image/png");
   expect(imageType(new Uint8Array(JPEG))).toBe("image/jpeg");
 });

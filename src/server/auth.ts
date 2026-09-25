@@ -4,6 +4,7 @@ import { magicLink } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
+import { cache } from "react";
 import { getTranslations } from "next-intl/server";
 import { v7 as uuidv7 } from "uuid";
 import { db } from "@/db";
@@ -41,7 +42,7 @@ export const auth = betterAuth({
 });
 
 /** The signed-in Creator, or null when nobody is signed in. */
-export async function currentCreator() {
+export const currentCreator = cache(async () => {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return null;
   const [creator] = await db
@@ -49,4 +50,4 @@ export async function currentCreator() {
     .from(schema.creator)
     .where(eq(schema.creator.authUserId, session.user.id));
   return creator ?? null;
-}
+});
