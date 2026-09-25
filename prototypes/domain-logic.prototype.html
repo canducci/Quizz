@@ -47,12 +47,17 @@
 <main>
   <h1>Quizz prototype: Attempts and Certificates</h1>
   <div class="intro">
-    <p><strong>The question:</strong> does the v1 model for Attempts and Certificates hold up in the awkward cases? It covers the deadline-based timer (finalized when next accessed), the Retake Policy and cooldown, Assessment Versions, confirming the name, Revocation, Expiry, Learner Erasure, and Creator deletion versus Creator Ban. The rules come from <code>.scratch/quizz-v1/spec.md</code>. Everything is in memory with fake data. Click a scenario tab, or play freely.</p>
+    <p><strong>The question:</strong> does the v1 model for Attempts and Certificates hold up in the awkward cases? It covers the deadline-based timer (an Attempt not submitted in time is Timed out when next accessed), the Retake Policy and cooldown, Assessment Versions, confirming the name, Revocation, Expiry, Learner Erasure, and Creator deletion versus Creator Ban. The rules come from <code>.scratch/quizz-v1/spec.md</code>. Everything is in memory with fake data. Click a scenario tab, or play freely.</p>
+    <p><strong>Rules settled after the first round of this prototype:</strong></p>
+    <ul>
+      <li>There is no auto-submit. An Attempt not submitted by its deadline is <em>Timed out</em>: no score, can't pass, and it counts against the Retake Policy.</li>
+      <li>The Learner types their name when submitting. A pass issues the Certificate immediately; on a fail the name is thrown away.</li>
+      <li>A Learner holding a Valid Certificate for the Assessment can't start another Attempt. Once it has expired or been revoked, they can.</li>
+      <li>Assessment Statistics are running counters: Learner Erasure never lowers them. Name corrections are not counted as Revocations.</li>
+    </ul>
     <p><strong>Deliberate choices this prototype makes. Check they feel right:</strong></p>
     <ul>
-      <li>A Learner who already holds a valid Certificate may take the Assessment again, and passing again issues a second Certificate.</li>
-      <li>The Retake Policy counts every Attempt on the Assessment, across all Assessment Versions. The cooldown runs from when the Attempt ended; for an auto-submitted Attempt, that's its deadline.</li>
-      <li>An Attempt that passes on auto-submit still needs the Learner to come back and confirm their name before a Certificate exists.</li>
+      <li>The Retake Policy counts every Attempt on the Assessment, across all Assessment Versions. The cooldown runs from when the Attempt ended; for a Timed-out Attempt, that's its deadline.</li>
       <li>A name correction is started by the Learner: the old Certificate is revoked ("Name correction") and a new one is issued with a new ID.</li>
       <li>The random question draw isn't modeled; each answer is just "correct" or "wrong".</li>
     </ul>
@@ -80,8 +85,7 @@
       <button data-a="start">Verify email & start / resume Attempt</button>
       <button data-a="answerRight">Answer a question correctly</button>
       <button data-a="answerWrong">Answer a question wrongly</button>
-      <button data-a="submit">Submit Attempt</button>
-      <button data-a="confirmName">Confirm name & get Certificate</button>
+      <button data-a="submit">Enter name & submit Attempt</button>
       <button data-a="correctName">Fix name on Certificate</button>
       <button data-a="erase">Erase all my data</button>
     </div>
@@ -137,6 +141,8 @@ const Quizz = (() => {
         versions: [],
       },
       attempts: [], certificates: [], seq: 1, log: [],
+      // Running counters: anonymous, and never lowered by Learner Erasure.
+      stats: { attempts: 0, passed: 0, timedOut: 0, scores: [], minutes: [], issued: 0, revoked: 0, expiries: [] },
     };
   }
 
@@ -150,14 +156,23 @@ const Quizz = (() => {
   }
 
   function finish(s, a, status, at) {
-    a.status = status; a.finishedAt = at; a.score = score(s, a);
-    a.passed = a.score >= versionOf(s, a.version).passingScore;
+    a.status = status; a.finishedAt = at;
+    a.score = status === 'Timed out' ? null : score(s, a);
+    a.passed = a.score !== null && a.score >= versionOf(s, a.version).passingScore;
+    s.stats.attempts++; s.stats.minutes.push(at - a.startedAt);
+    if (a.passed) s.stats.passed++;
+    if (status === 'Timed out') s.stats.timedOut++; else s.stats.scores.push(a.score);
   }
 
-  // Attempts are never finalized by a timer: whoever touches an overdue Attempt finalizes it.
+  // Attempts are never finalized by a timer: whoever touches an overdue Attempt times it out.
   function finalizeIfOverdue(s, a) {
-    if (isOverdue(s, a)) { finish(s, a, 'Auto-submitted', a.deadline); return true; }
+    if (isOverdue(s, a)) { finish(s, a, 'Timed out', a.deadline); return true; }
     return false;
+  }
+
+  function revoke(s, c, reason) {
+    c.revoked = { at: s.now, reason };
+    if (reason !== 'Name correction') s.stats.revoked++;
   }
 
   function issue(s, a, name) {
@@ -168,6 +183,7 @@ const Quizz = (() => {
       expiresAt: v.expiryDays ? s.now + v.expiryDays * DAY : null, revoked: null,
     };
     s.certificates.push(c); a.certificateId = c.id;
+    s.stats.issued++; if (c.expiresAt !== null) s.stats.expiries.push(c.expiresAt);
     return c;
   }
 
@@ -222,6 +238,8 @@ const Quizz = (() => {
         if (A.accessMode === 'Invite-only' && !A.invited.includes(hash)) return no('Rejected: this email was not invited.');
         const o = open();
         if (o && !finalizeIfOverdue(s, o)) return ok(`Resumed Attempt ${o.id}. The clock kept running: ${o.deadline - s.now} min left.`);
+        const held = s.certificates.find(c => c.emailHash === hash && verify(s, c.id).status === 'Valid');
+        if (held) return no(`Rejected: this Learner already holds a Valid Certificate (${held.id}) for this Assessment.`);
         const v = current(s), prior = mine();
         if (prior.length >= v.maxAttempts) return no(`Rejected: all ${v.maxAttempts} Attempts used.`);
         const last = prior[prior.length - 1];
@@ -229,13 +247,13 @@ const Quizz = (() => {
         const a = { id: 'A-' + String(s.seq++).padStart(4, '0'), emailHash: hash, version: v.number, startedAt: s.now,
           deadline: s.now + v.timeLimit, answers: [], status: 'In progress', finishedAt: null, score: null, passed: null, certificateId: null };
         s.attempts.push(a);
-        return ok(`${o ? 'The previous Attempt was overdue and has been auto-submitted. ' : ''}Email verified. Attempt ${a.id} started on Version ${v.number}; ${v.timeLimit} min on the clock.`);
+        return ok(`${o ? 'The previous Attempt was overdue and is now Timed out. ' : ''}Email verified. Attempt ${a.id} started on Version ${v.number}; ${v.timeLimit} min on the clock.`);
       }
 
       case 'answer': {
         const a = open();
         if (!a) return no('No Attempt in progress.');
-        if (finalizeIfOverdue(s, a)) return no(`Too late: the deadline has passed. ${a.id} was auto-submitted with ${a.score}%.`);
+        if (finalizeIfOverdue(s, a)) return no(`Too late: the deadline has passed. ${a.id} is Timed out, with no score.`);
         if (a.answers.length >= versionOf(s, a.version).questionsDrawn) return no('All questions answered; submit the Attempt.');
         a.answers.push(act.correct);
         return ok(`Answer saved (${a.answers.length}/${versionOf(s, a.version).questionsDrawn}).`);
@@ -244,24 +262,18 @@ const Quizz = (() => {
       case 'submit': {
         const a = open();
         if (!a) return no('No Attempt in progress.');
-        if (finalizeIfOverdue(s, a)) return no(`Too late: ${a.id} was already over time and has been auto-submitted with ${a.score}%.`);
+        if (finalizeIfOverdue(s, a)) return no(`Too late: ${a.id} was already over time and is Timed out, with no score.`);
+        if (!act.name.trim()) return no('Enter your full name, as it will appear on your Certificate if you pass.');
         finish(s, a, 'Submitted', s.now);
-        return ok(`Submitted: ${a.score}%, ${a.passed ? 'passed. Next, confirm your name.' : 'failed.'} The Learner sees only the score and pass/fail.`);
-      }
-
-      case 'confirmName': {
-        mine().forEach(a => finalizeIfOverdue(s, a));
-        const a = mine().filter(a => a.passed && !a.certificateId).pop();
-        if (!a) return no('No passed Attempt waiting for a name.');
-        if (!act.name.trim()) return no('The name is required.');
+        if (!a.passed) return ok(`Submitted: ${a.score}%, failed. The name was thrown away, not stored. The Learner sees only the score and pass/fail.`);
         const c = issue(s, a, act.name.trim());
-        return ok(`Certificate ${c.id} issued to "${c.name}". It can't be changed from now on.`);
+        return ok(`Submitted: ${a.score}%, passed. Certificate ${c.id} issued to "${c.name}" in the same step. It can't be changed from now on.`);
       }
 
       case 'correctName': {
         const c = s.certificates.filter(c => c.emailHash === hash && !c.revoked).pop();
         if (!c) return no('No valid Certificate to correct.');
-        c.revoked = { at: s.now, reason: 'Name correction' };
+        revoke(s, c, 'Name correction');
         const n = issue(s, s.attempts.find(a => a.id === c.attemptId), act.name.trim());
         return ok(`${c.id} revoked (Name correction). ${n.id} issued to "${n.name}" at a new URL.`);
       }
@@ -269,7 +281,7 @@ const Quizz = (() => {
       case 'revoke': {
         const c = s.certificates.filter(c => c.emailHash === hash && !c.revoked).pop();
         if (!c) return no('The Creator looked up this email (by its hash) and found no valid Certificate.');
-        c.revoked = { at: s.now, reason: act.reason };
+        revoke(s, c, act.reason);
         return ok(`${c.id} revoked: ${act.reason}. Its Verification Page stays up and shows it as revoked.`);
       }
 
@@ -278,7 +290,7 @@ const Quizz = (() => {
         s.attempts = s.attempts.filter(a => a.emailHash !== hash);
         s.certificates = s.certificates.filter(c => c.emailHash !== hash);
         A.invited = A.invited.filter(h => h !== hash);
-        return ok(`Learner Erasure: ${nA} Attempt(s) and ${nC} Certificate(s) deleted. Retake counts reset; the invitation is gone too.`);
+        return ok(`Learner Erasure: ${nA} Attempt(s) and ${nC} Certificate(s) deleted. Retake counts reset; the invitation is gone too. Assessment Statistics are unchanged.`);
       }
 
       case 'deleteCreator':
@@ -289,12 +301,12 @@ const Quizz = (() => {
       case 'banCreator':
         if (s.creator.status === 'banned') return no('Already banned.');
         s.creator.status = 'banned'; if (A.status === 'Published') A.status = 'Closed';
-        s.certificates.filter(c => !c.revoked).forEach(c => { c.revoked = { at: s.now, reason: 'Creator banned' }; });
+        s.certificates.filter(c => !c.revoked).forEach(c => revoke(s, c, 'Creator banned'));
         return ok('Creator banned. Every Certificate they issued is revoked.');
 
       case 'cleanup': {
         const n = s.attempts.filter(a => finalizeIfOverdue(s, a)).length;
-        return ok(`Daily cleanup: ${n} abandoned Attempt(s) finalized.`);
+        return ok(`Daily cleanup: ${n} abandoned Attempt(s) Timed out.`);
       }
     }
     return no('Unknown action.');
@@ -321,18 +333,16 @@ const Quizz = (() => {
   }
 
   function statistics(s) {
-    const done = s.attempts.filter(a => a.status !== 'In progress');
-    const times = done.map(a => a.finishedAt - a.startedAt).sort((x, y) => x - y);
+    const t = s.stats, times = t.minutes.slice().sort((x, y) => x - y);
     return {
-      attempts: done.length,
+      attempts: t.attempts, timedOut: t.timedOut,
       inProgress: s.attempts.filter(a => a.status === 'In progress' && !isOverdue(s, a)).length,
       overdueUnfinalized: s.attempts.filter(a => isOverdue(s, a)).length,
-      passRate: done.length ? Math.round(100 * done.filter(a => a.passed).length / done.length) : null,
-      scores: done.map(a => a.score),
+      passRate: t.attempts ? Math.round(100 * t.passed / t.attempts) : null,
+      scores: t.scores,
       medianMinutes: times.length ? times[Math.floor(times.length / 2)] : null,
-      issued: s.certificates.length,
-      revoked: s.certificates.filter(c => c.revoked).length,
-      expired: s.certificates.filter(c => verify(s, c.id).status === 'Expired').length,
+      issued: t.issued, revoked: t.revoked,
+      expired: t.expiries.filter(x => s.now >= x).length,
     };
   }
 
@@ -358,8 +368,7 @@ const A = {
   start: e => ({ type: 'start', email: e }),
   answerRight: e => ({ type: 'answer', email: e, correct: true }),
   answerWrong: e => ({ type: 'answer', email: e, correct: false }),
-  submit: e => ({ type: 'submit', email: e }),
-  confirmName: (e, n) => ({ type: 'confirmName', email: e, name: n }),
+  submit: (e, n) => ({ type: 'submit', email: e, name: n }),
   correctName: (e, n) => ({ type: 'correctName', email: e, name: n }),
   revoke: e => ({ type: 'revoke', email: e, reason: 'Cheating reported' }),
   erase: e => ({ type: 'erase', email: e }),
@@ -394,8 +403,9 @@ function render(note) {
     const overdue = Quizz.isOverdue(s, a);
     const status = overdue ? pill('Overdue: finalized next time it is read', 'warn')
       : a.status === 'In progress' ? pill(`In progress, ${a.deadline - s.now} min left`)
+      : a.status === 'Timed out' ? pill('Timed out', 'bad')
       : pill(a.status + (a.passed ? ', passed' : ', failed'), a.passed ? 'ok' : 'bad');
-    const cert = a.passed && !a.certificateId ? pill('Waiting for name', 'warn') : (a.certificateId || '');
+    const cert = a.certificateId || '';
     return `<tr><td>${a.id}</td><td>${who(a.emailHash)} <code>${a.emailHash}</code></td><td>v${a.version}</td><td>${a.answers.map(x => x ? '✓' : '✗').join(' ') || '·'}</td><td>${status}</td><td>${a.score ?? ''}${a.score !== null ? '%' : ''}</td><td>${cert}</td></tr>`;
   }).join('');
 
@@ -420,8 +430,8 @@ function render(note) {
         <dt>Questions / time</dt><dd>${v.questionsDrawn} questions, ${v.timeLimit} min</dd>
         <dt>Retake Policy</dt><dd>max ${v.maxAttempts} Attempts, ${v.cooldown} min cooldown</dd>
         <dt>Expiry</dt><dd>${v.expiryDays ? v.expiryDays + ' days' : 'off'}</dd></dl></div>
-      <div><h3>Assessment Statistics (all the Creator sees)</h3><dl>
-        <dt>Attempts finished</dt><dd>${st.attempts}${st.inProgress ? ` (+${st.inProgress} in progress)` : ''}${st.overdueUnfinalized ? ` (+${st.overdueUnfinalized} abandoned, not counted until cleanup)` : ''}</dd>
+      <div><h3>Assessment Statistics (all the Creator sees; running counters)</h3><dl>
+        <dt>Attempts finished</dt><dd>${st.attempts}${st.timedOut ? ` (${st.timedOut} Timed out)` : ''}${st.inProgress ? ` (+${st.inProgress} in progress)` : ''}${st.overdueUnfinalized ? ` (+${st.overdueUnfinalized} abandoned, not counted until cleanup)` : ''}</dd>
         <dt>Pass rate</dt><dd>${st.passRate ?? '—'}${st.passRate !== null ? '%' : ''}</dd>
         <dt>Scores</dt><dd>${st.scores.join(', ') || '—'}</dd>
         <dt>Median time</dt><dd>${st.medianMinutes ?? '—'}${st.medianMinutes !== null ? ' min' : ''}</dd>
@@ -440,54 +450,55 @@ function render(note) {
 // ---- Guided scenarios ----
 const step = (label, key, email, name) => ({ label, key, email, name });
 const SCENARIOS = [
-  { title: 'Happy path', text: 'Ana takes the Assessment, passes with 80% (pass mark 70%), confirms her name and gets a Certificate. Watch: nothing is issued until she confirms her name, and the Statistics never show who she is.', steps: [
+  { title: 'Happy path', text: 'Ana takes the Assessment, types her name as she submits, and passes with 80% (pass mark 70%). The Certificate is issued in the same step. Then she tries to take it again. Watch: the Statistics never show who she is.', steps: [
     step('Creator publishes', 'publish'), step('Ana verifies her email and starts', 'start', ANA),
     step('Ana answers correctly', 'answerRight', ANA), step('Ana answers correctly', 'answerRight', ANA), step('Ana answers correctly', 'answerRight', ANA),
     step('Ana answers correctly', 'answerRight', ANA), step('Ana answers wrongly', 'answerWrong', ANA),
-    step('Ana submits', 'submit', ANA), step('Ana confirms "Ana Souza"', 'confirmName', ANA, 'Ana Souza')] },
-  { title: 'Laptop dies', text: 'Bruno has 10 minutes. He answers 4 questions correctly, his laptop dies, and he comes back after the deadline. Watch: while he is away nothing happens; the Attempt shows as overdue. It is finalized the moment he touches it, with the answers he had saved. 4/5 = 80% passes, so he still has to confirm his name.', steps: [
+    step('Ana enters "Ana Souza" and submits', 'submit', ANA, 'Ana Souza'), step('Ana tries to take it again', 'start', ANA)] },
+  { title: 'Laptop dies', text: 'Bruno has 10 minutes. He answers 4 questions correctly, his laptop dies, and he comes back after the deadline. Watch: while he is away nothing happens; the Attempt just shows as overdue. The moment he touches it, it becomes Timed out with no score, even though his saved answers would have passed. The cooldown runs from the deadline.', steps: [
     step('Creator publishes', 'publish'), step('Bruno starts', 'start', BRUNO),
     step('Bruno answers correctly', 'answerRight', BRUNO), step('Bruno answers correctly', 'answerRight', BRUNO),
     step('+5 minutes: laptop still on', 't5'), step('Bruno comes back and resumes (5 min left)', 'start', BRUNO),
     step('Bruno answers correctly', 'answerRight', BRUNO), step('Bruno answers correctly', 'answerRight', BRUNO),
     step('Laptop dies. +1 hour passes', 't60'), step('Bruno tries to answer', 'answerRight', BRUNO),
-    step('Bruno confirms "Bruno Lima"', 'confirmName', BRUNO, 'Bruno Lima')] },
-  { title: 'Retake limits', text: 'Eve fails, tries again immediately (cooldown), waits, fails again, and then has no Attempts left. Then she erases her data and starts over. That is the loophole we accepted.', steps: [
-    step('Creator publishes', 'publish'), step('Eve starts', 'start', EVE), step('Eve answers wrongly', 'answerWrong', EVE), step('Eve submits (0%)', 'submit', EVE),
+    step('Bruno tries to start again', 'start', BRUNO), step('+5 minutes', 't5'), step('Bruno starts his 2nd Attempt', 'start', BRUNO)] },
+  { title: 'Retake limits', text: 'Eve fails, tries again immediately (cooldown), waits, fails again, and then has no Attempts left. Then she erases her data and starts over. That is the loophole we accepted. Watch the Statistics: the erasure does not lower them.', steps: [
+    step('Creator publishes', 'publish'), step('Eve starts', 'start', EVE), step('Eve answers wrongly', 'answerWrong', EVE), step('Eve submits (0%)', 'submit', EVE, 'Eve Rocha'),
     step('Eve tries again at once', 'start', EVE), step('+1 hour', 't60'), step('Eve starts her 2nd Attempt', 'start', EVE),
-    step('Eve submits (0%)', 'submit', EVE), step('+1 hour', 't60'), step('Eve tries a 3rd time', 'start', EVE),
+    step('Eve submits (0%)', 'submit', EVE, 'Eve Rocha'), step('+1 hour', 't60'), step('Eve tries a 3rd time', 'start', EVE),
     step('Eve erases all her data', 'erase', EVE), step('Eve starts again: allowed', 'start', EVE)] },
-  { title: 'Editing after issuing', text: 'Ana passes with 80% on Version 1 (pass mark 70%). The Creator then raises the Passing Score to 80%, creating Version 2. Watch: Ana\'s Certificate still says v1 (pass ≥ 70%). Bruno scores 60% on v2 and fails.', steps: [
+  { title: 'Editing after issuing', text: 'Ana passes with 80% on Version 1 (pass mark 70%). The Creator then raises the Passing Score to 80%, creating Version 2. Watch: Ana\'s Certificate still says v1 (pass ≥ 70%). Bruno scores 60% on v2 and fails; the name he typed is not stored.', steps: [
     step('Creator publishes', 'publish'), step('Ana starts', 'start', ANA),
     step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA),
-    step('Ana submits (80%)', 'submit', ANA), step('Ana confirms her name', 'confirmName', ANA, 'Ana Souza'),
+    step('Ana submits as "Ana Souza" (80%)', 'submit', ANA, 'Ana Souza'),
     step('Creator raises Passing Score to 80%', 'raise'), step('Bruno starts on v2', 'start', BRUNO),
     step('Bruno ✓', 'answerRight', BRUNO), step('Bruno ✓', 'answerRight', BRUNO), step('Bruno ✓', 'answerRight', BRUNO),
-    step('Bruno submits (60%)', 'submit', BRUNO)] },
+    step('Bruno submits as "Bruno Lima" (60%)', 'submit', BRUNO, 'Bruno Lima')] },
   { title: 'Invite-only', text: 'The Creator restricts the Assessment and invites Ana. Eve tries to get in with the link.', steps: [
     step('Creator publishes', 'publish'), step('Creator makes it Invite-only', 'inviteOnly'), step('Creator invites Ana', 'invite', ANA),
     step('Eve tries to start', 'start', EVE), step('Ana starts', 'start', ANA)] },
-  { title: 'Revoke, fix name, delete', text: 'Ana passes with a typo in her name and fixes it. Later the Creator hears she cheated and revokes, then tries to delete the Assessment. Watch the Verification Page column: the old ID stays up as revoked.', steps: [
+  { title: 'Revoke, fix name, delete', text: 'Ana passes with a typo in her name and fixes it. Later the Creator hears she cheated and revokes, then tries to delete the Assessment. Watch: the old IDs stay up as revoked, but the Statistics count only one Revocation, because the name fix does not count.', steps: [
     step('Creator publishes', 'publish'), step('Ana starts', 'start', ANA),
     step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA),
-    step('Ana submits', 'submit', ANA), step('Ana confirms "Jhon Souza" (typo)', 'confirmName', ANA, 'Jhon Souza'),
+    step('Ana submits as "Jhon Souza" (typo)', 'submit', ANA, 'Jhon Souza'),
     step('Ana fixes it to "Ana Souza"', 'correctName', ANA, 'Ana Souza'), step('Creator revokes Ana\'s Certificate (by her email)', 'revoke', ANA),
     step('Creator tries to delete the Assessment', 'deleteAssessment'), step('Creator closes it instead', 'close'),
     step('Ana tries to start', 'start', ANA)] },
-  { title: 'Expiry', text: 'The Creator turns on a 30-day Expiry after Ana already has a Certificate. Watch: Ana\'s Certificate (v1, no expiry) stays valid forever; Bruno\'s (v2) expires after 30 days.', steps: [
+  { title: 'Expiry', text: 'The Creator turns on a 30-day Expiry after Ana already has a Certificate. Watch: Ana\'s Certificate (v1, no expiry) stays valid forever, so she can never retake; Bruno\'s (v2) expires after 30 days, and then he can take it again to renew.', steps: [
     step('Creator publishes', 'publish'), step('Ana starts', 'start', ANA),
     step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA),
-    step('Ana submits', 'submit', ANA), step('Ana confirms her name', 'confirmName', ANA, 'Ana Souza'),
+    step('Ana submits as "Ana Souza"', 'submit', ANA, 'Ana Souza'),
     step('Creator sets Expiry to 30 days (v2)', 'expiry'), step('Bruno starts on v2', 'start', BRUNO),
     step('Bruno ✓', 'answerRight', BRUNO), step('Bruno ✓', 'answerRight', BRUNO), step('Bruno ✓', 'answerRight', BRUNO), step('Bruno ✓', 'answerRight', BRUNO),
-    step('Bruno submits', 'submit', BRUNO), step('Bruno confirms his name', 'confirmName', BRUNO, 'Bruno Lima'), step('+31 days', 't31d')] },
+    step('Bruno submits as "Bruno Lima"', 'submit', BRUNO, 'Bruno Lima'), step('+31 days', 't31d'),
+    step('Ana tries to take it again', 'start', ANA), step('Bruno takes it again', 'start', BRUNO)] },
   { title: 'Creator leaves vs banned', text: 'Ana passes. The Creator deletes their account and her Certificate stays valid. Then the platform bans the Creator (say, they were impersonating a university), and every Certificate is revoked. Finally, Ana erases her data and her Verification Page becomes "Not found".', steps: [
     step('Creator publishes', 'publish'), step('Ana starts', 'start', ANA),
     step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA),
-    step('Ana submits', 'submit', ANA), step('Ana confirms her name', 'confirmName', ANA, 'Ana Souza'),
+    step('Ana submits as "Ana Souza"', 'submit', ANA, 'Ana Souza'),
     step('Creator deletes their account', 'deleteCreator'), step('Bruno tries to start', 'start', BRUNO),
     step('Platform bans the Creator', 'banCreator'), step('Ana erases all her data', 'erase', ANA)] },
-  { title: 'Abandoned Attempts', text: 'Two Learners start and never come back. Watch the Statistics: abandoned Attempts are not counted until the daily cleanup finalizes them (with 0 answers, so 0%).', steps: [
+  { title: 'Abandoned Attempts', text: 'Two Learners start and never come back. Watch the Statistics: abandoned Attempts are not counted until the daily cleanup marks them Timed out.', steps: [
     step('Creator publishes', 'publish'), step('Ana starts', 'start', ANA), step('Bruno starts', 'start', BRUNO),
     step('Ana answers once and leaves', 'answerRight', ANA), step('+1 hour', 't60'), step('Run daily cleanup', 'cleanup')] },
 ];
