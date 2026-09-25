@@ -56,7 +56,7 @@ Schema sketch: [`data-model.md`](data-model.md).
 - A Learner who can't start sees why: Draft is not found; Closed says so with the Creator's name; Invite-only checks the list only after the code ("This email isn't invited, ask <Creator>"); the Retake Policy shows when the next Attempt is allowed; a Valid Certificate is linked.
 - Each Attempt draws a random N Questions from the pool. Answer options are shuffled unless the Question is marked "keep order".
 - The server holds the clock: each Attempt stores its deadline. Answers save as they go. A Learner who disconnects can resume the same Attempt, and the clock keeps running.
-- There is no auto-submit. An Attempt not submitted by its deadline is Timed out: no score, can't pass, and it counts against the Retake Policy, with the cooldown running from the deadline. An overdue Attempt becomes Timed out the next time anything reads it, and a daily cleanup job times out abandoned ones.
+- There is no auto-submit. An Attempt not submitted by its deadline is Timed out: no score, can't pass, and it counts against the Retake Policy, with the cooldown running from the deadline. An overdue Attempt becomes Timed out the next time anything reads it, and an hourly sweep inside the app times out abandoned ones (and counts each Timed out Attempt on its deadline's day).
 - A Learner holding a Valid Certificate for the Assessment can't start another Attempt. Once it has expired or been revoked, they can (subject to the Retake Policy).
 - When a Learner's Certificate expires, their Attempt count for that Assessment starts again from zero, so they can always renew. Revocation doesn't reset the count.
 - The Retake Policy is enforced on the keyed email hash.

@@ -36,6 +36,6 @@ Decided in the "Data model" ticket (`issues/05-data-model.md`). Vocabulary follo
 ## Rules the schema carries
 
 - Retake Policy: count a Learner's Attempts on the Assessment started after their last Certificate for it expired (Revocation doesn't reset it); cooldown runs from the last Attempt's end or, for a Timed out one, its deadline.
-- The hourly sweep times out overdue Attempts and records Certificates that crossed Expiry (sets `expiry_counted_at`, bumps `stats_day.expired`), each exactly once.
+- The hourly sweep times out overdue Attempts and records Certificates that crossed Expiry (sets `expiry_counted_at`, bumps `stats_day.expired`), each exactly once, counting them on the deadline's and `expires_at`'s day. It also deletes one-time codes older than a day, `email_day` rows older than a week, and expired Better Auth sessions and verification tokens.
 - Certificate PDFs are never stored; they're rendered from the Certificate and its Version snapshot for the email and for Download PDF.
 - Learner Erasure deletes the Learner's attempt, certificate, invite and one_time_code rows by `email_hash`; nothing about them is in Silo.
