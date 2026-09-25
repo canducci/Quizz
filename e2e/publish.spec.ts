@@ -52,8 +52,8 @@ test("a Creator publishes, edits and publishes Version 2, then closes and reopen
   // Ready: publish Version 1.
   await expect(publish).toBeEnabled();
   await publish.click();
-  await expect(page.locator(".pill")).toHaveText("Published · v1");
-  await expect(publish).toHaveText("Published · Version 1");
+  await expect(page.locator(".pill")).toHaveText("Published · Version 1");
+  await expect(publish).toHaveText("Up to date · Version 1");
   await expect(publish).toBeDisabled();
   await expect(page.getByText("No unpublished changes.")).toBeVisible();
 
@@ -63,15 +63,15 @@ test("a Creator publishes, edits and publishes Version 2, then closes and reopen
   await expect(page.getByRole("status")).toHaveText("Saved");
   await expect(page.getByText(/Publishing creates Version 2; .* stay on Version 1/)).toBeVisible();
   await publish.click();
-  await expect(page.locator(".pill")).toHaveText("Published · v2");
+  await expect(page.locator(".pill")).toHaveText("Published · Version 2");
   await expect(page.getByText(/Publishing creates Version/)).toHaveCount(0);
 
   // Close, then reopen. A published Assessment can't be deleted.
   await expect(page.getByRole("button", { name: "Delete Assessment" })).toHaveCount(0);
   await page.getByRole("button", { name: "Close" }).click();
-  await expect(page.locator(".pill")).toHaveText("Closed · v2");
+  await expect(page.locator(".pill")).toHaveText("Closed · Version 2");
   await page.getByRole("button", { name: "Reopen" }).click();
-  await expect(page.locator(".pill")).toHaveText("Published · v2");
+  await expect(page.locator(".pill")).toHaveText("Published · Version 2");
 
   // A Draft can be deleted.
   await page.goto("/dashboard");

@@ -60,6 +60,8 @@ export const assessmentVersion = sqliteTable(
   (t) => [uniqueIndex("assessment_version_number").on(t.assessmentId, t.number)],
 );
 
+export type AssessmentStatus = (typeof assessment.$inferSelect)["status"];
+
 /** Invite-only access list. On the Assessment, not the Version, so changes apply at once. */
 export const invite = sqliteTable(
   "invite",

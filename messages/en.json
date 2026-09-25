@@ -159,7 +159,7 @@
   "publishTab": {
     "publish": "Publish",
     "asVersion": "Publish as Version {n}",
-    "upToDate": "Published · Version {n}",
+    "upToDate": "Up to date · Version {n}",
     "newVersion": "You're editing a published Assessment. Publishing creates Version {next}; Certificates already issued stay on Version {current}.",
     "blocked": "Before you can publish:",
     "ready": "Ready to publish.",
@@ -184,6 +184,7 @@
     "reopen": "Reopen",
     "delete": "Delete Assessment",
     "confirmDelete": "Delete this Draft and its Questions?",
-    "noDelete": "A published Assessment can't be deleted, only Closed."
+    "noDelete": "A published Assessment can't be deleted, only Closed.",
+    "version": "Version {n}"
   }
 }

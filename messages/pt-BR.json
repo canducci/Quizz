@@ -159,7 +159,7 @@
   "publishTab": {
     "publish": "Publicar",
     "asVersion": "Publicar como Versão {n}",
-    "upToDate": "Publicada · Versão {n}",
+    "upToDate": "Em dia · Versão {n}",
     "newVersion": "Você está editando uma Avaliação publicada. Publicar cria a Versão {next}; os Certificados já emitidos continuam na Versão {current}.",
     "blocked": "Antes de publicar:",
     "ready": "Pronta para publicar.",
@@ -184,6 +184,7 @@
     "reopen": "Reabrir",
     "delete": "Excluir Avaliação",
     "confirmDelete": "Excluir este Rascunho e suas Questões?",
-    "noDelete": "Uma Avaliação publicada não pode ser excluída, só Encerrada."
+    "noDelete": "Uma Avaliação publicada não pode ser excluída, só Encerrada.",
+    "version": "Versão {n}"
   }
 }

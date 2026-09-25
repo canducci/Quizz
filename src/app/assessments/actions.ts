@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
 import { v7 as uuidv7 } from "uuid";
 import { db } from "@/db";
-import { assessment, question } from "@/db/schema";
+import { assessment, question, type AssessmentStatus } from "@/db/schema";
 import { parseAccess, parseRules } from "@/domain/settings";
 import { normalizeQuestion, type QuestionContent, type QuestionType } from "@/domain/question";
 import { requireCreator } from "@/server/auth";
@@ -137,9 +137,7 @@ export async function publishAssessment(assessmentId: string) {
   redirect(`/assessments/${assessmentId}?tab=publish`);
 }
 
-type Status = (typeof assessment.$inferSelect)["status"];
-
-async function moveStatus(assessmentId: string, from: Status, to: Status) {
+async function moveStatus(assessmentId: string, from: AssessmentStatus, to: AssessmentStatus) {
   const creator = await requireCreator();
   await db
     .update(assessment)

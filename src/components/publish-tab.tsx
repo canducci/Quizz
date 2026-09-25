@@ -7,10 +7,8 @@ import {
   publishAssessment,
   reopenAssessment,
 } from "@/app/assessments/actions";
-import type { assessment } from "@/db/schema";
+import type { AssessmentStatus } from "@/db/schema";
 import type { PublishProblem } from "@/domain/publish";
-
-type Status = (typeof assessment.$inferSelect)["status"];
 
 export function PublishButton(props: {
   assessmentId: string;
@@ -35,7 +33,7 @@ export function PublishButton(props: {
 
 export function PublishTab(props: {
   assessmentId: string;
-  status: Status;
+  status: AssessmentStatus;
   version: number;
   changed: boolean;
   problems: PublishProblem[];

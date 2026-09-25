@@ -33,7 +33,7 @@ export default async function Editor(props: {
         <h1>{assessment.title}</h1>
         <span className="pill">
           {status(assessment.status)}
-          {version > 0 && ` · v${version}`}
+          {version > 0 && ` · ${tPublish("version", { n: version })}`}
         </span>
         <nav className="tabs">
           {TABS.map((name) => (
