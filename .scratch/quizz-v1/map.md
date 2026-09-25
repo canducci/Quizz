@@ -20,12 +20,13 @@ A build-ready plan for Quizz v1: every open question in `spec.md` answered, and 
 
 - [Stack choices inside Next.js](issues/01-stack-choices-research.md): recommends Drizzle on libsql (async transactions, Postgres-portable), next-intl, react-pdf, react-markdown with sanitising, AWS S3 SDK to Silo behind an app route, Vitest and Playwright; findings on branch `research/stack-choices`.
 - [Confirm the stack](issues/02-confirm-stack.md): all research picks accepted (Drizzle on libsql per ADR 0006, next-intl, react-pdf with bundled OFL fonts, sanitised Markdown with uploaded images only, files served by the app), npm, ESLint + Prettier, Node 26; CI workflow is manual only.
+- [Data model](issues/05-data-model.md): JSON-snapshot Versions with frozen branding, per-day statistics counters, unrotatable email HMAC, 80-bit Certificate IDs, PDFs rendered on demand; sketch in `data-model.md`.
 - [Pilot box and accounts](issues/03-pilot-box-and-accounts.md): localhost only for now; local Silo on :9000 with bucket `quizz`, Mailpit for email, fake Google sign-in, secrets in a gitignored `.env`.
 - [Product gaps before build](issues/04-product-gaps.md): no invite emails, abuse reports mailto the Operator, CSV columns fixed, one-time code limits and daily email cap, and what a Learner sees when they can't start.
 
 ## Not yet specified
 
-- Backups and upgrades for self-hosters: how the SQLite file and Silo bucket get backed up and restored, and how schema migrations run when a self-hoster upgrades.
+- Backups and upgrades for self-hosters: how the SQLite file, the Silo bucket and `EMAIL_HMAC_SECRET` get backed up and restored, and how schema migrations run when a self-hoster upgrades.
 - Secrets: where the HMAC secret, SMTP and S3 credentials live and how a self-hoster generates them on first run.
 - Operator tools: how the Operator applies a Creator Ban (a CLI, an admin page?) and sets the instance config (Operator email, daily email cap). Reports already arrive by email.
 

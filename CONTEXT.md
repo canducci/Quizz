@@ -82,7 +82,7 @@ The page where a Learner proves their email with a one-time code and sees every 
 _Avoid_: Wallet, profile, dashboard
 
 **Revocation**:
-A Creator's withdrawal of a Certificate, with a reason that stays private to the Creator; the Verification Page stays up and shows only that it was revoked, and when. Also used when a Learner corrects their name (reason "Name correction"), which isn't counted as revoked in Assessment Statistics.
+A Creator's withdrawal of a Certificate, with a reason that stays private to the Creator; the Verification Page stays up and shows only that it was revoked, and when. Also used when a Learner corrects their name (reason "Name correction"), which isn't counted as revoked in Assessment Statistics; such a Certificate shows as Replaced.
 _Avoid_: Deletion, cancellation
 
 **Expiry**:

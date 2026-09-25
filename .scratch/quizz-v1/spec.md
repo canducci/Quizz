@@ -13,6 +13,10 @@ Vocabulary follows `CONTEXT.md`. Decisions recorded in `docs/adr/`.
 - Verification Page UI: branch `prototype/verification-ui`, file `prototypes/verification-page.prototype.html`. Three variants compared; the chosen one is **Variant B** (open with `?variant=B`).
 - Certificate PDF: branch `prototype/certificate-ui`, file `prototypes/certificate-pdf.prototype.html`. Three variants compared; the chosen one is **Variant C** (open with `?variant=C`).
 
+## Data model
+
+Schema sketch: [`data-model.md`](data-model.md).
+
 ## Scope
 
 - Assessment and certification only; no course hosting (ADR 0001).
@@ -64,7 +68,7 @@ Vocabulary follows `CONTEXT.md`. Decisions recorded in `docs/adr/`.
 - The Learner enters their full name when submitting ("as it will appear on your Certificate if you pass"). A pass issues the Certificate in the same step; on a fail the name is thrown away. A Certificate can't be changed. The Learner can correct their name, which revokes the Certificate ("Name correction") and issues a new one at a new URL.
 - The Certificate attests to the Learner's name, the Assessment (and version), the score, the date, and the Creator.
 - Delivered by email as a PDF in the Assessment Language, with a QR code linking to the Verification Page.
-- Verification Page: public, at an unguessable unique URL. It shows validity, revoked (with date) or expired. It always shows "Issued by <Creator> via Quizz", when the Creator joined, and a report-abuse link: a `mailto:` to the Operator with the Certificate ID in the subject. Labels follow the viewer's interface language; content stays in the Assessment Language.
+- Verification Page: public, at an unguessable unique URL (`/c/<Certificate ID>`, 16 random characters shown as `XXXX-XXXX-XXXX-XXXX`). It shows validity, revoked (with date) or expired. It always shows "Issued by <Creator> via Quizz", when the Creator joined, and a report-abuse link: a `mailto:` to the Operator with the Certificate ID in the subject. Labels follow the viewer's interface language; content stays in the Assessment Language.
 - Revocation: the Creator gives a reason and finds the Certificate by its ID or URL, or by the Learner's email (hashed for the lookup).
 
 ## Learner privacy (ADR 0002)
