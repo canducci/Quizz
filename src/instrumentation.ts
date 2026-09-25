@@ -14,4 +14,7 @@ export async function register() {
 
   const { ensureBucket } = await import("./server/files");
   await ensureBucket();
+
+  const { startSweep } = await import("./server/sweep");
+  startSweep(db);
 }

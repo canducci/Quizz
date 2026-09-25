@@ -1,6 +1,6 @@
 # Hourly sweep
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 09
 
 ## What to build
@@ -9,10 +9,10 @@ The in-process sweep per the "Daily cleanup trigger" decision.
 
 ## Acceptance criteria
 
-- [ ] Started from `instrumentation.ts` (Node runtime), once at boot not awaited, then hourly with `setInterval(...).unref()`, guarded against dev double start.
-- [ ] Times out overdue Attempts (counter `timed_out` on the deadline's day); records Certificates crossing Expiry once (`expiry_counted_at`, `expired` on the `expires_at` day).
-- [ ] Deletes one-time codes older than a day, `email_day` older than a week, expired Better Auth sessions and verification tokens.
-- [ ] Vitest: idempotence (running twice changes nothing), day attribution, catch-up after downtime.
+- [x] Started from `instrumentation.ts` (Node runtime), once at boot not awaited, then hourly with `setInterval(...).unref()`, guarded against dev double start.
+- [x] Times out overdue Attempts (counter `timed_out` on the deadline's day); records Certificates crossing Expiry once (`expiry_counted_at`, `expired` on the `expires_at` day).
+- [x] Deletes one-time codes older than a day, `email_day` older than a week, expired Better Auth sessions and verification tokens.
+- [x] Vitest: idempotence (running twice changes nothing), day attribution, catch-up after downtime.
 
 ## Conventions (every ticket)
 

@@ -23,7 +23,7 @@ type Db = LibSQLDatabase<typeof schema>;
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 type Attempt = typeof schema.attempt.$inferSelect;
 type Certificate = typeof schema.certificate.$inferSelect;
-type Counter = "attempts" | "timedOut" | "submitted" | "passed" | "certificatesIssued";
+type Counter = "attempts" | "timedOut" | "submitted" | "passed" | "certificatesIssued" | "expired";
 type Tallies = Pick<
   typeof schema.statsDay.$inferSelect,
   "scoreHistogram" | "timeHistogram" | "questions"
@@ -32,7 +32,7 @@ const { assessment, assessmentVersion, attempt, certificate, statsDay } = schema
 
 /** Adds one to each counter for the Version's day. The counter write comes first, so it holds the
  * row (and SQLite's write lock) before `tallies` reads and rewrites the JSON columns. */
-async function bump(
+export async function bump(
   tx: Tx,
   versionId: string,
   day: Date,
@@ -51,7 +51,7 @@ async function bump(
   await tx.update(statsDay).set(tallies(row)).where(where);
 }
 
-/** Marks a running Attempt Timed out, counted once on its deadline's day. The hourly sweep (ticket 12) must reuse it. */
+/** Marks a running Attempt Timed out, counted once on its deadline's day. The hourly sweep reuses it. */
 export async function timeOut(tx: Tx, row: Attempt) {
   const done = await tx
     .update(attempt)
