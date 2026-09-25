@@ -53,6 +53,7 @@
       <li>There is no auto-submit. An Attempt not submitted by its deadline is <em>Timed out</em>: no score, can't pass, and it counts against the Retake Policy.</li>
       <li>The Learner types their name when submitting. A pass issues the Certificate immediately; on a fail the name is thrown away.</li>
       <li>A Learner holding a Valid Certificate for the Assessment can't start another Attempt. Once it has expired or been revoked, they can.</li>
+      <li>When a Certificate expires, the Learner's Attempt count for that Assessment starts again from zero, so they can always renew.</li>
       <li>Assessment Statistics are running counters: Learner Erasure never lowers them. Name corrections are not counted as Revocations.</li>
     </ul>
     <p><strong>Deliberate choices this prototype makes. Check they feel right:</strong></p>
@@ -240,7 +241,9 @@ const Quizz = (() => {
         if (o && !finalizeIfOverdue(s, o)) return ok(`Resumed Attempt ${o.id}. The clock kept running: ${o.deadline - s.now} min left.`);
         const held = s.certificates.find(c => c.emailHash === hash && verify(s, c.id).status === 'Valid');
         if (held) return no(`Rejected: this Learner already holds a Valid Certificate (${held.id}) for this Assessment.`);
-        const v = current(s), prior = mine();
+        // The Retake Policy count starts again once the Learner's Certificate has expired.
+        const resetAt = Math.max(-1, ...s.certificates.filter(c => c.emailHash === hash && c.expiresAt !== null && s.now >= c.expiresAt).map(c => c.expiresAt));
+        const v = current(s), prior = mine().filter(a => a.startedAt >= resetAt);
         if (prior.length >= v.maxAttempts) return no(`Rejected: all ${v.maxAttempts} Attempts used.`);
         const last = prior[prior.length - 1];
         if (last && s.now < last.finishedAt + v.cooldown) return no(`Rejected: cooldown. Next Attempt allowed in ${last.finishedAt + v.cooldown - s.now} min.`);
@@ -484,14 +487,17 @@ const SCENARIOS = [
     step('Ana fixes it to "Ana Souza"', 'correctName', ANA, 'Ana Souza'), step('Creator revokes Ana\'s Certificate (by her email)', 'revoke', ANA),
     step('Creator tries to delete the Assessment', 'deleteAssessment'), step('Creator closes it instead', 'close'),
     step('Ana tries to start', 'start', ANA)] },
-  { title: 'Expiry', text: 'The Creator turns on a 30-day Expiry after Ana already has a Certificate. Watch: Ana\'s Certificate (v1, no expiry) stays valid forever, so she can never retake; Bruno\'s (v2) expires after 30 days, and then he can take it again to renew.', steps: [
+  { title: 'Expiry', text: 'The Creator turns on a 30-day Expiry after Ana already has a Certificate. Watch: Ana\'s Certificate (v1, no expiry) stays valid forever, so she can never retake; Bruno\'s (v2) expires after 30 days, and then he can take it again to renew, as often as it expires.', steps: [
     step('Creator publishes', 'publish'), step('Ana starts', 'start', ANA),
     step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA),
     step('Ana submits as "Ana Souza"', 'submit', ANA, 'Ana Souza'),
     step('Creator sets Expiry to 30 days (v2)', 'expiry'), step('Bruno starts on v2', 'start', BRUNO),
     step('Bruno ✓', 'answerRight', BRUNO), step('Bruno ✓', 'answerRight', BRUNO), step('Bruno ✓', 'answerRight', BRUNO), step('Bruno ✓', 'answerRight', BRUNO),
     step('Bruno submits as "Bruno Lima"', 'submit', BRUNO, 'Bruno Lima'), step('+31 days', 't31d'),
-    step('Ana tries to take it again', 'start', ANA), step('Bruno takes it again', 'start', BRUNO)] },
+    step('Ana tries to take it again', 'start', ANA), step('Bruno takes it again (count reset)', 'start', BRUNO),
+    step('Bruno ✓', 'answerRight', BRUNO), step('Bruno ✓', 'answerRight', BRUNO), step('Bruno ✓', 'answerRight', BRUNO), step('Bruno ✓', 'answerRight', BRUNO),
+    step('Bruno renews as "Bruno Lima"', 'submit', BRUNO, 'Bruno Lima'), step('+31 days', 't31d'),
+    step('Bruno renews again (would be his 3rd Attempt ever)', 'start', BRUNO)] },
   { title: 'Creator leaves vs banned', text: 'Ana passes. The Creator deletes their account and her Certificate stays valid. Then the platform bans the Creator (say, they were impersonating a university), and every Certificate is revoked. Finally, Ana erases her data and her Verification Page becomes "Not found".', steps: [
     step('Creator publishes', 'publish'), step('Ana starts', 'start', ANA),
     step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA), step('Ana ✓', 'answerRight', ANA),
