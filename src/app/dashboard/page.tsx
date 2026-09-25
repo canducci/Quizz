@@ -1,22 +1,14 @@
-import { desc, eq } from "drizzle-orm";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createAssessment } from "@/app/assessments/actions";
-import { db } from "@/db";
-import { assessment } from "@/db/schema";
-import { currentCreator } from "@/server/auth";
+import { creatorAssessments } from "@/server/assessments";
+import { requireCreator } from "@/server/auth";
 
 export default async function Dashboard() {
-  const me = await currentCreator();
-  if (!me) redirect("/");
+  const me = await requireCreator();
   const t = await getTranslations("dashboard");
-  const status = await getTranslations("editor.status");
-  const assessments = await db
-    .select()
-    .from(assessment)
-    .where(eq(assessment.creatorId, me.id))
-    .orderBy(desc(assessment.createdAt));
+  const status = await getTranslations("assessmentStatus");
+  const assessments = await creatorAssessments(me.id);
 
   return (
     <section className="stack">

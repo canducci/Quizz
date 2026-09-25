@@ -81,6 +81,9 @@ test("a Creator writes a Draft's Question Pool and sees it as a Learner would", 
   await page.reload();
   await expect(pool.getByRole("listitem")).toHaveCount(2);
 
+  // Leaving straight after an edit, inside the autosave pause, still keeps it.
+  await page.getByLabel("Question (Markdown)").fill("Hooks may never run inside loops.");
   await page.getByRole("link", { name: "Assessments" }).click();
-  await expect(page.getByRole("link", { name: "React basics" })).toBeVisible();
+  await page.getByRole("link", { name: "React basics" }).click();
+  await expect(pool.getByRole("button", { name: /may never run/ })).toBeVisible();
 });

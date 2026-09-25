@@ -6,17 +6,11 @@ import { v7 as uuidv7 } from "uuid";
 import { db } from "@/db";
 import { assessment, question } from "@/db/schema";
 import { normalizeQuestion, type QuestionContent, type QuestionType } from "@/domain/question";
-import { currentCreator } from "@/server/auth";
+import { requireCreator } from "@/server/auth";
 import { ownAssessment } from "@/server/assessments";
 import { putImage, type UploadResult } from "@/server/files";
 
 export type StoredQuestion = QuestionContent & { id: string };
-
-async function me() {
-  const creator = await currentCreator();
-  if (!creator) redirect("/");
-  return creator;
-}
 
 async function ownQuestion(id: string) {
   const [row] = await db
@@ -27,14 +21,14 @@ async function ownQuestion(id: string) {
       and(
         eq(question.id, id),
         isNull(question.deletedAt),
-        eq(assessment.creatorId, (await me()).id),
+        eq(assessment.creatorId, (await requireCreator()).id),
       ),
     );
   return row ?? null;
 }
 
 export async function createAssessment(form: FormData) {
-  const creator = await me();
+  const creator = await requireCreator();
   const title = String(form.get("title") ?? "").trim();
   if (!title || title.length > 200) return;
   const id = uuidv7();
@@ -52,7 +46,7 @@ export async function addQuestion(
     options: [0, 1].map(() => ({ text: "", correct: false })),
     keepOrder: false,
   });
-  if (!added || !(await ownAssessment(assessmentId, (await me()).id))) return null;
+  if (!added || !(await ownAssessment(assessmentId, (await requireCreator()).id))) return null;
   const stored = { id: uuidv7(), ...added };
   await db.transaction(async (tx) => {
     const [{ last }] = await tx
@@ -71,13 +65,14 @@ export async function saveQuestion(id: string, input: unknown): Promise<boolean>
   return true;
 }
 
-export async function deleteQuestion(id: string) {
-  if (!(await ownQuestion(id))) return;
+export async function deleteQuestion(id: string): Promise<boolean> {
+  if (!(await ownQuestion(id))) return false;
   await db.update(question).set({ deletedAt: new Date() }).where(eq(question.id, id));
+  return true;
 }
 
 export async function uploadQuestionImage(form: FormData): Promise<UploadResult> {
-  await me();
+  await requireCreator();
   const file = form.get("image");
   if (!(file instanceof File)) return { error: "badImage" };
   return putImage(file);

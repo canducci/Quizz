@@ -46,18 +46,13 @@
     }
   },
   "editor": {
-    "status": {
-      "draft": "Rascunho",
-      "published": "Publicada",
-      "closed": "Encerrada"
-    },
     "tabs": {
       "questions": "Questões ({n})",
       "rules": "Regras",
       "access": "Acesso e idioma",
       "publish": "Publicar"
     },
-    "pool": "Banco de Questões",
+    "pool": "Conjunto de Questões",
     "untitled": "Questão sem título",
     "incomplete": "incompleta",
     "newQuestion": "+ Nova questão",
@@ -111,5 +106,10 @@
     },
     "true": "Verdadeiro",
     "false": "Falso"
+  },
+  "assessmentStatus": {
+    "draft": "Rascunho",
+    "published": "Publicada",
+    "closed": "Encerrada"
   }
 }

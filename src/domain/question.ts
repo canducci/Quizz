@@ -12,6 +12,9 @@ export type QuestionContent = {
   keepOrder: boolean;
 };
 
+/** Several answers tick boxes; one answer picks a radio. */
+export const answerInput = (type: QuestionType) => (type === "multi" ? "checkbox" : "radio");
+
 export type QuestionProblem =
   "noText" | "tooFewOptions" | "emptyOption" | "noCorrect" | "tooManyCorrect";
 

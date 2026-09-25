@@ -4,6 +4,7 @@ import { magicLink } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { cache } from "react";
 import { getTranslations } from "next-intl/server";
 import { v7 as uuidv7 } from "uuid";
@@ -51,3 +52,10 @@ export const currentCreator = cache(async () => {
     .where(eq(schema.creator.authUserId, session.user.id));
   return creator ?? null;
 });
+
+/** The signed-in Creator; anyone else goes to the sign-in page. */
+export async function requireCreator() {
+  const creator = await currentCreator();
+  if (!creator) redirect("/");
+  return creator;
+}

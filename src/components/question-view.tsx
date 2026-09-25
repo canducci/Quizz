@@ -1,4 +1,4 @@
-import type { QuestionContent } from "@/domain/question";
+import { answerInput, type QuestionContent } from "@/domain/question";
 import { Markdown } from "./markdown";
 
 /** Words the Learner sees, in the Assessment Language rather than the interface language. */
@@ -17,7 +17,6 @@ export function QuestionView({
   question: QuestionContent;
   labels: QuestionLabels;
 }) {
-  const multi = question.type === "multi";
   return (
     <div className="paper">
       <div className="qhead">
@@ -29,7 +28,7 @@ export function QuestionView({
       </div>
       {question.options.map((o, i) => (
         <label key={i} className="option">
-          <input type={multi ? "checkbox" : "radio"} name="answer" disabled />
+          <input type={answerInput(question.type)} name="answer" disabled />
           {question.type === "truefalse" ? (
             [labels.true, labels.false][i]
           ) : (

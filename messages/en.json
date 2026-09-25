@@ -46,11 +46,6 @@
     }
   },
   "editor": {
-    "status": {
-      "draft": "Draft",
-      "published": "Published",
-      "closed": "Closed"
-    },
     "tabs": {
       "questions": "Questions ({n})",
       "rules": "Rules",
@@ -111,5 +106,10 @@
     },
     "true": "True",
     "false": "False"
+  },
+  "assessmentStatus": {
+    "draft": "Draft",
+    "published": "Published",
+    "closed": "Closed"
   }
 }

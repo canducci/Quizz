@@ -2,10 +2,9 @@
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { creator } from "@/db/schema";
-import { currentCreator } from "@/server/auth";
+import { requireCreator } from "@/server/auth";
 import { putImage, type UploadResult } from "@/server/files";
 
 export type BrandingState = {
@@ -15,8 +14,7 @@ export type BrandingState = {
 const text = (form: FormData, field: string) => String(form.get(field) ?? "").trim();
 
 export async function saveBranding(_: BrandingState, form: FormData): Promise<BrandingState> {
-  const me = await currentCreator();
-  if (!me) redirect("/");
+  const me = await requireCreator();
 
   const name = text(form, "name");
   const accent = text(form, "accent");

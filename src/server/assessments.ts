@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { assessment, question } from "@/db/schema";
 
@@ -24,4 +24,13 @@ export function questionPool(assessmentId: string) {
     .from(question)
     .where(and(eq(question.assessmentId, assessmentId), isNull(question.deletedAt)))
     .orderBy(asc(question.position));
+}
+
+/** The Creator's Assessments, newest first. */
+export function creatorAssessments(creatorId: string) {
+  return db
+    .select()
+    .from(assessment)
+    .where(eq(assessment.creatorId, creatorId))
+    .orderBy(desc(assessment.createdAt));
 }

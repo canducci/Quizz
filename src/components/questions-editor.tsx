@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -11,6 +11,7 @@ import {
   type StoredQuestion,
 } from "@/app/assessments/actions";
 import {
+  answerInput,
   MAX_OPTIONS,
   normalizeQuestion,
   QUESTION_TYPES,
@@ -25,42 +26,67 @@ type SaveState = "idle" | "saving" | "saved" | "failed";
 
 export function QuestionsEditor(props: { assessmentId: string; pool: StoredQuestion[] }) {
   const t = useTranslations("editor");
-  const tl = useTranslations("attempt");
+  // ponytail: interface language until ticket 04 adds the Assessment Language; then load that locale's "attempt" messages.
+  const tAttempt = useTranslations("attempt");
   const [questions, setQuestions] = useState(props.pool);
   const [selectedId, setSelectedId] = useState(props.pool[0]?.id);
-  const [save, setSave] = useState<SaveState>("idle");
+  const [saveState, setSaveState] = useState<SaveState>("idle");
   const [imageError, setImageError] = useState<"badImage" | "tooLarge" | null>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
   // Refreshes the server-rendered top bar (its Question count); local state survives.
   const router = useRouter();
+  // The latest pool, for edits that land after an await. Every change goes through setPool.
+  const latest = useRef(props.pool);
+  const setPool = (next: StoredQuestion[]) => setQuestions((latest.current = next));
 
   // Edits save the whole Question after a short pause, one request at a time, last write wins.
   const pending = useRef<StoredQuestion | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const chain = useRef(Promise.resolve());
-  const flush = () => {
+  const saveQueue = useRef(Promise.resolve());
+  const flush = useCallback(() => {
     clearTimeout(timer.current);
     const q = pending.current;
     pending.current = null;
     if (q) {
-      chain.current = chain.current.then(async () => {
+      saveQueue.current = saveQueue.current.then(async () => {
         const ok = await saveQuestion(q.id, q).catch(() => false);
-        if (!pending.current) setSave(ok ? "saved" : "failed");
+        if (!ok) {
+          // Keep it for the next flush unless a newer edit replaced it.
+          pending.current ??= q;
+          setSaveState("failed");
+        } else if (!pending.current) setSaveState("saved");
       });
     }
-    return chain.current;
-  };
+    return saveQueue.current;
+  }, []);
+
+  // Leaving the page or the editor sends the last edit instead of dropping it.
+  useEffect(() => {
+    const warn = (e: BeforeUnloadEvent) => {
+      if (pending.current) {
+        flush();
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => {
+      window.removeEventListener("beforeunload", warn);
+      flush();
+    };
+  }, [flush]);
 
   const index = questions.findIndex((q) => q.id === selectedId);
   const selected = questions[index];
 
-  function edit(change: Partial<QuestionContent>) {
-    const content = normalizeQuestion({ ...selected, ...change });
-    if (!content) return; // Past the length limits.
-    const next = { id: selected.id, ...content };
-    setQuestions((qs) => qs.map((q) => (q.id === next.id ? next : q)));
+  function edit(change: Partial<QuestionContent>, id = selected.id) {
+    const current = latest.current.find((q) => q.id === id);
+    const content = current && normalizeQuestion({ ...current, ...change });
+    if (!content) return; // Gone, or past the length limits.
+    const next = { id, ...content };
+    setPool(latest.current.map((q) => (q.id === id ? next : q)));
+    if (pending.current && pending.current.id !== id) flush();
     pending.current = next;
-    setSave("saving");
+    setSaveState("saving");
     clearTimeout(timer.current);
     timer.current = setTimeout(flush, 400);
   }
@@ -90,8 +116,8 @@ export function QuestionsEditor(props: { assessmentId: string; pool: StoredQuest
   async function add() {
     await flush();
     const added = await addQuestion(props.assessmentId, "single");
-    if (!added) return setSave("failed");
-    setQuestions((qs) => [...qs, added]);
+    if (!added) return setSaveState("failed");
+    setPool([...latest.current, added]);
     setSelectedId(added.id);
     router.refresh();
   }
@@ -99,22 +125,25 @@ export function QuestionsEditor(props: { assessmentId: string; pool: StoredQuest
   async function remove() {
     if (!confirm(t("confirmDelete", { n: index + 1 }))) return;
     await flush();
-    await deleteQuestion(selected.id);
-    setQuestions((qs) => qs.filter((q) => q.id !== selected.id));
+    if (!(await deleteQuestion(selected.id))) return setSaveState("failed");
+    setPool(latest.current.filter((q) => q.id !== selected.id));
     setSelectedId(questions[index + 1]?.id ?? questions[index - 1]?.id);
     router.refresh();
   }
 
   async function insertImage(file: File) {
     if (file.size > MAX_IMAGE_BYTES) return setImageError("tooLarge");
+    const id = selected.id;
+    const at = textRef.current?.selectionStart ?? selected.text.length;
     const form = new FormData();
     form.set("image", file);
     const upload = await uploadQuestionImage(form);
     if ("error" in upload) return setImageError(upload.error);
     setImageError(null);
-    const at = textRef.current?.selectionStart ?? selected.text.length;
+    // Read the text again: the Creator may have kept typing during the upload.
+    const text = latest.current.find((q) => q.id === id)?.text ?? "";
     const image = `![${t("imageAlt")}](/files/${upload.key})`;
-    edit({ text: selected.text.slice(0, at) + image + selected.text.slice(at) });
+    edit({ text: text.slice(0, at) + image + text.slice(at) }, id);
   }
 
   return (
@@ -159,7 +188,7 @@ export function QuestionsEditor(props: { assessmentId: string; pool: StoredQuest
           <>
             <div className="row">
               <h2>{t("question", { n: index + 1 })}</h2>
-              <p role="status">{save !== "idle" && t(`save.${save}`)}</p>
+              <p role="status">{saveState !== "idle" && t(`save.${saveState}`)}</p>
               <button type="button" className="danger" onClick={remove}>
                 {t("delete")}
               </button>
@@ -204,17 +233,18 @@ export function QuestionsEditor(props: { assessmentId: string; pool: StoredQuest
               {selected.options.map((o, i) => (
                 <div key={i} className="row">
                   <input
-                    type={selected.type === "multi" ? "checkbox" : "radio"}
+                    type={answerInput(selected.type)}
                     name="correct"
                     checked={o.correct}
                     aria-label={t("correct", { n: i + 1 })}
                     onChange={(e) => markCorrect(i, e.target.checked)}
                   />
                   {selected.type === "truefalse" ? (
-                    <span>{i === 0 ? tl("true") : tl("false")}</span>
+                    <span>{[tAttempt("true"), tAttempt("false")][i]}</span>
                   ) : (
                     <>
-                      <input
+                      <textarea
+                        rows={1}
                         className="grow"
                         value={o.text}
                         aria-label={t("option", { n: i + 1 })}
@@ -281,14 +311,14 @@ export function QuestionsEditor(props: { assessmentId: string; pool: StoredQuest
             <QuestionView
               question={selected}
               labels={{
-                heading: tl("heading", { n: index + 1 }),
+                heading: tAttempt("heading", { n: index + 1 }),
                 hint: {
-                  single: tl("hint.single"),
-                  multi: tl("hint.multi"),
-                  truefalse: tl("hint.truefalse"),
+                  single: tAttempt("hint.single"),
+                  multi: tAttempt("hint.multi"),
+                  truefalse: tAttempt("hint.truefalse"),
                 },
-                true: tl("true"),
-                false: tl("false"),
+                true: tAttempt("true"),
+                false: tAttempt("false"),
               }}
             />
             <p>
