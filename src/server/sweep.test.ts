@@ -5,7 +5,7 @@ import { saveAnswer, startAttempt, submitAttempt } from "./attempts";
 import { sweep } from "./sweep";
 import { at, published } from "./test-db";
 
-const DAY = 24 * 60;
+const DAY_MINUTES = 24 * 60;
 const { attempt, certificate, emailDay, oneTimeCode, session, statsDay, user, verification } =
   schema;
 
@@ -22,11 +22,11 @@ it("times out overdue Attempts once, each on its deadline's day, after any downt
   const { db } = await published();
   // Two Learners abandon Attempts on different days; the app is down until the third day.
   await startAttempt(db, { assessmentId: "a1", learner: "ana", now: at(0) });
-  await startAttempt(db, { assessmentId: "a1", learner: "bia", now: at(DAY) });
+  await startAttempt(db, { assessmentId: "a1", learner: "bia", now: at(DAY_MINUTES) });
   // Still running at the sweep: left alone.
-  await startAttempt(db, { assessmentId: "a1", learner: "cid", now: at(2 * DAY) });
+  await startAttempt(db, { assessmentId: "a1", learner: "cid", now: at(2 * DAY_MINUTES) });
 
-  await sweep(db, at(2 * DAY + 5));
+  await sweep(db, at(2 * DAY_MINUTES + 5));
   const outcomes = await db
     .select({ learner: attempt.emailHash, outcome: attempt.outcome })
     .from(attempt);
@@ -43,7 +43,7 @@ it("times out overdue Attempts once, each on its deadline's day, after any downt
   ]);
 
   const before = await everything(db);
-  await sweep(db, at(2 * DAY + 6));
+  await sweep(db, at(2 * DAY_MINUTES + 6));
   expect(await everything(db)).toEqual(before);
 });
 
@@ -56,18 +56,18 @@ it("counts a valid Certificate crossing Expiry once, on its expires_at day", asy
     await submitAttempt(db, { assessmentId: "a1", learner, name: learner, now: at(1) });
   }
   const [ana, bia] = await db.select().from(certificate).orderBy(certificate.emailHash);
-  expect(ana.expiresAt).toEqual(at(DAY + 1));
+  expect(ana.expiresAt).toEqual(at(DAY_MINUTES + 1));
   // A revoked Certificate's Expiry isn't counted: it already left the valid ones.
   await db.update(certificate).set({ status: "revoked" }).where(eq(certificate.id, bia.id));
 
-  await sweep(db, at(DAY));
+  await sweep(db, at(DAY_MINUTES));
   expect((await db.select().from(certificate)).map((c) => c.expiryCountedAt)).toEqual([null, null]);
 
   // Swept days late: counted on the day it expired, not the day of the sweep.
-  await sweep(db, at(3 * DAY));
-  await sweep(db, at(4 * DAY));
+  await sweep(db, at(3 * DAY_MINUTES));
+  await sweep(db, at(4 * DAY_MINUTES));
   const [counted] = await db.select().from(certificate).where(eq(certificate.id, ana.id));
-  expect(counted.expiryCountedAt).toEqual(at(3 * DAY));
+  expect(counted.expiryCountedAt).toEqual(at(3 * DAY_MINUTES));
   const days = await db.select({ day: statsDay.day, expired: statsDay.expired }).from(statsDay);
   expect(days.sort((a, b) => a.day.localeCompare(b.day))).toEqual([
     { day: "2026-09-25", expired: 0 },
@@ -77,7 +77,7 @@ it("counts a valid Certificate crossing Expiry once, on its expires_at day", asy
 
 it("deletes old one-time codes, email counts, and expired sign-in sessions and tokens", async () => {
   const { db } = await published();
-  const now = at(10 * DAY);
+  const now = at(10 * DAY_MINUTES);
   const code = (id: string, createdAt: Date) => ({
     id,
     emailHash: "h",
@@ -87,7 +87,9 @@ it("deletes old one-time codes, email counts, and expired sign-in sessions and t
     createdAt,
     ip: "1.1.1.1",
   });
-  await db.insert(oneTimeCode).values([code("old", at(9 * DAY - 1)), code("new", at(9 * DAY))]);
+  await db
+    .insert(oneTimeCode)
+    .values([code("old", at(9 * DAY_MINUTES - 1)), code("new", at(9 * DAY_MINUTES))]);
   // Today is 2026-10-05: keep the last week, from 2026-09-28.
   await db.insert(emailDay).values([
     { day: "2026-09-27", sent: 1 },
@@ -96,11 +98,11 @@ it("deletes old one-time codes, email counts, and expired sign-in sessions and t
   await db.insert(user).values({ id: "u", name: "U", email: "u@x" });
   await db.insert(session).values([
     { id: "old", token: "a", userId: "u", expiresAt: now, updatedAt: now },
-    { id: "new", token: "b", userId: "u", expiresAt: at(10 * DAY + 1), updatedAt: now },
+    { id: "new", token: "b", userId: "u", expiresAt: at(10 * DAY_MINUTES + 1), updatedAt: now },
   ]);
   await db.insert(verification).values([
     { id: "old", identifier: "i", value: "v", expiresAt: now },
-    { id: "new", identifier: "i", value: "v", expiresAt: at(10 * DAY + 1) },
+    { id: "new", identifier: "i", value: "v", expiresAt: at(10 * DAY_MINUTES + 1) },
   ]);
 
   await sweep(db, now);

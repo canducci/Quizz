@@ -343,8 +343,8 @@
       "90": "Last 90 days",
       "all": "All time"
     },
-    "allVersions": "All versions",
-    "version": "Version {n} (pass {score}%)",
+    "allVersions": "All Versions",
+    "version": "Version {n} (Passing Score {score}%)",
     "note": "Totals only. Learners are never shown individually. Counts don't drop when a Learner erases their data.",
     "attempts": "Attempts",
     "timedOut": "{n} Timed out",
@@ -361,7 +361,7 @@
     "perDay": "Attempts per day",
     "scores": "Score distribution",
     "scoresSub": "Submitted Attempts only; Timed out Attempts have no score.",
-    "pickVersion": "Pick a version to see its Passing Score.",
+    "pickVersion": "Pick a Version to see its Passing Score.",
     "passingScore": "Passing Score {n}%",
     "questions": "Correct-answer rate per Question",
     "questionsSub": "Questions under 50% are highlighted: they may be too hard or have a wrong answer key.",
@@ -375,6 +375,7 @@
     "scoreTip": "Score {range} · {n, plural, one {# Attempt} other {# Attempts}}",
     "questionTip": "Q{n}: {text} · {rate}% correct · seen in {seen} Attempts",
     "empty": "No Attempts in this range",
-    "emptyHint": "Try a longer range or another version."
+    "emptyHint": "No Learner took {version, select, all {any Version} other {Version {version}}} in this range. Try a longer range or another Version.",
+    "questionLabel": "Q{n}"
   }
 }

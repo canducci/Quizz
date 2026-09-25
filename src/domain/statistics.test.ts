@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { daysFrom, median, summarize, type DayCounters } from "./statistics";
+import { daysFrom, median, needsReview, summarize, type DayCounters } from "./statistics";
 
 const row = (day: string, counters: Partial<DayCounters>): DayCounters => ({
   day,
@@ -90,4 +90,11 @@ it("adds counters across days and Versions, filling days without Attempts", () =
 
 it("has no pass rate before anything finished", () => {
   expect(summarize([row("2026-09-01", { attempts: 1 })], ["2026-09-01"]).passRate).toBeNull();
+});
+
+it("flags Questions answered correctly under 50% of the time", () => {
+  expect(needsReview({ shown: 3, correct: 1 })).toBe(true);
+  expect(needsReview({ shown: 2, correct: 1 })).toBe(false);
+  // 49.6% rounds to 50%: what the chart shows decides the flag.
+  expect(needsReview({ shown: 250, correct: 124 })).toBe(false);
 });

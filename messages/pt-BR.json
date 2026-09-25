@@ -343,8 +343,8 @@
       "90": "Últimos 90 dias",
       "all": "Todo o período"
     },
-    "allVersions": "Todas as versões",
-    "version": "Versão {n} (aprovação {score}%)",
+    "allVersions": "Todas as Versões",
+    "version": "Versão {n} (Nota de Aprovação {score}%)",
     "note": "Apenas totais. Participantes nunca aparecem individualmente. As contagens não diminuem quando um Participante apaga seus dados.",
     "attempts": "Tentativas",
     "timedOut": "{n} com Tempo esgotado",
@@ -361,7 +361,7 @@
     "perDay": "Tentativas por dia",
     "scores": "Distribuição de notas",
     "scoresSub": "Somente Tentativas enviadas; Tentativas com Tempo esgotado não têm nota.",
-    "pickVersion": "Escolha uma versão para ver sua Nota de Aprovação.",
+    "pickVersion": "Escolha uma Versão para ver sua Nota de Aprovação.",
     "passingScore": "Nota de Aprovação {n}%",
     "questions": "Taxa de acerto por Questão",
     "questionsSub": "Questões abaixo de 50% ficam destacadas: podem estar difíceis demais ou com o gabarito errado.",
@@ -375,6 +375,7 @@
     "scoreTip": "Nota {range} · {n, plural, one {# Tentativa} other {# Tentativas}}",
     "questionTip": "Q{n}: {text} · {rate}% de acerto · vista em {seen} Tentativas",
     "empty": "Nenhuma Tentativa neste período",
-    "emptyHint": "Tente um período maior ou outra versão."
+    "emptyHint": "Nenhum Participante fez {version, select, all {qualquer Versão} other {a Versão {version}}} neste período. Tente um período maior ou outra Versão.",
+    "questionLabel": "Q{n}"
   }
 }

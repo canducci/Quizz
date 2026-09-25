@@ -23,6 +23,7 @@ export default async function Editor(props: {
   if (!assessment) notFound();
   const { tab: asked, ...filter } = await props.searchParams;
   const tab = TABS.find((name) => name === asked) ?? "questions";
+  const range = RANGES.find((r) => r === filter.range) ?? "30";
   const pool = await questionPool(assessment.id);
   const t = await getTranslations("editor");
   const status = await getTranslations("assessmentStatus");
@@ -63,9 +64,9 @@ export default async function Editor(props: {
       )}
       {tab === "statistics" && (
         <StatisticsTab
-          range={RANGES.find((r) => r === filter.range) ?? "30"}
+          range={range}
           stats={await assessmentStatistics(db, assessment.id, {
-            range: RANGES.find((r) => r === filter.range) ?? "30",
+            range,
             version: Number(filter.version),
           })}
         />

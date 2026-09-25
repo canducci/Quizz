@@ -11,7 +11,8 @@ const DAY = 24 * 60 * 60_000;
 export const RANGES = ["7", "30", "90", "all"] as const;
 export type Range = (typeof RANGES)[number];
 
-/** A Question's label for charts: its first line of prose, no Markdown syntax, cut short. */
+/** A Question's label for charts: its first line of prose, no Markdown syntax, cut short.
+ * ponytail: regex stripping, not a Markdown parser; odd Markdown can leave stray characters. */
 const label = (markdown: string) => {
   const line = markdown
     .replace(/```[\s\S]*?```/g, "")
@@ -57,13 +58,14 @@ export async function assessmentStatistics(
   const first = from ?? rows.map((r) => r.day).sort()[0] ?? today;
   const summary = summarize(rows, daysFrom(first, today));
 
-  // Newest Version first, so each Question keeps its latest wording; numbered in that order.
+  // The chosen (or newest) Version first, so Questions follow its order and wording; then older
+  // Versions' removed Questions. Numbered after dropping unseen ones, so there are no gaps.
   const texts = new Map<string, string>();
-  for (const v of [...versions].reverse())
+  for (const v of chosen ? [chosen] : [...versions].reverse())
     for (const q of v.snapshot.questions) if (!texts.has(q.id)) texts.set(q.id, label(q.text));
   const questions = [...texts]
-    .map(([id, text], i) => ({ n: i + 1, text, ...summary.questions[id] }))
-    .filter((q) => q.shown > 0);
+    .filter(([id]) => summary.questions[id]?.shown)
+    .map(([id, text], i) => ({ n: i + 1, text, ...summary.questions[id] }));
 
   const current = chosen ?? versions.at(-1);
   return {

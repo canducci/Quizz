@@ -13,11 +13,12 @@ const HOUR = 60 * 60_000;
  * longer needed. Each item is its own short transaction, and each counts exactly once, so running
  * it twice or after downtime changes nothing more. A failed item is logged and retried next hour. */
 export async function sweep(db: Db, now = new Date()) {
+  // ponytail: loads every overdue row at once; page with a limit if a backlog ever gets large.
   const overdue = await db
     .select()
     .from(attempt)
     .where(and(eq(attempt.outcome, "in_progress"), lte(attempt.deadline, now)));
-  for (const row of overdue) await orLog(() => db.transaction((tx) => timeOut(tx, row)));
+  for (const row of overdue) await orLog(() => db.transaction(async (tx) => timeOut(tx, row)));
 
   // Only valid ones: a revoked or replaced Certificate already left the valid count.
   const expired = await db
@@ -61,7 +62,9 @@ async function orLog(work: () => Promise<unknown>) {
   }
 }
 
-/** Sweeps once at boot, then hourly. Once per process, even when dev reloads this module. */
+/** Sweeps once at boot, then hourly. Once per process, even when dev reloads this module.
+ * ponytail: in-process timer, one per app process; the guarded updates keep extra replicas'
+ * sweeps harmless, and a scheduler job replaces it if the app ever runs as many. */
 export function startSweep(db: Db) {
   const g = globalThis as { quizzSweep?: true };
   if (g.quizzSweep) return;

@@ -26,6 +26,12 @@ const COUNTERS = [
 ] as const;
 const DAY = 24 * 60 * 60_000;
 
+/** A Question answered correctly less often than this (in %) is flagged for review. */
+export const REVIEW_BELOW = 50;
+/** Whole-percent correct-answer rate of a Question. */
+export const correctRate = (q: QuestionTally[string]) => Math.round((q.correct * 100) / q.shown);
+export const needsReview = (q: QuestionTally[string]) => correctRate(q) < REVIEW_BELOW;
+
 /** The bucket holding the middle count (the lower one of two), or null if empty. */
 export function median(h: Histogram) {
   const buckets = Object.keys(h)

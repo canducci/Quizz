@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
+import { correctRate as rate, needsReview } from "@/domain/statistics";
 import { RANGES, type Range, assessmentStatistics } from "@/server/statistics";
 
 type Stats = Awaited<ReturnType<typeof assessmentStatistics>>;
 type Format = Awaited<ReturnType<typeof getFormatter>>;
 type T = Awaited<ReturnType<typeof getTranslations<"statistics">>>;
 
-const rate = (q: { shown: number; correct: number }) => Math.round((q.correct * 100) / q.shown);
 const binLabel = (i: number) => `${i * 10}–${i === 9 ? 100 : i * 10 + 9}%`;
 
 /** The Statistics tab (Variant A): filters, number tiles, then three charts, each with a table. */
@@ -17,8 +17,15 @@ export async function StatisticsTab({ stats, range }: { stats: Stats; range: Ran
     format.dateTime(new Date(d), { month: "short", day: "numeric", timeZone: "UTC" });
   const href = (r: Range, v: number | null) =>
     `?tab=statistics&range=${r}${v === null ? "" : `&version=${v}`}`;
-  const toReview = stats.questions.filter((q) => rate(q) < 50).length;
-  const empty = !stats.attempts && !stats.submitted && !stats.timedOut;
+  const toReview = stats.questions.filter(needsReview).length;
+  const empty = ![
+    stats.attempts,
+    stats.submitted,
+    stats.timedOut,
+    stats.certificatesIssued,
+    stats.revoked,
+    stats.expired,
+  ].some(Boolean);
 
   return (
     <div className="stats">
@@ -54,7 +61,7 @@ export async function StatisticsTab({ stats, range }: { stats: Stats; range: Ran
       {empty ? (
         <div className="card">
           <h3>{t("empty")}</h3>
-          <p className="muted">{t("emptyHint")}</p>
+          <p className="muted">{t("emptyHint", { version: String(stats.version ?? "all") })}</p>
         </div>
       ) : (
         <>
@@ -114,8 +121,8 @@ export async function StatisticsTab({ stats, range }: { stats: Stats; range: Ran
                 t={t}
                 head={[t("question"), t("correct"), t("seen")]}
                 rows={stats.questions.map((q) => [
-                  `Q${q.n} ${q.text}`,
-                  `${rate(q)}%${rate(q) < 50 ? " ⚠" : ""}`,
+                  `${t("questionLabel", { n: q.n })} ${q.text}`,
+                  `${rate(q)}%${needsReview(q) ? " ⚠" : ""}`,
                   format.number(q.shown),
                 ])}
               />
@@ -303,7 +310,7 @@ function Questions(props: {
         return (
           <g key={q.n}>
             <text x={pad.l - 8} y={y + 12} textAnchor="end">
-              Q{q.n}
+              {t("questionLabel", { n: q.n })}
             </text>
             <rect
               x={pad.l}
@@ -311,7 +318,7 @@ function Questions(props: {
               width={Math.max(1, (r / 100) * iw)}
               height={16}
               rx={3}
-              className={r < 50 ? "series" : "deemph"}
+              className={needsReview(q) ? "series" : "deemph"}
             >
               <title>
                 {t("questionTip", {
