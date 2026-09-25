@@ -206,3 +206,17 @@ it("resumes, not fails, when two Starts race", async () => {
   expect(new Set(all.map((s) => s.ok && s.attempt.id)).size).toBe(1);
   expect(all.every((s) => s.ok)).toBe(true);
 });
+
+it("saves every answer when Learners save at the same moment", async () => {
+  const { db } = await published();
+  const learners = ["hash-a", "hash-b", "hash-c", "hash-d"];
+  for (const l of learners) await startAttempt(db, { assessmentId: "a1", learner: l, now: at(0) });
+  const saved = await Promise.all(
+    learners.flatMap((l) =>
+      ["q1", "q2", "q3"].map((questionId) =>
+        saveAnswer(db, { assessmentId: "a1", learner: l, questionId, choice: [0], now: at(1) }),
+      ),
+    ),
+  );
+  expect(saved.every(Boolean)).toBe(true);
+});

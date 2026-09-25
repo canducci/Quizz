@@ -1,6 +1,6 @@
 # Overlapping writes fail with SQLITE_BUSY
 
-Status: ready-for-agent
+Status: resolved
 Blocked by:
 
 ## What to build
@@ -17,11 +17,11 @@ A busy timeout (`createClient({ timeout })`) doesn't fix it. libsql's native cal
 
 ## Acceptance criteria
 
-- [ ] In `src/db`, every `db.transaction` in the process waits its turn in a queue, including Better Auth's through the Drizzle adapter.
-- [ ] No transaction calls `db.transaction` from inside another; that would deadlock the queue. Check the code and Better Auth's adapter.
-- [ ] Remove the `startAttempt` retry. Its race test (4 simultaneous Starts resume one Attempt) still passes.
-- [ ] Vitest: overlapping `saveAnswer` calls from different Learners all succeed. Tests build the database the same way the app does, so they go through the queue.
-- [ ] ADR 0006 still holds: no SQLite-only SQL. Note the queue in the ADR as a consequence of SQLite having one writer; it goes away with Postgres.
+- [x] In `src/db`, every `db.transaction` in the process waits its turn in a queue, including Better Auth's through the Drizzle adapter.
+- [x] No transaction calls `db.transaction` from inside another; that would deadlock the queue. Check the code and Better Auth's adapter.
+- [x] Remove the `startAttempt` retry. Its race test (4 simultaneous Starts resume one Attempt) still passes.
+- [x] Vitest: overlapping `saveAnswer` calls from different Learners all succeed. Tests build the database the same way the app does, so they go through the queue.
+- [x] ADR 0006 still holds: no SQLite-only SQL. Note the queue in the ADR as a consequence of SQLite having one writer; it goes away with Postgres.
 
 ## Conventions (every ticket)
 

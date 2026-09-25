@@ -1,18 +1,16 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createClient } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
+import { openDatabase } from "../db/open";
 import { expect, it } from "vitest";
 import { migrateDatabase } from "../db/migrate";
 import * as schema from "../db/schema";
 import { addInvites, inviteCount, removeInvites } from "./invites";
 
 it("adds each invited email once, stores only its hash and removes at once", async () => {
-  const client = createClient({
-    url: `file:${join(mkdtempSync(join(tmpdir(), "quizz-")), "t.db")}`,
-  });
-  const db = drizzle(client, { schema });
+  const { client, db } = openDatabase(
+    `file:${join(mkdtempSync(join(tmpdir(), "quizz-")), "t.db")}`,
+  );
   await migrateDatabase(client, db);
   await db.insert(schema.creator).values({ id: "c1", name: "Ana", joinedAt: new Date() });
   await db

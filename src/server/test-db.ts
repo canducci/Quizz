@@ -1,8 +1,7 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createClient } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
+import { openDatabase } from "../db/open";
 import { migrateDatabase } from "../db/migrate";
 import * as schema from "../db/schema";
 import { publish } from "./publish";
@@ -12,10 +11,9 @@ export const at = (minutes: number) => new Date(Date.UTC(2026, 8, 25, 12) + minu
 
 /** A published Assessment "a1": 3 of 3 single-answer Questions, option 0 right, 10 minutes, 67% to pass. */
 export async function published(expiryDays: number | null = null) {
-  const client = createClient({
-    url: `file:${join(mkdtempSync(join(tmpdir(), "quizz-")), "t.db")}`,
-  });
-  const db = drizzle(client, { schema });
+  const { client, db } = openDatabase(
+    `file:${join(mkdtempSync(join(tmpdir(), "quizz-")), "t.db")}`,
+  );
   await migrateDatabase(client, db);
   await db.insert(schema.creator).values({
     id: "c1",

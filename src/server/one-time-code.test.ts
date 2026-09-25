@@ -1,21 +1,18 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createClient } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
+import { openDatabase } from "../db/open";
 import { expect, it } from "vitest";
 import { migrateDatabase } from "../db/migrate";
-import * as schema from "../db/schema";
 import { countEmail, requestCode, verifyCode } from "./one-time-code";
 
 const SECRET = "test-secret";
 const MINUTE = 60_000;
 
 async function testDb() {
-  const client = createClient({
-    url: `file:${join(mkdtempSync(join(tmpdir(), "quizz-")), "t.db")}`,
-  });
-  const db = drizzle(client, { schema });
+  const { client, db } = openDatabase(
+    `file:${join(mkdtempSync(join(tmpdir(), "quizz-")), "t.db")}`,
+  );
   await migrateDatabase(client, db);
   return db;
 }

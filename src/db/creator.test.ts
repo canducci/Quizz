@@ -1,18 +1,16 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createClient } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
+import { openDatabase } from "./open";
 import { expect, it } from "vitest";
 import { ensureCreator } from "./creator";
 import { migrateDatabase } from "./migrate";
 import * as schema from "./schema";
 
 it("makes a signed-in user a Creator exactly once, even if an earlier attempt failed", async () => {
-  const client = createClient({
-    url: `file:${join(mkdtempSync(join(tmpdir(), "quizz-")), "t.db")}`,
-  });
-  const db = drizzle(client, { schema });
+  const { client, db } = openDatabase(
+    `file:${join(mkdtempSync(join(tmpdir(), "quizz-")), "t.db")}`,
+  );
   await migrateDatabase(client, db);
   await db.insert(schema.user).values({ id: "u1", name: "Ana", email: "ana@example.test" });
 

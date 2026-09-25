@@ -1,8 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import { createClient } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
-import * as schema from "./schema";
+import { openDatabase } from "./open";
 
 export const databaseUrl = process.env.DATABASE_URL ?? "file:./data/quizz.db";
 
@@ -11,5 +9,4 @@ if (databaseUrl.startsWith("file:")) {
   mkdirSync(dirname(databaseUrl.slice("file:".length)), { recursive: true });
 }
 
-export const client = createClient({ url: databaseUrl });
-export const db = drizzle(client, { schema });
+export const { client, db } = openDatabase(databaseUrl);

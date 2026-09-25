@@ -153,24 +153,6 @@ export async function startAttempt(
   db: Db,
   opts: { assessmentId: string; learner: string; now?: Date; random?: () => number },
 ): Promise<StartResult> {
-  // ponytail: two Starts at once (a double click, two tabs): the second one's BEGIN finds the
-  // first holding SQLite's write lock and fails SQLITE_BUSY at once, so it waits and retries,
-  // then resumes the first one's Attempt. Every other overlapping write transaction in this
-  // process can still fail that way; an in-process transaction queue in src/db would fix them all.
-  for (let wait = 10; ; wait *= 2) {
-    try {
-      return await begin(db, opts);
-    } catch (e) {
-      if ((e as { code?: string }).code !== "SQLITE_BUSY" || wait > 1000) throw e;
-      await new Promise((r) => setTimeout(r, wait));
-    }
-  }
-}
-
-async function begin(
-  db: Db,
-  opts: { assessmentId: string; learner: string; now?: Date; random?: () => number },
-): Promise<StartResult> {
   const now = opts.now ?? new Date();
   return db.transaction(async (tx) => {
     const resumed = await running(tx, opts.assessmentId, opts.learner, now);
@@ -214,8 +196,6 @@ export async function saveAnswer(
   opts: { assessmentId: string; learner: string; questionId: string; choice: unknown; now?: Date },
 ) {
   const now = opts.now ?? new Date();
-  // ponytail: read-modify-write of the answers JSON; a save racing another tab's save fails and the
-  // client reports it. The client itself sends one save at a time.
   return db.transaction(async (tx) => {
     const row = await running(tx, opts.assessmentId, opts.learner, now);
     if (!row || !row.attempt.drawn.some((d) => d.id === opts.questionId)) return false;
