@@ -19,12 +19,12 @@ A build-ready plan for Quizz v1: every open question in `spec.md` answered, and 
 <!-- one line per resolved ticket: [title](issues/NN-slug.md): gist -->
 
 - [Stack choices inside Next.js](issues/01-stack-choices-research.md): recommends Drizzle on libsql (async transactions, Postgres-portable), next-intl, react-pdf, react-markdown with sanitising, AWS S3 SDK to Silo behind an app route, Vitest and Playwright; findings on branch `research/stack-choices`.
+- [Confirm the stack](issues/02-confirm-stack.md): all research picks accepted (Drizzle on libsql per ADR 0006, next-intl, react-pdf with bundled OFL fonts, sanitised Markdown with uploaded images only, files served by the app), npm, ESLint + Prettier, Node 26; CI workflow is manual only.
 - [Pilot box and accounts](issues/03-pilot-box-and-accounts.md): localhost only for now; local Silo on :9000 with bucket `quizz`, Mailpit for email, fake Google sign-in, secrets in a gitignored `.env`.
 - [Product gaps before build](issues/04-product-gaps.md): no invite emails, abuse reports mailto the Operator, CSV columns fixed, one-time code limits and daily email cap, and what a Learner sees when they can't start.
 
 ## Not yet specified
 
-- Certificate PDF fidelity: whether the chosen PDF library can draw Variant C exactly (fonts, the accent arc, shrinking long names) may need a prototype, depending on the stack choice.
 - Backups and upgrades for self-hosters: how the SQLite file and Silo bucket get backed up and restored, and how schema migrations run when a self-hoster upgrades.
 - Secrets: where the HMAC secret, SMTP and S3 credentials live and how a self-hoster generates them on first run.
 - Operator tools: how the Operator applies a Creator Ban (a CLI, an admin page?) and sets the instance config (Operator email, daily email cap). Reports already arrive by email.

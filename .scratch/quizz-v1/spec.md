@@ -20,6 +20,7 @@ Vocabulary follows `CONTEXT.md`. Decisions recorded in `docs/adr/`.
 - Free for now. Pricing will be decided later; nothing in v1 meters or charges.
 - Open source under AGPL-3.0 (ADR 0003). Tech stack: TypeScript/Next.js as a portable Docker image, and email over SMTP (ADR 0004).
 - Self-hosted first, including the pilot: SQLite for data, Silo (pgsty/silo, S3-compatible) for files (ADR 0005).
+- Libraries: Drizzle on libsql (ADR 0006), next-intl, @react-pdf/renderer, react-markdown with rehype-sanitize, @aws-sdk/client-s3, Vitest and Playwright, npm, ESLint + Prettier, Node 26. CI on GitHub Actions runs manually only for now.
 
 ## Creators
 
@@ -38,7 +39,8 @@ Vocabulary follows `CONTEXT.md`. Decisions recorded in `docs/adr/`.
 - Settings: Assessment Language (English or pt-BR), Access Mode (Public or Invite-only; default Public), Passing Score, time limit, number of Questions drawn (N), Retake Policy (max Attempts and cooldown), optional Expiry (off by default).
 - Invite-only: the Creator pastes the emails. We store only their keyed hashes and match them when a Learner verifies. Quizz sends no invitations; the Creator shares the link.
 - Questions: single-answer multiple choice, multi-select multiple choice, and true/false. All auto-graded.
-- Question content is Markdown (code blocks and images), in both the question and its answer options.
+- Question content is Markdown (code blocks and images), in both the question and its answer options. Images must be uploaded to Quizz; external image links are not allowed, because they would let a Creator see Learners' IP addresses (ADR 0002).
+- Uploaded images (Question images, logo, signature) are PNG or JPEG only. Quizz serves every file itself; the file store is never public.
 - Questions are written in the editor or imported from CSV. AI generation is out of v1.
 - A Question has at most 8 answer options.
 - CSV import: one row per Question; columns `type` (`single`|`multi`|`truefalse`), `question` (Markdown), `option_1`…`option_8`, `correct` (option numbers like `1;3`, or `true`/`false`), `keep_order` (`yes`/blank). Rows are added to the Question Pool; any invalid row rejects the whole file, with every error listed by row. The editor offers a template.

@@ -1,0 +1,3 @@
+# Drizzle on libsql, not better-sqlite3
+
+The app reaches SQLite through Drizzle ORM with the `@libsql/client` driver on a local file, even though Better Auth's docs recommend better-sqlite3. better-sqlite3 only runs synchronous transactions: an `async` callback commits before its awaits run. So transaction code written for it would have to be rewritten when we move to Postgres, which ADR 0005 wants to keep cheap. libsql's transactions are async, the same shape as node-postgres. drizzle-kit keeps the only migration history, and Better Auth's tables are generated into the Drizzle schema. Every transaction is written `await db.transaction(async (tx) => …)`, and no SQLite-only SQL is allowed. See `docs/research/stack-choices.md` on branch `research/stack-choices`.
