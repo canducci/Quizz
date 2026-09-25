@@ -240,13 +240,13 @@ export async function submitAttempt(
     }
     // After the deadline check, so a late Learner hears that time ran out.
     if (!name || name.length > MAX_NAME) return { ok: false, reason: "name" };
-    const [owner] = await tx
+    const [issuer] = await tx
       .select({ id: creator.id, bannedAt: creator.bannedAt })
       .from(assessment)
       .innerJoin(creator, eq(assessment.creatorId, creator.id))
       .where(eq(assessment.id, opts.assessmentId));
     // A Creator Ban revokes every Certificate, so one running Attempt can't earn a new one.
-    if (owner.bannedAt) return { ok: false, reason: "over" };
+    if (issuer.bannedAt) return { ok: false, reason: "over" };
     const { drawn, answers, versionId, startedAt } = row.attempt;
     const { settings, questions } = row.snapshot;
     const { score, passed, correct } = scoreAttempt(
@@ -281,7 +281,7 @@ export async function submitAttempt(
         id: uuidv7(),
         publicId: newPublicId(),
         versionId,
-        creatorId: owner.id,
+        creatorId: issuer.id,
         emailHash: opts.learner,
         holderName: name,
         score,

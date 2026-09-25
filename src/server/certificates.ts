@@ -100,6 +100,14 @@ export async function creatorCertificates(
     .orderBy(desc(certificate.issuedAt));
 }
 
+/** Still Valid at `now`: not revoked or replaced, and not past its Expiry. An expired one was
+ * already counted as expired, so revoking it would count it twice. */
+export const stillValid = (now: Date) =>
+  and(
+    eq(certificate.status, "valid"),
+    or(isNull(certificate.expiresAt), gt(certificate.expiresAt, now)),
+  );
+
 /** Revokes one of the Creator's Valid Certificates and counts it as revoked on today's
  * statistics. False if the reason is blank or the Certificate isn't theirs, or is no longer Valid:
  * an expired one was already counted as expired. */
@@ -118,8 +126,7 @@ export async function revokeCertificate(
         and(
           eq(certificate.publicId, opts.publicId),
           eq(certificate.creatorId, opts.creatorId),
-          eq(certificate.status, "valid"),
-          or(isNull(certificate.expiresAt), gt(certificate.expiresAt, now)),
+          stillValid(now),
         ),
       )
       .returning({ versionId: certificate.versionId });

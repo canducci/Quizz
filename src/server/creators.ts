@@ -1,7 +1,8 @@
-import { and, eq, gt, isNull, or } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import * as schema from "../db/schema";
 import { bump } from "./attempts";
+import { stillValid } from "./certificates";
 
 type Db = LibSQLDatabase<typeof schema>;
 const { account, assessment, certificate, creator, session, user } = schema;
@@ -22,17 +23,10 @@ export async function banCreator(db: Db, email: string, now = new Date()) {
       .update(creator)
       .set({ bannedAt: now })
       .where(and(eq(creator.id, found.id), isNull(creator.bannedAt)));
-    // An expired one was already counted as expired, as in revokeCertificate.
     const revoked = await tx
       .update(certificate)
       .set({ status: "revoked", statusAt: now, revocationReason: "Creator Ban" })
-      .where(
-        and(
-          eq(certificate.creatorId, found.id),
-          eq(certificate.status, "valid"),
-          or(isNull(certificate.expiresAt), gt(certificate.expiresAt, now)),
-        ),
-      )
+      .where(and(eq(certificate.creatorId, found.id), stillValid(now)))
       .returning({ versionId: certificate.versionId });
     for (const { versionId } of revoked) await bump(tx, versionId, now, ["revoked"]);
     await tx
