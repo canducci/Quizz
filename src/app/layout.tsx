@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { setLocale } from "@/i18n/actions";
-import { auth } from "@/server/auth";
+import Link from "next/link";
+import { currentCreator } from "@/server/auth";
 import { SignOutButton } from "@/components/sign-out-button";
 import "./globals.css";
 
@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Quizz" };
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   const t = await getTranslations("header");
-  const session = await auth.api.getSession({ headers: await headers() });
+  const me = await currentCreator();
 
   return (
     <html lang={locale}>
@@ -20,6 +20,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <NextIntlClientProvider>
           <header className="header">
             <strong>Quizz</strong>
+            {me && (
+              <nav className="nav">
+                <Link href="/dashboard">{t("assessments")}</Link>
+                <Link href="/settings">{t("settings")}</Link>
+              </nav>
+            )}
             <form action={setLocale} className="language" aria-label={t("language")}>
               <button name="locale" value="en" aria-pressed={locale === "en"}>
                 EN
@@ -28,7 +34,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 PT
               </button>
             </form>
-            {session && <SignOutButton label={t("signOut")} />}
+            {me && <SignOutButton label={t("signOut")} />}
           </header>
           <main className="main">{children}</main>
         </NextIntlClientProvider>

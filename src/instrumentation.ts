@@ -11,4 +11,7 @@ export async function register() {
   const { client, db } = await import("./db");
   const { migrateDatabase } = await import("./db/migrate");
   await migrateDatabase(client, db);
+
+  const { ensureBucket } = await import("./server/files");
+  await ensureBucket();
 }

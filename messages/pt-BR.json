@@ -1,7 +1,9 @@
 {
   "header": {
     "language": "Idioma",
-    "signOut": "Sair"
+    "signOut": "Sair",
+    "assessments": "Avaliações",
+    "settings": "Configurações"
   },
   "signIn": {
     "title": "Entrar no Quizz",
@@ -16,6 +18,24 @@
   "dashboard": {
     "title": "Suas Avaliações",
     "empty": "Nenhuma Avaliação ainda."
+  },
+  "settings": {
+    "title": "Configurações",
+    "intro": "Seus Certificados levam este nome e esta identidade visual.",
+    "name": "Nome do Criador",
+    "accent": "Cor de destaque",
+    "signerName": "Nome de quem assina",
+    "signerTitle": "Cargo de quem assina",
+    "logo": "Logotipo",
+    "signature": "Imagem da assinatura",
+    "imageHint": "Imagens: PNG ou JPEG, até 2 MB.",
+    "save": "Salvar",
+    "saved": "Salvo.",
+    "errors": {
+      "invalid": "Informe o nome do Criador e escolha uma cor de destaque.",
+      "badImage": "As imagens devem ser PNG ou JPEG.",
+      "tooLarge": "As imagens devem ter no máximo 2 MB."
+    }
   },
   "email": {
     "magicLink": {

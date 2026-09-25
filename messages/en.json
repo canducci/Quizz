@@ -1,7 +1,9 @@
 {
   "header": {
     "language": "Language",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "assessments": "Assessments",
+    "settings": "Settings"
   },
   "signIn": {
     "title": "Sign in to Quizz",
@@ -16,6 +18,24 @@
   "dashboard": {
     "title": "Your Assessments",
     "empty": "No Assessments yet."
+  },
+  "settings": {
+    "title": "Settings",
+    "intro": "Your Certificates carry this name and branding.",
+    "name": "Creator name",
+    "accent": "Accent colour",
+    "signerName": "Signer name",
+    "signerTitle": "Signer title",
+    "logo": "Logo",
+    "signature": "Signature image",
+    "imageHint": "Images: PNG or JPEG, up to 2 MB.",
+    "save": "Save",
+    "saved": "Saved.",
+    "errors": {
+      "invalid": "Enter a Creator name and pick an accent colour.",
+      "badImage": "Images must be PNG or JPEG.",
+      "tooLarge": "Images must be 2 MB or smaller."
+    }
   },
   "email": {
     "magicLink": {
