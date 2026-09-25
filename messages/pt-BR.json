@@ -111,5 +111,49 @@
     "draft": "Rascunho",
     "published": "Publicada",
     "closed": "Encerrada"
+  },
+  "settingsTabs": {
+    "save": "Salvar",
+    "saved": "Salvo",
+    "invalid": "Alguns valores estão fora do intervalo. Confira e salve de novo.",
+    "rules": {
+      "drawn": "Questões por Tentativa",
+      "drawnHint": "Sorteadas entre as {n} do Conjunto de Questões.",
+      "questions": "Questões",
+      "timeLimit": "Tempo limite",
+      "timeLimitHint": "Não enviada a tempo = Tempo esgotado, sem nota.",
+      "minutes": "minutos",
+      "passingScore": "Nota de Aprovação",
+      "passingScoreHint": "Nota mínima para receber um Certificado.",
+      "maxAttempts": "Tentativas permitidas",
+      "maxAttemptsHint": "Política de Novas Tentativas. Recomeça quando um Certificado expira.",
+      "perLearner": "por Participante",
+      "cooldown": "Intervalo",
+      "cooldownHint": "Política de Novas Tentativas. Espera entre Tentativas.",
+      "expiry": "Validade",
+      "expiryHint": "Depois disso, os Certificados aparecem como expirados.",
+      "never": "Nunca expira",
+      "days": "{n} dias"
+    },
+    "access": {
+      "language": "Idioma da Avaliação",
+      "languageHint": "O idioma em que os Participantes veem esta Avaliação e seus Certificados.",
+      "languages": {
+        "en": "English",
+        "pt-BR": "Português (Brasil)"
+      },
+      "accessMode": "Modo de Acesso",
+      "accessModeHint": "Quem pode iniciar uma Tentativa.",
+      "public": "Pública (qualquer pessoa com o link)",
+      "invite": "Somente convidados",
+      "invited": "{n, plural, =0 {Ninguém convidado ainda} one {# e-mail convidado} other {# e-mails convidados}}",
+      "invitesHint": "Cole e-mails separados por espaços, vírgulas ou quebras de linha. Guardamos só os hashes com chave, então a lista não pode ser exibida; cole um e-mail de novo para removê-lo. O Quizz não envia convites: compartilhe o link você mesmo. As mudanças valem na hora.",
+      "emails": "E-mails",
+      "add": "Convidar",
+      "remove": "Remover",
+      "added": "{n, plural, =0 {Nenhum e-mail novo convidado.} one {# e-mail convidado.} other {# e-mails convidados.}}",
+      "removed": "{n, plural, =0 {Nenhum destes estava convidado.} one {# e-mail removido.} other {# e-mails removidos.}}",
+      "skipped": "{n, plural, one {# item não é um e-mail e foi ignorado.} other {# itens não são e-mails e foram ignorados.}}"
+    }
   }
 }

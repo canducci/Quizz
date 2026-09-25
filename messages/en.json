@@ -111,5 +111,49 @@
     "draft": "Draft",
     "published": "Published",
     "closed": "Closed"
+  },
+  "settingsTabs": {
+    "save": "Save",
+    "saved": "Saved",
+    "invalid": "Some values are out of range. Check them and save again.",
+    "rules": {
+      "drawn": "Questions per Attempt",
+      "drawnHint": "Drawn at random from the {n} in the Question Pool.",
+      "questions": "Questions",
+      "timeLimit": "Time limit",
+      "timeLimitHint": "Not submitted in time = Timed out, no score.",
+      "minutes": "minutes",
+      "passingScore": "Passing Score",
+      "passingScoreHint": "Minimum score for a Certificate.",
+      "maxAttempts": "Attempts allowed",
+      "maxAttemptsHint": "Retake Policy. Starts again when a Certificate expires.",
+      "perLearner": "per Learner",
+      "cooldown": "Cooldown",
+      "cooldownHint": "Retake Policy. Wait between Attempts.",
+      "expiry": "Expiry",
+      "expiryHint": "Certificates show as expired after this.",
+      "never": "Never",
+      "days": "{n} days"
+    },
+    "access": {
+      "language": "Assessment Language",
+      "languageHint": "The language Learners see this Assessment and its Certificates in.",
+      "languages": {
+        "en": "English",
+        "pt-BR": "Português (Brasil)"
+      },
+      "accessMode": "Access Mode",
+      "accessModeHint": "Who can start an Attempt.",
+      "public": "Public (anyone with the link)",
+      "invite": "Invite-only",
+      "invited": "{n, plural, =0 {Nobody invited yet} one {# email invited} other {# emails invited}}",
+      "invitesHint": "Paste emails separated by spaces, commas or new lines. Only their keyed hashes are stored, so the list can't be shown; paste an email again to remove it. Quizz sends no invitations: share the link yourself. Changes apply at once.",
+      "emails": "Emails",
+      "add": "Invite",
+      "remove": "Remove",
+      "added": "{n, plural, =0 {No new emails invited.} one {# email invited.} other {# emails invited.}}",
+      "removed": "{n, plural, =0 {None of these were invited.} one {# email removed.} other {# emails removed.}}",
+      "skipped": "{n, plural, one {# entry isn't an email and was skipped.} other {# entries aren't emails and were skipped.}}"
+    }
   }
 }

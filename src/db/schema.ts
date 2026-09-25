@@ -1,6 +1,8 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core";
 import { user } from "./auth-schema";
 import { QUESTION_TYPES, type QuestionOption } from "../domain/question";
+import { ACCESS_MODES, DEFAULT_RULES } from "../domain/settings";
+import { locales } from "../i18n/locales";
 
 export * from "./auth-schema";
 
@@ -30,7 +32,27 @@ export const assessment = sqliteTable("assessment", {
     .default("draft"),
   title: text("title").notNull(),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  language: text("language", { enum: locales }).notNull().default("en"),
+  accessMode: text("access_mode", { enum: ACCESS_MODES }).notNull().default("public"),
+  passingScore: integer("passing_score").notNull().default(DEFAULT_RULES.passingScore),
+  timeLimit: integer("time_limit").notNull().default(DEFAULT_RULES.timeLimit), // minutes
+  drawn: integer("drawn").notNull().default(DEFAULT_RULES.drawn),
+  maxAttempts: integer("max_attempts").notNull().default(DEFAULT_RULES.maxAttempts),
+  cooldown: integer("cooldown").notNull().default(DEFAULT_RULES.cooldown), // minutes
+  expiryDays: integer("expiry_days"), // null = Certificates never expire
 });
+
+/** Invite-only access list. On the Assessment, not the Version, so changes apply at once. */
+export const invite = sqliteTable(
+  "invite",
+  {
+    assessmentId: text("assessment_id")
+      .notNull()
+      .references(() => assessment.id, { onDelete: "cascade" }),
+    emailHash: text("email_hash").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.assessmentId, t.emailHash] })],
+);
 
 /** The working copy of a Question; publishing snapshots it into an Assessment Version. */
 export const question = sqliteTable("question", {

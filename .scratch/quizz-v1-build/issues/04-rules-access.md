@@ -1,6 +1,6 @@
 # Assessment settings: Rules and Access
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 03
 
 ## What to build
@@ -9,11 +9,11 @@ The Rules and Access & language tabs hold every Assessment setting.
 
 ## Acceptance criteria
 
-- [ ] Rules: Passing Score, time limit, number of Questions drawn (N), Retake Policy (max Attempts, cooldown), optional Expiry (off by default).
-- [ ] Access & language: Assessment Language (EN or pt-BR), Access Mode (Public default, Invite-only).
-- [ ] Invite-only: paste emails; stored only as `invite.email_hash` (HMAC per data model); shows the count, never the emails; adding or removing applies at once, no new Version.
-- [ ] Vitest: email normalisation and HMAC; invite add is idempotent.
-- [ ] Playwright: set rules, switch to Invite-only, paste emails, see the count.
+- [x] Rules: Passing Score, time limit, number of Questions drawn (N), Retake Policy (max Attempts, cooldown), optional Expiry (off by default).
+- [x] Access & language: Assessment Language (EN or pt-BR), Access Mode (Public default, Invite-only).
+- [x] Invite-only: paste emails; stored only as `invite.email_hash` (HMAC per data model); shows the count, never the emails; adding or removing applies at once, no new Version.
+- [x] Vitest: email normalisation and HMAC; invite add is idempotent.
+- [x] Playwright: set rules, switch to Invite-only, paste emails, see the count.
 
 ## Design reference
 

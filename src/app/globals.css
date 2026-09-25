@@ -99,12 +99,13 @@ body {
   align-self: stretch;
 }
 
-.tabs span {
+.tabs > * {
   display: flex;
   align-items: center;
   padding: 0 0.9rem;
   color: #cbd5e1;
   border-bottom: 3px solid transparent;
+  text-decoration: none;
 }
 
 .tabs [aria-current] {
@@ -254,4 +255,34 @@ pre {
   .panes {
     grid-template-columns: 1fr;
   }
+}
+
+/* Rules and Access & language tabs: one setting per row, label and hint on the left. */
+.settings {
+  max-width: 44rem;
+  margin: 1.5rem auto;
+  padding: 0 1.25rem;
+}
+
+.setting {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.setting > span:first-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.setting input[type="number"] {
+  width: 6rem;
+}
+
+.muted {
+  color: #6b7280;
+  font-size: 0.875rem;
 }
