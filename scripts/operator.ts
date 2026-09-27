@@ -12,7 +12,7 @@ if (command !== "ban" || !email) {
 
 // The app's write queue is per process: this one waits out the app's lock instead of failing
 // SQLITE_BUSY. The pragma is SQLite-only, like the WAL one in migrate.ts; drop it with SQLite.
-await client.execute("pragma busy_timeout = 5000");
+if (client.protocol === "file") await client.execute("pragma busy_timeout = 5000");
 const done = await banCreator(db, email);
 if (!done) {
   console.error(`No Creator signs in with ${email}. A deleted account can't be banned.`);

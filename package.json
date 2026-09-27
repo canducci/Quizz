@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && esbuild scripts/operator.ts --bundle --platform=node --format=esm --external:@libsql/client --log-level=warning --outfile=operator.mjs",
+    "build": "next build && esbuild scripts/operator.ts scripts/migrate.ts --bundle --platform=node --format=esm --external:@libsql/client --log-level=warning --outdir=. --out-extension:.js=.mjs",
     "start": "next start",
     "operator": "node operator.mjs",
     "lint": "eslint . && prettier --check .",

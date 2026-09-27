@@ -1,0 +1,19 @@
+# Netlify: the Pilot's serverless alternative to the Docker box. Set every variable from
+# .env.example in the Netlify UI with the Builds and Functions scopes; values here don't reach
+# functions. DATABASE_URL must be hosted libsql (libsql://<db>.turso.io?authToken=...).
+[build]
+  command = "npm run build && node migrate.mjs"
+
+# Only production migrates: an unmerged branch's migration can't be taken back.
+[context.deploy-preview]
+  command = "npm run build"
+[context.branch-deploy]
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "26"
+
+[functions]
+  node_bundler = "esbuild"
+  # A native module; esbuild can't bundle it.
+  external_node_modules = ["@libsql/client"]

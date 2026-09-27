@@ -16,6 +16,9 @@ const eslintConfig = defineConfig([
     "data/**",
     "test-results/**",
     "playwright-report/**",
+    "operator.mjs",
+    "migrate.mjs",
+    ".netlify/**",
   ]),
 ]);
 
