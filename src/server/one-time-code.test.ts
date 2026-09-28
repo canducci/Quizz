@@ -5,10 +5,7 @@ import { countEmail, requestCode, verifyCode } from "./one-time-code";
 const SECRET = "test-secret";
 const MINUTE = 60_000;
 
-async function testDb() {
-  const db = await testDatabase();
-  return db;
-}
+const testDb = testDatabase;
 
 const at = (minutes: number) => new Date(Date.UTC(2026, 8, 25, 12) + minutes * MINUTE);
 

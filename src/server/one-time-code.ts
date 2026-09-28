@@ -52,7 +52,8 @@ export async function requestCode(
         .from(oneTimeCode)
         .where(and(where, gt(oneTimeCode.createdAt, since)))
     )[0].n;
-  // ponytail: check-then-insert, so two simultaneous requests can both pass a limit by one.
+  // ponytail: check-then-insert, so two simultaneous requests can both pass a limit by one. Not on
+  // Postgres, where the transaction runs SERIALIZABLE.
   return db.transaction(async (tx) => {
     if ((await recent(tx, eq(oneTimeCode.emailHash, hash))) >= PER_EMAIL)
       return { ok: false as const, reason: "email" as const };

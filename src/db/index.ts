@@ -10,4 +10,3 @@ if (databaseUrl.startsWith("file:")) {
 }
 
 export const db = openDatabase(databaseUrl);
-export type { Db, Tx } from "./open";

@@ -103,7 +103,7 @@ export async function verifyLearner(
 }
 
 /** Runs SQL in the app container: the one way to seed states nothing in the UI reaches yet. Pass
- * `{ sqlite, pg }` where the dialects' SQL differs. `?` placeholders work on both, and a Date is
+ * `{ sqlite, pg }` where the dialects' SQL differs. `?` placeholders work on both (so no literal `?` or jsonb `?` operator in pg SQL), and a Date is
  * stored the way the app's database keeps times. */
 export function sql(
   query: string | { sqlite: string; pg: string },
@@ -114,7 +114,7 @@ export function sql(
   // SQLite: the app writes too, from parallel tests, so wait for its lock instead of failing
   // SQLITE_BUSY. Postgres waits by itself.
   const run = `const url = process.env.DATABASE_URL;
-    const pg = /^postgres(ql)?:/.test(url);
+    const pg = /^postgres(ql)?:\/\//.test(url); // as src/db/dialect.ts
     const queries = JSON.parse(process.argv[1]);
     const args = JSON.parse(process.argv[2]).map((a) =>
       a && typeof a === "object" ? (pg ? new Date(a.date) : a.date) : a);

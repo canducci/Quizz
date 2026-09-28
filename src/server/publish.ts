@@ -33,7 +33,8 @@ export async function publishState(db: Db | Tx, assessmentId: string, creatorId:
     snapshot,
     version: current?.number ?? 0,
     // Publishing an unchanged Assessment would only duplicate its Version.
-    // Compared as data: Postgres's jsonb hands back the keys in its own order.
+    // Compared as data, since jsonb hands back keys in its own order; the round trip drops
+    // undefined fields the way storing did.
     changed: !current || !isDeepStrictEqual(current.snapshot, JSON.parse(JSON.stringify(snapshot))),
   };
 }

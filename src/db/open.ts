@@ -36,6 +36,7 @@ function openSqlite(url: string) {
   return db;
 }
 
+// ponytail: gives up after 10 tries (about 5 s) and throws; queue hot rows if contention gets there.
 const TRIES = 10;
 // Serialization failure (SERIALIZABLE reports a racing unique key as one too) and deadlock: a rerun
 // reads the winner's rows, as it would have under SQLite's queue.

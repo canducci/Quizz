@@ -1,6 +1,7 @@
 import { getTableConfig as pgConfig, PgTable } from "drizzle-orm/pg-core";
 import { getTableConfig as sqliteConfig, SQLiteTable } from "drizzle-orm/sqlite-core";
 import { expect, expectTypeOf, it } from "vitest";
+import * as app from "./schema";
 import * as pg from "./schema.pg";
 import * as sqlite from "./schema.sqlite";
 
@@ -30,6 +31,10 @@ it("keeps the Postgres schema column for column like the SQLite one", () => {
     expect(twin, name).toBeInstanceOf(PgTable);
     expect(shape(pgConfig(twin as PgTable)), name).toEqual(shape(sqliteConfig(table)));
   }
+});
+
+it("hands the app every table and constant of the schema", () => {
+  expect(Object.keys(app).sort()).toEqual(Object.keys(sqlite).sort());
 });
 
 it("gives the app the same row types on both", () => {
