@@ -1,5 +1,5 @@
 import { and, desc, eq, ne, sql } from "drizzle-orm";
-import type { LibSQLDatabase } from "drizzle-orm/libsql";
+import type { Db, Tx } from "../db/open";
 import { v7 as uuidv7 } from "uuid";
 import * as schema from "../db/schema";
 import {
@@ -19,8 +19,6 @@ import { retakeBlock, type RetakeBlock } from "../domain/retake";
 import type { Rules } from "../domain/settings";
 import { utcDay } from "./one-time-code";
 
-type Db = LibSQLDatabase<typeof schema>;
-type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 type Attempt = typeof schema.attempt.$inferSelect;
 type Certificate = typeof schema.certificate.$inferSelect;
 type Counter =
@@ -57,8 +55,9 @@ export async function timeOut(tx: Tx, row: Attempt) {
   const done = await tx
     .update(attempt)
     .set({ outcome: "timed_out" })
-    .where(and(eq(attempt.id, row.id), eq(attempt.outcome, "in_progress")));
-  if (done.rowsAffected === 1) await bump(tx, row.versionId, row.deadline, ["timedOut"]);
+    .where(and(eq(attempt.id, row.id), eq(attempt.outcome, "in_progress")))
+    .returning({ id: attempt.id });
+  if (done.length === 1) await bump(tx, row.versionId, row.deadline, ["timedOut"]);
 }
 
 /** The Learner's running Attempt with its Version snapshot, timing it out if it's overdue. */
@@ -258,8 +257,9 @@ export async function submitAttempt(
     const done = await tx
       .update(attempt)
       .set({ outcome: "submitted", submittedAt: now, score, passed })
-      .where(and(eq(attempt.id, row.attempt.id), eq(attempt.outcome, "in_progress")));
-    if (done.rowsAffected !== 1) return { ok: false, reason: "over" };
+      .where(and(eq(attempt.id, row.attempt.id), eq(attempt.outcome, "in_progress")))
+      .returning({ id: attempt.id });
+    if (done.length !== 1) return { ok: false, reason: "over" };
     // Per-Question counts come from submitted Attempts only, so a Timed out one doesn't lower the
     // correct-answer rate of Questions nobody answered.
     await bump(

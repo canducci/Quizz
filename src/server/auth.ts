@@ -10,13 +10,14 @@ import { getTranslations } from "next-intl/server";
 import { v7 as uuidv7 } from "uuid";
 import { db } from "@/db";
 import { ensureCreator } from "@/db/creator";
+import { isPostgres } from "@/db/dialect";
 import * as schema from "@/db/schema";
 import { googleEnabled } from "./env";
 import { sendMail } from "./mail";
 
 export const auth = betterAuth({
   baseURL: process.env.APP_URL,
-  database: drizzleAdapter(db, { provider: "sqlite", schema }),
+  database: drizzleAdapter(db, { provider: isPostgres() ? "pg" : "sqlite", schema }),
   advanced: { database: { generateId: () => uuidv7() } },
   socialProviders: googleEnabled()
     ? {

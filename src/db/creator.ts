@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
-import type { LibSQLDatabase } from "drizzle-orm/libsql";
+import type { Db } from "./open";
 import { v7 as uuidv7 } from "uuid";
 import * as schema from "./schema";
 
 /** Signing in makes the person a Creator. Runs on every sign-in, so a failed first try heals. */
-export async function ensureCreator(db: LibSQLDatabase<typeof schema>, authUserId: string) {
+export async function ensureCreator(db: Db, authUserId: string) {
   const [user] = await db.select().from(schema.user).where(eq(schema.user.id, authUserId));
   if (!user) return;
   await db

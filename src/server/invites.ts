@@ -1,9 +1,8 @@
 import { and, count, eq, inArray } from "drizzle-orm";
-import type { LibSQLDatabase } from "drizzle-orm/libsql";
+import type { Db } from "../db/open";
 import * as schema from "../db/schema";
 import { emailHash } from "./email-hash";
 
-type Db = LibSQLDatabase<typeof schema>;
 // Two bound values per row keeps each statement well under SQLite's variable limit.
 const CHUNK = 1000;
 
@@ -18,8 +17,12 @@ export async function addInvites(db: Db, assessmentId: string, emails: string[],
   await db.transaction(async (tx) => {
     for (let i = 0; i < all.length; i += CHUNK) {
       const rows = all.slice(i, i + CHUNK).map((emailHash) => ({ assessmentId, emailHash }));
-      const result = await tx.insert(schema.invite).values(rows).onConflictDoNothing();
-      added += result.rowsAffected;
+      const result = await tx
+        .insert(schema.invite)
+        .values(rows)
+        .onConflictDoNothing()
+        .returning({ emailHash: schema.invite.emailHash });
+      added += result.length;
     }
   });
   return added;
@@ -43,8 +46,9 @@ export async function removeInvites(
             eq(schema.invite.assessmentId, assessmentId),
             inArray(schema.invite.emailHash, all.slice(i, i + CHUNK)),
           ),
-        );
-      removed += result.rowsAffected;
+        )
+        .returning({ emailHash: schema.invite.emailHash });
+      removed += result.length;
     }
   });
   return removed;

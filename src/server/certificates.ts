@@ -1,5 +1,5 @@
 import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
-import type { LibSQLDatabase } from "drizzle-orm/libsql";
+import type { Db } from "../db/open";
 import { v7 as uuidv7 } from "uuid";
 import * as schema from "../db/schema";
 import { MAX_NAME } from "../domain/attempt";
@@ -13,7 +13,6 @@ import {
 import { bump } from "./attempts";
 import { emailHash } from "./email-hash";
 
-type Db = LibSQLDatabase<typeof schema>;
 export const MAX_REASON = 500;
 const { assessmentVersion, attempt, certificate, creator, invite, oneTimeCode } = schema;
 
@@ -192,8 +191,9 @@ export async function correctName(
         revocationReason: "Name correction",
         replacedById: id,
       })
-      .where(and(eq(certificate.id, old.id), eq(certificate.status, "valid")));
-    if (done.rowsAffected !== 1) return { ok: false, reason: "invalid" };
+      .where(and(eq(certificate.id, old.id), eq(certificate.status, "valid")))
+      .returning({ id: certificate.id });
+    if (done.length !== 1) return { ok: false, reason: "invalid" };
     const [issued] = await tx
       .insert(certificate)
       .values({

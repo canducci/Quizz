@@ -1,21 +1,16 @@
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { openDatabase } from "../db/open";
-import { migrateDatabase } from "../db/migrate";
+import { eq } from "drizzle-orm";
+import { testDatabase } from "../db/test-database";
 import * as schema from "../db/schema";
 import { publish } from "./publish";
 import { saveAnswer, startAttempt, submitAttempt } from "./attempts";
+import { utcDay } from "./one-time-code";
 
 export const MINUTE = 60_000;
 export const at = (minutes: number) => new Date(Date.UTC(2026, 8, 25, 12) + minutes * MINUTE);
 
 /** A published Assessment "a1": 3 of 3 single-answer Questions, option 0 right, 10 minutes, 67% to pass. */
 export async function published(expiryDays: number | null = null) {
-  const { client, db } = openDatabase(
-    `file:${join(mkdtempSync(join(tmpdir(), "quizz-")), "t.db")}`,
-  );
-  await migrateDatabase(client, db);
+  const db = await testDatabase();
   await db.insert(schema.creator).values({
     id: "c1",
     name: "Ana",
@@ -49,7 +44,14 @@ export async function published(expiryDays: number | null = null) {
     })),
   );
   await publish(db, "a1", "c1");
-  const stats = async () => (await db.select().from(schema.statsDay))[0];
+  // The statistics of minute 0's day: SQL gives rows in no set order.
+  const stats = async () =>
+    (
+      await db
+        .select()
+        .from(schema.statsDay)
+        .where(eq(schema.statsDay.day, utcDay(at(0))))
+    )[0];
   return { db, stats };
 }
 

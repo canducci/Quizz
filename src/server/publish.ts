@@ -1,11 +1,10 @@
+import { isDeepStrictEqual } from "node:util";
 import { and, asc, eq, isNull, max } from "drizzle-orm";
-import type { LibSQLDatabase } from "drizzle-orm/libsql";
+import type { Db, Tx } from "../db/open";
 import { v7 as uuidv7 } from "uuid";
 import * as schema from "../db/schema";
 import { publishProblems, snapshotOf } from "../domain/publish";
 
-type Db = LibSQLDatabase<typeof schema>;
-type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 const { assessment, assessmentVersion, creator, question } = schema;
 
 /** What publishing the Creator's Assessment would do now, or null if it isn't theirs. */
@@ -34,7 +33,8 @@ export async function publishState(db: Db | Tx, assessmentId: string, creatorId:
     snapshot,
     version: current?.number ?? 0,
     // Publishing an unchanged Assessment would only duplicate its Version.
-    changed: !current || JSON.stringify(current.snapshot) !== JSON.stringify(snapshot),
+    // Compared as data: Postgres's jsonb hands back the keys in its own order.
+    changed: !current || !isDeepStrictEqual(current.snapshot, JSON.parse(JSON.stringify(snapshot))),
   };
 }
 

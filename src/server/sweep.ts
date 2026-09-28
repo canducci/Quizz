@@ -1,10 +1,9 @@
 import { and, eq, isNull, lt, lte } from "drizzle-orm";
-import type { LibSQLDatabase } from "drizzle-orm/libsql";
+import type { Db } from "../db/open";
 import * as schema from "../db/schema";
 import { bump, timeOut } from "./attempts";
 import { utcDay } from "./one-time-code";
 
-type Db = LibSQLDatabase<typeof schema>;
 const { attempt, certificate, emailDay, oneTimeCode, session, verification } = schema;
 const DAY = 24 * 60 * 60_000;
 const HOUR = 60 * 60_000;
@@ -41,8 +40,9 @@ export async function sweep(db: Db, now = new Date()) {
         const done = await tx
           .update(certificate)
           .set({ expiryCountedAt: now })
-          .where(and(eq(certificate.id, row.id), isNull(certificate.expiryCountedAt)));
-        if (done.rowsAffected === 1) await bump(tx, row.versionId, row.expiresAt!, ["expired"]);
+          .where(and(eq(certificate.id, row.id), isNull(certificate.expiryCountedAt)))
+          .returning({ id: certificate.id });
+        if (done.length === 1) await bump(tx, row.versionId, row.expiresAt!, ["expired"]);
       }),
     );
 

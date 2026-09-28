@@ -8,9 +8,9 @@ export async function register() {
     process.exit(1);
   }
 
-  const { client, db } = await import("./db");
+  const { db } = await import("./db");
   const { migrateDatabase } = await import("./db/migrate");
-  await migrateDatabase(client, db);
+  await migrateDatabase(db);
 
   const { ensureBucket } = await import("./server/files");
   await ensureBucket();

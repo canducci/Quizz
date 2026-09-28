@@ -1,10 +1,9 @@
 import { and, asc, eq, gte, inArray } from "drizzle-orm";
-import type { LibSQLDatabase } from "drizzle-orm/libsql";
+import type { Db } from "../db/open";
 import * as schema from "../db/schema";
 import { daysFrom, summarize } from "../domain/statistics";
 import { utcDay } from "./one-time-code";
 
-type Db = LibSQLDatabase<typeof schema>;
 const { assessmentVersion, statsDay } = schema;
 const DAY = 24 * 60 * 60_000;
 

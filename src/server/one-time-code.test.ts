@@ -1,19 +1,12 @@
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { openDatabase } from "../db/open";
+import { testDatabase } from "../db/test-database";
 import { expect, it } from "vitest";
-import { migrateDatabase } from "../db/migrate";
 import { countEmail, requestCode, verifyCode } from "./one-time-code";
 
 const SECRET = "test-secret";
 const MINUTE = 60_000;
 
 async function testDb() {
-  const { client, db } = openDatabase(
-    `file:${join(mkdtempSync(join(tmpdir(), "quizz-")), "t.db")}`,
-  );
-  await migrateDatabase(client, db);
+  const db = await testDatabase();
   return db;
 }
 
@@ -82,6 +75,29 @@ it("locks a code after 5 wrong tries, even against the right code", async () => 
   expect(await check(wrong)).toEqual({ ok: false, reason: "locked" });
   expect(await check(sent.code)).toEqual({ ok: false, reason: "locked" });
   expect(await check("not a code")).toEqual({ ok: false, reason: "locked" });
+
+  // Guesses sent at the same moment get no more tries between them.
+  const again = await requestCode(db, {
+    email: "ana@example.com",
+    ip: "1.1.1.1",
+    purpose: "attempt",
+    cap: 300,
+    now: at(2),
+    secret: SECRET,
+  });
+  if (!again.ok) throw new Error("refused");
+  const guesses = await Promise.all(
+    Array.from({ length: 8 }, () =>
+      verifyCode(db, {
+        email: "ana@example.com",
+        code: String((Number(again.code) + 1) % 1_000_000).padStart(6, "0"),
+        purpose: "attempt",
+        now: at(3),
+        secret: SECRET,
+      }),
+    ),
+  );
+  expect(guesses.filter((g) => g.reason === "wrong")).toHaveLength(4);
 });
 
 it("allows 3 codes per email and 10 per IP an hour, used or not", async () => {

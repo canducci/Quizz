@@ -220,3 +220,15 @@ it("saves every answer when Learners save at the same moment", async () => {
   );
   expect(saved.every(Boolean)).toBe(true);
 });
+
+it("keeps every answer when one Learner saves several at the same moment", async () => {
+  const { db } = await published();
+  await startAttempt(db, { ...learner, now: at(0) });
+  await Promise.all(
+    ["q1", "q2", "q3"].map((questionId) =>
+      saveAnswer(db, { ...learner, questionId, choice: [0], now: at(1) }),
+    ),
+  );
+  const [row] = await db.select().from(schema.attempt);
+  expect(row.answers).toEqual({ q1: [0], q2: [0], q3: [0] });
+});

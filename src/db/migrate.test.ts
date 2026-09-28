@@ -1,22 +1,17 @@
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { createClient } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
+import { sql } from "drizzle-orm";
 import { expect, it } from "vitest";
+import { isPostgres } from "./dialect";
 import { migrateDatabase } from "./migrate";
+import * as schema from "./schema";
+import { testDatabase } from "./test-database";
 
-it("migrates a fresh file into WAL mode with the auth and creator tables", async () => {
-  const client = createClient({
-    url: `file:${join(mkdtempSync(join(tmpdir(), "quizz-")), "t.db")}`,
-  });
-  await migrateDatabase(client, drizzle(client));
-  await migrateDatabase(client, drizzle(client)); // a restart is a no-op
+it("migrates a fresh database, SQLite in WAL mode, with the auth and creator tables", async () => {
+  const db = await testDatabase();
+  await migrateDatabase(db); // a restart is a no-op
 
-  const mode = await client.execute("PRAGMA journal_mode");
-  expect(mode.rows[0].journal_mode).toBe("wal");
-  const tables = await client.execute("SELECT name FROM sqlite_master WHERE type = 'table'");
-  expect(tables.rows.map((r) => r.name)).toEqual(
-    expect.arrayContaining(["user", "session", "account", "verification", "creator"]),
-  );
+  if (!isPostgres())
+    expect(await db.get(sql`PRAGMA journal_mode`)).toEqual({ journal_mode: "wal" });
+  for (const table of [schema.user, schema.session, schema.account, schema.verification])
+    expect(await db.select().from(table)).toEqual([]);
+  expect(await db.select().from(schema.creator)).toEqual([]);
 });

@@ -9,4 +9,5 @@ if (databaseUrl.startsWith("file:")) {
   mkdirSync(dirname(databaseUrl.slice("file:".length)), { recursive: true });
 }
 
-export const { client, db } = openDatabase(databaseUrl);
+export const db = openDatabase(databaseUrl);
+export type { Db, Tx } from "./open";

@@ -102,12 +102,32 @@ export async function verifyLearner(
   return email;
 }
 
-/** Runs SQL in the app container: the one way to seed states nothing in the UI reaches yet. */
-export function sql(query: string, ...args: (string | number | null)[]) {
-  // The app writes too, from parallel tests: wait for its lock instead of failing SQLITE_BUSY.
-  const run = `const db = require("@libsql/client").createClient({ url: process.env.DATABASE_URL });
-    db.execute("pragma busy_timeout = 5000")
-      .then(() => db.execute({ sql: process.argv[1], args: JSON.parse(process.argv[2]) }))`;
+/** Runs SQL in the app container: the one way to seed states nothing in the UI reaches yet. Pass
+ * `{ sqlite, pg }` where the dialects' SQL differs. `?` placeholders work on both, and a Date is
+ * stored the way the app's database keeps times. */
+export function sql(
+  query: string | { sqlite: string; pg: string },
+  ...args: (string | number | Date | null)[]
+) {
+  const queries = typeof query === "string" ? { sqlite: query, pg: query } : query;
+  const values = args.map((a) => (a instanceof Date ? { date: a.getTime() } : a));
+  // SQLite: the app writes too, from parallel tests, so wait for its lock instead of failing
+  // SQLITE_BUSY. Postgres waits by itself.
+  const run = `const url = process.env.DATABASE_URL;
+    const pg = /^postgres(ql)?:/.test(url);
+    const queries = JSON.parse(process.argv[1]);
+    const args = JSON.parse(process.argv[2]).map((a) =>
+      a && typeof a === "object" ? (pg ? new Date(a.date) : a.date) : a);
+    if (pg) {
+      const db = new (require("pg").Client)({ connectionString: url });
+      let n = 0;
+      const numbered = queries.pg.replace(/[?]/g, () => "$" + ++n);
+      db.connect().then(() => db.query(numbered, args)).finally(() => db.end());
+    } else {
+      const db = require("@libsql/client").createClient({ url });
+      db.execute("pragma busy_timeout = 5000")
+        .then(() => db.execute({ sql: queries.sqlite, args }));
+    }`;
   execFileSync("docker", [
     "compose",
     "exec",
@@ -116,8 +136,8 @@ export function sql(query: string, ...args: (string | number | null)[]) {
     "node",
     "-e",
     run,
-    query,
-    JSON.stringify(args),
+    JSON.stringify(queries),
+    JSON.stringify(values),
   ]);
 }
 

@@ -11,8 +11,8 @@ const dashed = () => id.match(/.{4}/g)!.join("-");
 /** Sets every column a state reads, so no test depends on the one before it. */
 const seed = (
   status: string,
-  statusAt: number | null,
-  expiresAt: number | null,
+  statusAt: Date | null,
+  expiresAt: Date | null,
   reason: string | null,
 ) =>
   sql(
@@ -44,7 +44,7 @@ test("valid: the drawing, facts, issuer, Download PDF and a report link", async 
   page,
   request,
 }) => {
-  seed("valid", null, Date.UTC(2099, 0, 15), null);
+  seed("valid", null, new Date(Date.UTC(2099, 0, 15)), null);
   await page.goto(`/c/${dashed()}`);
   await expect(page.getByRole("status")).toContainText("Valid Certificate");
   await expect(page.locator(".stamp")).toHaveCount(0);
@@ -76,7 +76,7 @@ test("valid: the drawing, facts, issuer, Download PDF and a report link", async 
 });
 
 test("expired: stamped, with its date, no download", async ({ page, request }) => {
-  seed("valid", null, Date.now() - DAY, null);
+  seed("valid", null, new Date(Date.now() - DAY), null);
   await page.goto(`/c/${id}`);
   await expect(page.getByRole("status")).toContainText(
     "This Certificate was genuine but expired on",
@@ -87,7 +87,7 @@ test("expired: stamped, with its date, no download", async ({ page, request }) =
 });
 
 test("revoked: its date, never its reason", async ({ page, request }) => {
-  seed("revoked", Date.UTC(2026, 7, 2), null, "Shared answers in a forum");
+  seed("revoked", new Date(Date.UTC(2026, 7, 2)), null, "Shared answers in a forum");
   await page.goto(`/c/${id}`);
   await expect(page.getByRole("status")).toContainText(
     "The issuer revoked this Certificate on August 2, 2026.",
@@ -99,7 +99,7 @@ test("revoked: its date, never its reason", async ({ page, request }) => {
 });
 
 test("replaced: its date, no link to the replacement", async ({ page, request }) => {
-  seed("replaced", Date.UTC(2026, 7, 2), null, "Name correction");
+  seed("replaced", new Date(Date.UTC(2026, 7, 2)), null, "Name correction");
   await page.goto(`/c/${id}`);
   await expect(page.getByRole("status")).toContainText(
     "On August 2, 2026 this Certificate was replaced by a corrected one.",

@@ -1,10 +1,9 @@
 import { and, eq, isNull } from "drizzle-orm";
-import type { LibSQLDatabase } from "drizzle-orm/libsql";
+import type { Db } from "../db/open";
 import * as schema from "../db/schema";
 import { bump } from "./attempts";
 import { stillValid } from "./certificates";
 
-type Db = LibSQLDatabase<typeof schema>;
 const { account, assessment, certificate, creator, session, user } = schema;
 
 /** A Creator Ban, found by the sign-in email: sets `banned_at`, revokes every Valid Certificate

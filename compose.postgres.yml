@@ -1,0 +1,28 @@
+# Postgres instead of the SQLite file (ADR 0007):
+#   docker compose -f compose.yml -f compose.postgres.yml up -d
+# Set POSTGRES_PASSWORD in .env for anything but a trial. Backups are `pg_dump` plus the Silo bucket.
+services:
+  app:
+    environment:
+      DATABASE_URL: postgres://quizz:${POSTGRES_PASSWORD:-quizz}@postgres:5432/quizz
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Not published: the app is the only way in.
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: quizz
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quizz}
+      POSTGRES_DB: quizz
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "quizz", "-d", "quizz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres-data:

@@ -1,13 +1,11 @@
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { and, count, desc, eq, gt, sql } from "drizzle-orm";
-import type { LibSQLDatabase } from "drizzle-orm/libsql";
+import type { Db, Tx } from "../db/open";
 import { v7 as uuidv7 } from "uuid";
 import * as schema from "../db/schema";
 import { CODE_MINUTES } from "../domain/one-time-code";
 import { emailHash } from "./email-hash";
 
-type Db = LibSQLDatabase<typeof schema>;
-type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 type Purpose = (typeof schema.oneTimeCode.$inferSelect)["purpose"];
 const { oneTimeCode, emailDay } = schema;
 

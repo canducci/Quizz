@@ -1,18 +1,11 @@
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { openDatabase } from "../db/open";
+import { testDatabase } from "../db/test-database";
 import { eq } from "drizzle-orm";
 import { expect, it } from "vitest";
-import { migrateDatabase } from "../db/migrate";
 import * as schema from "../db/schema";
 import { publish, publishState } from "./publish";
 
 it("freezes each Version and publishes only a ready, changed Assessment", async () => {
-  const { client, db } = openDatabase(
-    `file:${join(mkdtempSync(join(tmpdir(), "quizz-")), "t.db")}`,
-  );
-  await migrateDatabase(client, db);
+  const db = await testDatabase();
   await db.insert(schema.creator).values({
     id: "c1",
     name: "Ana",
@@ -46,7 +39,11 @@ it("freezes each Version and publishes only a ready, changed Assessment", async 
 
   expect(await publish(db, "a1", "c1")).toBe(1);
   expect((await status()).status).toBe("published");
-  const v1 = await client.execute("select snapshot from assessment_version where number = 1");
+  const version1 = async () =>
+    (
+      await db.select().from(schema.assessmentVersion).where(eq(schema.assessmentVersion.number, 1))
+    )[0];
+  const v1 = await version1();
   expect(await publish(db, "a1", "c1")).toBeNull(); // unchanged
 
   // Editing the working copy (even while Closed) makes Version 2 and leaves Version 1 alone.
@@ -62,8 +59,6 @@ it("freezes each Version and publishes only a ready, changed Assessment", async 
     id: "q1",
     text: "Edited?",
   });
-  expect(await client.execute("select snapshot from assessment_version where number = 1")).toEqual(
-    v1,
-  );
-  expect(JSON.parse(String(v1.rows[0].snapshot)).questions[0].text).toBe("Q?");
+  expect(await version1()).toEqual(v1);
+  expect(v1.snapshot.questions[0].text).toBe("Q?");
 });

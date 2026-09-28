@@ -28,11 +28,18 @@ test("the Statistics tab shows the seeded counters as tiles and tables", async (
     [shown, correct]: number[],
   ) =>
     sql(
-      `insert into stats_day (version_id, day, attempts, timed_out, submitted, passed,
-        certificates_issued, revoked, expired, score_histogram, time_histogram, questions)
-       select id, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-         json_object(json_extract(snapshot, '$.questions[0].id'), json_object('shown', ?, 'correct', ?))
-       from assessment_version where assessment_id = ?`,
+      {
+        sqlite: `insert into stats_day (version_id, day, attempts, timed_out, submitted, passed,
+          certificates_issued, revoked, expired, score_histogram, time_histogram, questions)
+         select id, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+           json_object(json_extract(snapshot, '$.questions[0].id'), json_object('shown', ?, 'correct', ?))
+         from assessment_version where assessment_id = ?`,
+        pg: `insert into stats_day (version_id, day, attempts, timed_out, submitted, passed,
+          certificates_issued, revoked, expired, score_histogram, time_histogram, questions)
+         select id, ?, ?::int, ?::int, ?::int, ?::int, ?::int, ?::int, ?::int, ?::jsonb, ?::jsonb,
+           jsonb_build_object(snapshot->'questions'->0->>'id', jsonb_build_object('shown', ?::int, 'correct', ?::int))
+         from assessment_version where assessment_id = ?`,
+      },
       day(daysAgo),
       ...counters,
       JSON.stringify(scores),
