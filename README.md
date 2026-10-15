@@ -14,6 +14,8 @@ The app is on http://localhost:3000 and sign-in emails land in Mailpit at http:/
 
 Exposing it beyond localhost? Put it behind a reverse proxy that overwrites `X-Forwarded-For`. Learner one-time codes are limited per IP from that header, and Next passes a client-sent one through, so without the proxy that limit (and the daily email cap it protects) can be dodged.
 
+The sign-in and code forms make the browser solve a small proof-of-work challenge before any email goes out (ADR 0007). It needs no account or key. If phones feel slow on submit, lower `CAPTCHA_DIFFICULTY` in `.env`; raise it if bots still get through.
+
 ## Operate
 
 A Creator Ban revokes every Certificate the Creator issued, closes their Assessments and blocks their sign-in:

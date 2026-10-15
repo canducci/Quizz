@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { magicLink } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
@@ -10,7 +11,9 @@ import { getTranslations } from "next-intl/server";
 import { v7 as uuidv7 } from "uuid";
 import { db } from "@/db";
 import { ensureCreator } from "@/db/creator";
+import { CAPTCHA_FAILED, CAPTCHA_HEADER } from "@/domain/captcha";
 import * as schema from "@/db/schema";
+import { captchaPassed } from "./captcha";
 import { googleEnabled } from "./env";
 import { sendMail } from "./mail";
 
@@ -26,6 +29,14 @@ export const auth = betterAuth({
         },
       }
     : {},
+  hooks: {
+    // No magic link goes out without a solved CAPTCHA (ADR 0007).
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== "/sign-in/magic-link") return;
+      if (!(await captchaPassed(ctx.headers?.get(CAPTCHA_HEADER))))
+        throw new APIError("BAD_REQUEST", { message: "CAPTCHA failed", code: CAPTCHA_FAILED });
+    }),
+  },
   databaseHooks: {
     session: {
       create: {

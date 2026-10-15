@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { authClient } from "@/server/auth-client";
+import { CAPTCHA_FAILED, CAPTCHA_HEADER } from "@/domain/captcha";
+import { solveCaptcha } from "./captcha";
 
 export function SignInForm({ google }: { google: boolean }) {
   const t = useTranslations("signIn");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "failed">("idle");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "failed" | "captcha">("idle");
   const [email, setEmail] = useState("");
 
   if (status === "sent") return <p role="status">{t("sent", { email })}</p>;
@@ -18,12 +20,14 @@ export function SignInForm({ google }: { google: boolean }) {
         onSubmit={async (e) => {
           e.preventDefault();
           setStatus("sending");
+          const captcha = await solveCaptcha();
           const { error } = await authClient.signIn.magicLink({
             email,
             callbackURL: "/dashboard",
             errorCallbackURL: "/?error=signIn",
+            fetchOptions: { headers: { [CAPTCHA_HEADER]: captcha } },
           });
-          setStatus(error ? "failed" : "sent");
+          setStatus(!error ? "sent" : error.code === CAPTCHA_FAILED ? "captcha" : "failed");
         }}
       >
         <label className="stack">
@@ -38,6 +42,7 @@ export function SignInForm({ google }: { google: boolean }) {
         </label>
         <button disabled={status === "sending"}>{t("sendLink")}</button>
         {status === "failed" && <p role="alert">{t("failed")}</p>}
+        {status === "captcha" && <p role="alert">{t("captcha")}</p>}
       </form>
       {google && (
         <>

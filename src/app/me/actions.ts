@@ -16,13 +16,15 @@ import {
   learnerEmail,
   learnerToken,
 } from "@/server/learner-session";
+import { captchaPassed } from "@/server/captcha";
 import { sendMail } from "@/server/mail";
 import { requestCode, verifyCode } from "@/server/one-time-code";
 
 /** Sends a My Certificates code, in the interface language: it isn't about any one Assessment. */
-export async function requestMyCode(typed: string): Promise<EntryError | null> {
+export async function requestMyCode(typed: string, captcha: string): Promise<EntryError | null> {
   const [email] = parseEmailList(typed).emails;
   if (!email || normalizeEmail(typed) !== email) return { reason: "badEmail" };
+  if (!(await captchaPassed(captcha))) return { reason: "captcha" };
   const sent = await requestCode(db, {
     email,
     ip: await clientIp(),

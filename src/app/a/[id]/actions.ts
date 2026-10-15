@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { saveAnswer, startAttempt, submitAttempt } from "@/server/attempts";
 import { emailHash, normalizeEmail, parseEmailList } from "@/server/email-hash";
 import { LEARNER_COOKIE, learnerEmail, learnerToken } from "@/server/learner-session";
+import { captchaPassed } from "@/server/captcha";
 import { sendMail } from "@/server/mail";
 import { requestCode, sentToday, verifyCode } from "@/server/one-time-code";
 import { mailCertificate } from "@/server/certificate-mail";
@@ -29,11 +30,13 @@ async function openAssessment(id: string) {
 export async function requestLearnerCode(
   assessmentId: string,
   typed: string,
+  captcha: string,
 ): Promise<EntryError | null> {
   const { snapshot, error } = await openAssessment(assessmentId);
   if (error) return error;
   const [email] = parseEmailList(typed).emails;
   if (!email || normalizeEmail(typed) !== email) return { reason: "badEmail" };
+  if (!(await captchaPassed(captcha))) return { reason: "captcha" };
   const sent = await requestCode(db, {
     email,
     ip: await clientIp(),
