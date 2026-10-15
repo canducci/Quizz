@@ -14,6 +14,7 @@
     "sendLink": "Enviar link de acesso por e-mail",
     "sent": "Confira sua caixa de entrada: enviamos um link de acesso para {email}.",
     "failed": "Não conseguimos enviar o link. Tente de novo em um minuto.",
+    "captcha": "Não conseguimos confirmar que este pedido veio do seu navegador. Recarregue a página e tente de novo.",
     "or": "ou",
     "google": "Continuar com o Google",
     "deleted": "Sua conta foi excluída. Os Certificados que você emitiu continuam válidos.",
@@ -243,6 +244,7 @@
     "verifiedHint": "Começar uma Tentativa inicia o relógio de {minutes} minutos. Ele continua correndo se você fechar a página.",
     "errors": {
       "badEmail": "Informe um endereço de e-mail válido.",
+      "captcha": "Não conseguimos confirmar que este pedido veio do seu navegador. Recarregue a página e tente de novo.",
       "email": "Muitos códigos para este e-mail. Tente de novo em uma hora.",
       "ip": "Muitos códigos a partir desta rede. Tente de novo em uma hora.",
       "dailyCap": "Já enviamos todos os e-mails possíveis hoje. Tente de novo amanhã.",

@@ -10,7 +10,10 @@ type Mail = {
 };
 
 /** Mailpit's messages to `email`, newest first. */
-async function mailsTo(request: APIRequestContext, email: string): Promise<{ ID: string }[]> {
+export async function mailsTo(
+  request: APIRequestContext,
+  email: string,
+): Promise<{ ID: string }[]> {
   const search = await request.get(`${MAILPIT}/api/v1/search`, {
     params: { query: `to:"${email}"` },
   });

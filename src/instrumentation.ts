@@ -1,8 +1,8 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
-  const { secretsProblem } = await import("./server/env");
-  const problem = secretsProblem();
+  const { captchaProblem, secretsProblem } = await import("./server/env");
+  const problem = secretsProblem() ?? captchaProblem();
   if (problem) {
     console.error(problem);
     process.exit(1);

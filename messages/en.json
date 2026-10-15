@@ -14,6 +14,7 @@
     "sendLink": "Email me a sign-in link",
     "sent": "Check your inbox: we sent a sign-in link to {email}.",
     "failed": "We couldn't send the link. Try again in a minute.",
+    "captcha": "We couldn't check that this request came from your browser. Reload the page and try again.",
     "or": "or",
     "google": "Continue with Google",
     "deleted": "Your account was deleted. The Certificates you issued stay valid.",
@@ -243,6 +244,7 @@
     "verifiedHint": "Starting an Attempt begins the {minutes}-minute clock. It keeps running if you close the page.",
     "errors": {
       "badEmail": "Enter a valid email address.",
+      "captcha": "We couldn't check that this request came from your browser. Reload the page and try again.",
       "email": "Too many codes for this email. Try again in an hour.",
       "ip": "Too many codes from this network. Try again in an hour.",
       "dailyCap": "We've sent all the emails we can today. Try again tomorrow.",

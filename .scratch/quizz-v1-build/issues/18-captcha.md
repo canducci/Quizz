@@ -1,6 +1,6 @@
 # CAPTCHA on public forms
 
-Status: needs-triage
+Status: resolved
 Blocked by:
 
 ## What to build
@@ -34,13 +34,13 @@ Candidates to start from: ALTCHA (self-hosted proof-of-work, no third party), Cl
 
 ## Acceptance criteria
 
-- [ ] The ADR records the choice, the rejected options and why.
-- [ ] The server verifies the CAPTCHA token before sending any email, on all three forms. A missing or bad token gets a translated error, and no email goes out.
-- [ ] Verification happens server-side at the trust boundary (the server action or a Better Auth hook), not only in the client.
-- [ ] Configured through env (`src/server/env.ts` validation, `.env.example`, README). With no config, self-hosted installs still work: the ADR says whether that means CAPTCHA off or the self-hosted provider on by default.
-- [ ] Every new string in English and pt-BR. Learner-facing forms use the Assessment Language.
-- [ ] Vitest: token verification accepts a good token and rejects missing or bad ones.
-- [ ] Playwright: the existing sign-in and entry flows still pass (test keys or a test-mode bypass that is impossible to enable in production), and one test shows a submit without a valid token sends no email.
+- [x] The ADR records the choice, the rejected options and why.
+- [x] The server verifies the CAPTCHA token before sending any email, on all three forms. A missing or bad token gets a translated error, and no email goes out.
+- [x] Verification happens server-side at the trust boundary (the server action or a Better Auth hook), not only in the client.
+- [x] Configured through env (`src/server/env.ts` validation, `.env.example`, README). With no config, self-hosted installs still work: the ADR says whether that means CAPTCHA off or the self-hosted provider on by default.
+- [x] Every new string in English and pt-BR. Learner-facing forms use the Assessment Language.
+- [x] Vitest: token verification accepts a good token and rejects missing or bad ones.
+- [x] Playwright: the existing sign-in and entry flows still pass (test keys or a test-mode bypass that is impossible to enable in production), and one test shows a submit without a valid token sends no email.
 
 ## Conventions (every ticket)
 

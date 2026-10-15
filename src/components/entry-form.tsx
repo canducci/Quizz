@@ -4,14 +4,15 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { CODE_MINUTES, type EntryError } from "@/domain/one-time-code";
+import { solveCaptcha } from "./captcha";
 
 /** Email, then the one-time code. A verified Learner reloads into the page's verified view.
- * `request` and `verify` are the page's server actions. */
+ * `request` and `verify` are the page's server actions; each request carries a fresh CAPTCHA. */
 export function EntryForm({
   request,
   verify,
 }: {
-  request: (email: string) => Promise<EntryError | null>;
+  request: (email: string, captcha: string) => Promise<EntryError | null>;
   verify: (email: string, code: string) => Promise<EntryError | null>;
 }) {
   const t = useTranslations("learner");
@@ -24,7 +25,7 @@ export function EntryForm({
 
   const send = () =>
     startTransition(async () => {
-      const failed = await request(email);
+      const failed = await request(email, await solveCaptcha());
       setError(failed);
       if (!failed) {
         setSent(true);
